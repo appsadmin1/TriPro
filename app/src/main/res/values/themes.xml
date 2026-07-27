@@ -1,0 +1,10 @@
+<resources>
+    <!-- This XML theme only controls the system window before setContent{} runs.
+         All real theming (colors, type, shapes) lives in ui/theme/*.kt and is
+         generated from DESIGN.md's Horizon Ethos tokens. -->
+    <style name="Theme.TriPro.Starting" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/surface</item>
+        <item name="android:statusBarColor">@color/surface</item>
+        <item name="android:navigationBarColor">@color/surface</item>
+    </style>
+</resources>

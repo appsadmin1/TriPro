@@ -1,0 +1,25 @@
+# Copy this file's contents into your own local.properties (Android Studio creates that
+# file automatically and it's already gitignored — never commit real keys).
+
+# Path to your Android SDK — Android Studio fills this in automatically.
+sdk.dir=/path/to/your/Android/sdk
+
+# From Google Cloud Console > APIs & Services > Credentials, for the Maps SDK for Android.
+# See README "Setup" step 3.
+MAPS_API_KEY=your_maps_api_key_here
+
+# Firebase Console > Authentication > Sign-in method > Google > Web SDK configuration >
+# "Web client ID" (NOT the Android client ID). See README "Setup" step 2.
+WEB_CLIENT_ID=your_web_client_id.apps.googleusercontent.com
+
+# Cloudinary dashboard (top of the page) > Cloud name, plus Settings > Upload > Upload
+# presets > an UNSIGNED preset you create. Both are safe to embed in the app — that's
+# the point of an unsigned preset. Never put your API Secret here. See README
+# "Cloudinary setup".
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_UPLOAD_PRESET=your_unsigned_preset_name
+
+# Your deployed Netlify site's base URL (no trailing slash), e.g.
+# https://tripro-notifications.netlify.app — functions are called at
+# {this}/.netlify/functions/{name}. See README "Push notifications setup".
+NETLIFY_FUNCTIONS_BASE_URL=https://your-site.netlify.app

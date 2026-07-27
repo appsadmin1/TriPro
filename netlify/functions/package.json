@@ -1,0 +1,9 @@
+{
+  "name": "tripro-netlify-functions",
+  "description": "Push notification + Cloudinary cleanup backend for TriPro, replacing the Firebase Cloud Functions approach so the Firebase project can stay on the Spark (free) plan.",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}

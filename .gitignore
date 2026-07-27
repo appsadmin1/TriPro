@@ -1,0 +1,20 @@
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Firebase config is per-developer/per-project — see README "Setup" step 1.
+app/google-services.json
+
+*.hprof
+
+# Netlify Functions
+netlify/functions/node_modules/
+.netlify/
+netlify/functions/.env*

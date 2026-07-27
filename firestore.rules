@@ -1,0 +1,121 @@
+rules_version = '2';
+
+// Deploy with: firebase deploy --only firestore:rules
+//
+// Design summary:
+//  - trip.members is a map<uid, "owner"|"editor"|"viewer">. It is the single source of
+//    truth for who can read/write a trip and everything under it.
+//  - trip.memberIds mirrors members.keys() purely so the client can run
+//    whereArrayContains("memberIds", uid) — Firestore can't query into map keys directly.
+//    These rules enforce that the two stay in sync on every write.
+//  - Collaborator invites: if the invited email already has a users/{uid} doc, they're
+//    added to members immediately (app-level, via setMemberRole). If not, a
+//    pendingInvites/{email} doc is created (doc ID = the email itself, so this ruleset
+//    can authorize "self-accept" without a second document read). See the "self-accept"
+//    branch below and UserRepository.reconcilePendingInvites in the app code.
+//  - Known limitation: the self-accept branch trusts the client to write the *exact*
+//    role recorded in its own pendingInvites doc, which this ruleset checks via get()
+//    against that same doc — but if you fork this, test the exact scenario against the
+//    Firestore emulator (`firebase emulators:start`) before relying on it in production.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isMember(tripData) {
+      return request.auth.uid in tripData.members;
+    }
+
+    function roleOf(tripData) {
+      return tripData.members[request.auth.uid];
+    }
+
+    // ---------------------------------------------------------------- users
+
+    match /users/{uid} {
+      // Any signed-in user may read the public directory (needed to resolve invites by
+      // email and to show collaborator avatars) but may only write their own doc.
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // ---------------------------------------------------------------- trips
+
+    match /trips/{tripId} {
+      allow read: if isSignedIn() && isMember(resource.data);
+
+      allow create: if isSignedIn()
+        && request.auth.uid == request.resource.data.ownerId
+        && request.resource.data.members[request.auth.uid] == 'owner'
+        && request.resource.data.memberIds == [request.auth.uid];
+
+      allow update: if isSignedIn() && (
+        // Case 1: an existing member editing the trip.
+        (
+          isMember(resource.data) && (
+            roleOf(resource.data) == 'owner' ||
+            (
+              roleOf(resource.data) == 'editor' &&
+              request.resource.data.members == resource.data.members &&
+              request.resource.data.memberIds == resource.data.memberIds &&
+              request.resource.data.ownerId == resource.data.ownerId
+            )
+          )
+        )
+        ||
+        // Case 2: a brand-new member self-accepting their own pending invite. They may
+        // ONLY add themselves, with exactly the role recorded in the matching
+        // pendingInvites/{their own email} doc, and touch nothing else on the trip.
+        (
+          !isMember(resource.data) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberIds']) &&
+          request.resource.data.memberIds == resource.data.memberIds.concat([request.auth.uid]) &&
+          request.resource.data.members ==
+            resource.data.members.merge({
+              (request.auth.uid):
+                get(/databases/$(database)/documents/trips/$(tripId)/pendingInvites/$(request.auth.token.email)).data.role
+            })
+        )
+      );
+
+      allow delete: if isSignedIn() && isMember(resource.data) && roleOf(resource.data) == 'owner';
+
+      // ------------------------------------------------------------- days
+
+      match /days/{date} {
+        allow read: if isSignedIn()
+          && isMember(get(/databases/$(database)/documents/trips/$(tripId)).data);
+        allow write: if isSignedIn()
+          && roleOf(get(/databases/$(database)/documents/trips/$(tripId)).data) in ['owner', 'editor'];
+
+        // ----------------------------------------------------------- items
+
+        match /items/{itemId} {
+          allow read: if isSignedIn()
+            && isMember(get(/databases/$(database)/documents/trips/$(tripId)).data);
+          allow write: if isSignedIn()
+            && roleOf(get(/databases/$(database)/documents/trips/$(tripId)).data) in ['owner', 'editor'];
+        }
+      }
+
+      // ---------------------------------------------------- pendingInvites
+
+      // Doc ID is the invitee's lowercased email — see design note above.
+      match /pendingInvites/{email} {
+        allow read: if isSignedIn() && (
+          roleOf(get(/databases/$(database)/documents/trips/$(tripId)).data) == 'owner' ||
+          email == request.auth.token.email
+        );
+        allow create, update: if isSignedIn()
+          && roleOf(get(/databases/$(database)/documents/trips/$(tripId)).data) == 'owner';
+        allow delete: if isSignedIn() && (
+          roleOf(get(/databases/$(database)/documents/trips/$(tripId)).data) == 'owner' ||
+          email == request.auth.token.email
+        );
+      }
+    }
+  }
+}

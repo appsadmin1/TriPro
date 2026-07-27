@@ -1,0 +1,12 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "pendingInvites",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "email", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
