@@ -9,6 +9,7 @@ enum class ItemType(val icon: String) {
     ATTRACTION("museum"),
     ACTIVITY("hiking"),
     TRANSPORT("directions_car"),
+    SHOW("theater_comedy"),
     CUSTOM("event")
 }
 
@@ -40,6 +41,7 @@ data class ItineraryItem(
     val address: String = "",
     val lat: Double? = null,
     val lng: Double? = null,
+    val customTypeName: String = "",
     /** Special note/alert for this specific place, e.g. "18+ only" or
      *  "Closes early at 18:00 today" — rendered as the amber/red alert pill in the UI. */
     val note: String = "",

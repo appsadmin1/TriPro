@@ -7,21 +7,34 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.ui.text.googlefonts.Font
+import androidx.compose.ui.text.googlefonts.GoogleFont
+import com.tripro.app.R
+
 /**
- * DESIGN.md specifies three families: Plus Jakarta Sans (headlines), Work Sans (body),
- * and JetBrains Mono (technical labels / timestamps / confirmation codes).
- *
- * To use the real webfonts instead of the system default:
- *  1. Download the static .ttf/.otf files from https://fonts.google.com
- *  2. Drop them into app/src/main/res/font/ (e.g. plus_jakarta_sans_semibold.ttf)
- *  3. Replace FontFamily.Default below with FontFamily(Font(R.font.plus_jakarta_sans_semibold, FontWeight.SemiBold), ...)
- *
- * Leaving them as FontFamily.Default keeps this project buildable with zero extra
- * setup; swapping in the real fonts is a five-minute follow-up, not a blocker.
+ * Premium typography using Google Fonts: Plus Jakarta Sans (Headlines), Work Sans (Body),
+ * and JetBrains Mono (Technical).
  */
-private val PlusJakartaSans = FontFamily.Default
-private val WorkSans = FontFamily.Default
-private val JetBrainsMono = FontFamily.Default
+val provider = GoogleFont.Provider(
+    providerAuthority = "com.google.android.gms.fonts",
+    providerPackage = "com.google.android.gms",
+    certificates = R.array.com_google_android_gms_fonts_certs
+)
+
+private val PlusJakartaSans = FontFamily(
+    Font(googleFont = GoogleFont("Plus Jakarta Sans"), fontProvider = provider),
+    Font(googleFont = GoogleFont("Plus Jakarta Sans"), fontProvider = provider, weight = FontWeight.SemiBold),
+    Font(googleFont = GoogleFont("Plus Jakarta Sans"), fontProvider = provider, weight = FontWeight.Bold)
+)
+
+private val WorkSans = FontFamily(
+    Font(googleFont = GoogleFont("Work Sans"), fontProvider = provider),
+    Font(googleFont = GoogleFont("Work Sans"), fontProvider = provider, weight = FontWeight.Medium)
+)
+
+private val JetBrainsMono = FontFamily(
+    Font(googleFont = GoogleFont("JetBrains Mono"), fontProvider = provider)
+)
 
 val TriProTypography = Typography().let { base ->
     base.copy(

@@ -35,11 +35,14 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -321,6 +324,8 @@ private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave:
     var address by remember { mutableStateOf(existing?.address.orEmpty()) }
     var checkIn by remember { mutableStateOf(existing?.checkIn.orEmpty()) }
     var checkOut by remember { mutableStateOf(existing?.checkOut.orEmpty()) }
+    var showCheckInPicker by remember { mutableStateOf(false) }
+    var showCheckOutPicker by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -330,8 +335,12 @@ private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave:
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Hotel name") })
                 OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") })
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = checkIn, onValueChange = { checkIn = it }, label = { Text("Check-in") }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = checkOut, onValueChange = { checkOut = it }, label = { Text("Check-out") }, modifier = Modifier.weight(1f))
+                    OutlinedButton(onClick = { showCheckInPicker = true }, modifier = Modifier.weight(1f)) {
+                        Text(if (checkIn.isBlank()) "Check-in" else "In: $checkIn")
+                    }
+                    OutlinedButton(onClick = { showCheckOutPicker = true }, modifier = Modifier.weight(1f)) {
+                        Text(if (checkOut.isBlank()) "Check-out" else "Out: $checkOut")
+                    }
                 }
             }
         },
@@ -344,6 +353,44 @@ private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave:
             }) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+
+    if (showCheckInPicker) {
+        TimePickerDialogSimple(
+            initial = if (checkIn.isBlank()) "14:00" else checkIn,
+            onDismiss = { showCheckInPicker = false },
+            onConfirm = { checkIn = it; showCheckInPicker = false }
+        )
+    }
+    if (showCheckOutPicker) {
+        TimePickerDialogSimple(
+            initial = if (checkOut.isBlank()) "11:00" else checkOut,
+            onDismiss = { showCheckOutPicker = false },
+            onConfirm = { checkOut = it; showCheckOutPicker = false }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimePickerDialogSimple(
+    initial: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    val parts = initial.split(":")
+    val state = rememberTimePickerState(
+        initialHour = parts.getOrNull(0)?.toIntOrNull() ?: 9,
+        initialMinute = parts.getOrNull(1)?.toIntOrNull() ?: 0,
+        is24Hour = true
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { onConfirm("%02d:%02d".format(state.hour, state.minute)) }) { Text("OK") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        text = { TimeInput(state = state) }
     )
 }
 
@@ -417,6 +464,8 @@ private fun FlightEditDialog(existing: FlightInfo?, onDismiss: () -> Unit, onSav
     var arrivalCode by remember { mutableStateOf(existing?.arrivalAirportCode.orEmpty()) }
     var departureTime by remember { mutableStateOf(existing?.departureTime.orEmpty()) }
     var arrivalTime by remember { mutableStateOf(existing?.arrivalTime.orEmpty()) }
+    var showDepPicker by remember { mutableStateOf(false) }
+    var showArrPicker by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -432,8 +481,12 @@ private fun FlightEditDialog(existing: FlightInfo?, onDismiss: () -> Unit, onSav
                     OutlinedTextField(value = arrivalCode, onValueChange = { arrivalCode = it }, label = { Text("To (airport code)") }, modifier = Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = departureTime, onValueChange = { departureTime = it }, label = { Text("Departs (HH:mm)") }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = arrivalTime, onValueChange = { arrivalTime = it }, label = { Text("Arrives (HH:mm)") }, modifier = Modifier.weight(1f))
+                    OutlinedButton(onClick = { showDepPicker = true }, modifier = Modifier.weight(1f)) {
+                        Text(if (departureTime.isBlank()) "Departs" else "Dep: $departureTime")
+                    }
+                    OutlinedButton(onClick = { showArrPicker = true }, modifier = Modifier.weight(1f)) {
+                        Text(if (arrivalTime.isBlank()) "Arrives" else "Arr: $arrivalTime")
+                    }
                 }
             }
         },
@@ -454,6 +507,21 @@ private fun FlightEditDialog(existing: FlightInfo?, onDismiss: () -> Unit, onSav
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
+
+    if (showDepPicker) {
+        TimePickerDialogSimple(
+            initial = if (departureTime.isBlank()) "12:00" else departureTime,
+            onDismiss = { showDepPicker = false },
+            onConfirm = { departureTime = it; showDepPicker = false }
+        )
+    }
+    if (showArrPicker) {
+        TimePickerDialogSimple(
+            initial = if (arrivalTime.isBlank()) "14:00" else arrivalTime,
+            onDismiss = { showArrPicker = false },
+            onConfirm = { arrivalTime = it; showArrPicker = false }
+        )
+    }
 }
 
 @Composable

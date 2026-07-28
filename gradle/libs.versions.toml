@@ -19,6 +19,8 @@ okhttp = "4.12.0"
 coilCompose = "2.7.0"
 kotlinxCoroutines = "1.9.0"
 lifecycleViewmodelCompose = "2.8.7"
+uiTextGoogleFonts = "1.7.6"
+playServicesPlaces = "4.1.0"
 
 [libraries]
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -50,6 +52,8 @@ play-services-location = { group = "com.google.android.gms", name = "play-servic
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coilCompose" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutines" }
+ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
+play-services-places = { group = "com.google.android.libraries.places", name = "places", version.ref = "playServicesPlaces" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

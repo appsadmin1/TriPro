@@ -3,7 +3,10 @@ package com.tripro.app.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 
 /**
  * DESIGN.md's token names (surface-container-high, on-primary-fixed-variant, ...) are
@@ -70,10 +73,12 @@ private val HorizonEthosColorScheme = lightColorScheme(
 
 @Composable
 fun TriProTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = HorizonEthosColorScheme,
-        typography = TriProTypography,
-        shapes = TriProShapes,
-        content = content
-    )
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        MaterialTheme(
+            colorScheme = HorizonEthosColorScheme,
+            typography = TriProTypography,
+            shapes = TriProShapes,
+            content = content
+        )
+    }
 }

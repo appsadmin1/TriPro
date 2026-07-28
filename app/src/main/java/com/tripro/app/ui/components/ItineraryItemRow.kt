@@ -27,7 +27,9 @@ import androidx.compose.material.icons.filled.Hiking
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.Museum
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.TheaterComedy
 import androidx.compose.material.icons.filled.UploadFile
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -72,11 +74,22 @@ fun ItineraryItemRow(
                     Text(item.startTime ?: "--:--", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
                     Text(item.endTime ?: "", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                TimeType.PERIOD -> Text(
-                    (item.period ?: DayPeriod.MORNING).label,
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                TimeType.PERIOD -> {
+                    val label = (item.period ?: DayPeriod.MORNING).label
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        label.uppercase().forEach { char ->
+                            Text(
+                                char.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -106,7 +119,7 @@ fun ItineraryItemRow(
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text(
-                                item.title,
+                                if (item.type == ItemType.CUSTOM && item.customTypeName.isNotBlank()) item.customTypeName else item.title,
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -206,5 +219,6 @@ private fun imageVectorForType(type: ItemType): ImageVector = when (type) {
     ItemType.ATTRACTION -> Icons.Filled.Museum
     ItemType.ACTIVITY -> Icons.Filled.Hiking
     ItemType.TRANSPORT -> Icons.Filled.DirectionsCar
+    ItemType.SHOW -> Icons.Filled.TheaterComedy
     ItemType.CUSTOM -> Icons.Filled.Event
 }

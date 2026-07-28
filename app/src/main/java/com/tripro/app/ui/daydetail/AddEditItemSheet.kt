@@ -20,7 +20,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TimeInput
+import com.tripro.app.ui.components.PlaceSearchField
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -56,6 +58,7 @@ fun AddEditItemSheet(
     var period by remember { mutableStateOf(existing?.period ?: DayPeriod.MORNING) }
     var startTime by remember { mutableStateOf(existing?.startTime ?: "09:00") }
     var endTime by remember { mutableStateOf(existing?.endTime ?: "11:00") }
+    var customTypeName by remember { mutableStateOf(existing?.customTypeName.orEmpty()) }
     var locationName by remember { mutableStateOf(existing?.locationName.orEmpty()) }
     var address by remember { mutableStateOf(existing?.address.orEmpty()) }
     var pin by remember {
@@ -110,7 +113,10 @@ fun AddEditItemSheet(
             }
 
             when (timeType) {
-                TimeType.PERIOD -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TimeType.PERIOD -> Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     DayPeriod.entries.forEach { p ->
                         FilterChip(selected = period == p, onClick = { period = p }, label = { Text(p.label) })
                     }
@@ -122,12 +128,26 @@ fun AddEditItemSheet(
                 }
             }
 
-            OutlinedTextField(
-                value = locationName,
-                onValueChange = { locationName = it },
-                label = { Text("Place name") },
+            if (type == ItemType.CUSTOM) {
+                OutlinedTextField(
+                    value = customTypeName,
+                    onValueChange = { customTypeName = it },
+                    label = { Text("What is it? (e.g. Scuba Diving)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            PlaceSearchField(
+                label = "Search Place",
+                initialValue = locationName,
+                onPlaceSelected = { result ->
+                    locationName = result.name
+                    address = result.address
+                    pin = result.latLng
+                },
                 modifier = Modifier.fillMaxWidth()
             )
+
             OutlinedTextField(
                 value = address,
                 onValueChange = { address = it },
@@ -172,6 +192,7 @@ fun AddEditItemSheet(
                             startTime = if (timeType != TimeType.PERIOD) startTime else null,
                             endTime = if (timeType == TimeType.RANGE) endTime else null,
                             period = if (timeType == TimeType.PERIOD) period else null,
+                            customTypeName = if (type == ItemType.CUSTOM) customTypeName else "",
                             locationName = locationName,
                             address = address,
                             lat = pin?.latitude,
@@ -224,6 +245,6 @@ private fun TimePickerDialogSimple(
             TextButton(onClick = { onConfirm("%02d:%02d".format(state.hour, state.minute)) }) { Text("OK") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-        text = { TimePicker(state = state) }
+        text = { TimeInput(state = state) }
     )
 }

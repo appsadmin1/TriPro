@@ -1,17 +1,29 @@
 package com.tripro.app.ui.triplist
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -27,9 +39,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
@@ -50,9 +66,10 @@ fun CreateTripRoute(
 ) {
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
+    val contentResolver = LocalContext.current.contentResolver
     val viewModel: CreateTripViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { CreateTripViewModel(container.tripRepository, ownerId, ownerName) }
+            initializer { CreateTripViewModel(container.tripRepository, container.cloudinaryRepository, ownerId, ownerName) }
         }
     )
     val uiState by viewModel.uiState.collectAsState()
@@ -63,11 +80,15 @@ fun CreateTripRoute(
 
     var name by remember { mutableStateOf("") }
     var destination by remember { mutableStateOf("") }
-    var coverImageUrl by remember { mutableStateOf("") }
+    var pickedImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var startDate by remember { mutableStateOf<LocalDate?>(null) }
     var endDate by remember { mutableStateOf<LocalDate?>(null) }
     var pickingStart by remember { mutableStateOf(false) }
     var pickingEnd by remember { mutableStateOf(false) }
+
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        pickedImageUri = uri
+    }
 
     Scaffold(
         topBar = {
@@ -99,12 +120,31 @@ fun CreateTripRoute(
                 label = { Text("Destination") },
                 modifier = Modifier.fillMaxWidth()
             )
-            OutlinedTextField(
-                value = coverImageUrl,
-                onValueChange = { coverImageUrl = it },
-                label = { Text("Cover image URL (optional)") },
-                modifier = Modifier.fillMaxWidth()
-            )
+
+            Text("Cover Image", style = MaterialTheme.typography.bodyMedium)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                    .padding(4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (pickedImageUri != null) {
+                    AsyncImage(
+                        model = pickedImageUri,
+                        contentDescription = "Cover preview",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Filled.AddPhotoAlternate, contentDescription = null, modifier = Modifier.padding(bottom = 8.dp))
+                        Text("Add cover photo from device", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
 
             Row(horizontalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)) {
                 OutlinedButton(onClick = { pickingStart = true }, modifier = Modifier.weight(1f)) {
@@ -123,12 +163,21 @@ fun CreateTripRoute(
                 onClick = {
                     val s = startDate
                     val e = endDate
-                    if (s != null && e != null) viewModel.createTrip(name, destination, coverImageUrl, s, e)
+                    if (s != null && e != null) {
+                        viewModel.createTrip(contentResolver, name, destination, pickedImageUri, s, e)
+                    }
                 },
                 enabled = !uiState.isSaving && name.isNotBlank() && startDate != null && endDate != null,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             ) {
-                Text(if (uiState.isSaving) "Creating…" else "Create Vacation")
+                if (uiState.isSaving) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp).height(16.dp), strokeWidth = 2.dp)
+                        Text("Creating…")
+                    }
+                } else {
+                    Text("Create Vacation")
+                }
             }
         }
     }
