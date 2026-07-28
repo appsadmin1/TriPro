@@ -6,16 +6,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenu
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -69,7 +66,6 @@ fun AddEditItemSheet(
     var note by remember { mutableStateOf(existing?.note.orEmpty()) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
-    var typeMenuExpanded by remember { mutableStateOf(false) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -92,25 +88,17 @@ fun AddEditItemSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            ExposedDropdownMenuBox(expanded = typeMenuExpanded, onExpandedChange = { typeMenuExpanded = it }) {
-                OutlinedTextField(
-                    value = type.name.lowercase().replaceFirstChar { it.uppercase() },
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Type") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeMenuExpanded) },
-                    // NOTE: menuAnchor() was no-arg pre-1.3; Material3 1.3+ requires
-                    // menuAnchor(MenuAnchorType.PrimaryNotEditable) here instead. If this
-                    // line fails to compile after Android Studio bumps the BOM, that's why.
-                    modifier = Modifier.fillMaxWidth().menuAnchor()
-                )
-                ExposedDropdownMenu(expanded = typeMenuExpanded, onDismissRequest = { typeMenuExpanded = false }) {
-                    ItemType.entries.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option.name.lowercase().replaceFirstChar { it.uppercase() }) },
-                            onClick = { type = option; typeMenuExpanded = false }
-                        )
-                    }
+            Text("Type", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ItemType.entries.forEach { option ->
+                    FilterChip(
+                        selected = type == option,
+                        onClick = { type = option },
+                        label = { Text(option.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                    )
                 }
             }
 

@@ -3,7 +3,7 @@
 /local.properties
 .idea/
 .DS_Store
-/build
+*build
 /captures
 .externalNativeBuild
 .cxx
@@ -18,3 +18,4 @@ app/google-services.json
 netlify/functions/node_modules/
 .netlify/
 netlify/functions/.env*
+tripro-*.json

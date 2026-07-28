@@ -59,22 +59,14 @@ private val HorizonEthosColorScheme = lightColorScheme(
     outline = HorizonEthosColors.Outline,
     outlineVariant = HorizonEthosColors.OutlineVariant,
     scrim = Color.Black,
-
-    primaryFixed = HorizonEthosColors.PrimaryFixed,
-    primaryFixedDim = HorizonEthosColors.PrimaryFixedDim,
-    onPrimaryFixed = HorizonEthosColors.OnPrimaryFixed,
-    onPrimaryFixedVariant = HorizonEthosColors.OnPrimaryFixedVariant,
-
-    secondaryFixed = HorizonEthosColors.SecondaryFixed,
-    secondaryFixedDim = HorizonEthosColors.SecondaryFixedDim,
-    onSecondaryFixed = HorizonEthosColors.OnSecondaryFixed,
-    onSecondaryFixedVariant = HorizonEthosColors.OnSecondaryFixedVariant,
-
-    tertiaryFixed = HorizonEthosColors.TertiaryFixed,
-    tertiaryFixedDim = HorizonEthosColors.TertiaryFixedDim,
-    onTertiaryFixed = HorizonEthosColors.OnTertiaryFixed,
-    onTertiaryFixedVariant = HorizonEthosColors.OnTertiaryFixedVariant,
 )
+
+// DESIGN.md's "fixed" tone tokens (PrimaryFixed, SecondaryFixed, TertiaryFixed, and their
+// Dim/On variants) don't have a home in lightColorScheme()'s constructor in every Material3
+// version — that API has churned across releases. Rather than depend on a specific version
+// having them, HorizonEthosColors.PrimaryFixed etc. (in Color.kt) are just referenced
+// directly wherever a component needs that exact value, instead of routing through
+// MaterialTheme.colorScheme.
 
 @Composable
 fun TriProTheme(content: @Composable () -> Unit) {

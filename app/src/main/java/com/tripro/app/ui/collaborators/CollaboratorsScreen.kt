@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -28,9 +30,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenu
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,7 +51,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.compose.viewModelFactory
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
 import coil.compose.AsyncImage
 import com.tripro.app.TriProApplication
@@ -77,7 +77,6 @@ fun CollaboratorsRoute(
 
     var email by remember { mutableStateOf("") }
     var inviteRole by remember { mutableStateOf(Role.EDITOR) }
-    var roleMenuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -113,21 +112,18 @@ fun CollaboratorsRoute(
                                     label = { Text("Email address") },
                                     modifier = Modifier.fillMaxWidth()
                                 )
-                                ExposedDropdownMenuBox(expanded = roleMenuExpanded, onExpandedChange = { roleMenuExpanded = it }) {
-                                    OutlinedTextField(
-                                        value = if (inviteRole == Role.EDITOR) "Can edit" else "Read only",
-                                        onValueChange = {},
-                                        readOnly = true,
-                                        label = { Text("Permission") },
-                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = roleMenuExpanded) },
-                                        // See the same note in AddEditItemSheet.kt re: menuAnchor()'s
-                                        // signature changing in Material3 1.3+.
-                                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                                Text("Permission", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    FilterChip(
+                                        selected = inviteRole == Role.EDITOR,
+                                        onClick = { inviteRole = Role.EDITOR },
+                                        label = { Text("Can edit") }
                                     )
-                                    ExposedDropdownMenu(expanded = roleMenuExpanded, onDismissRequest = { roleMenuExpanded = false }) {
-                                        DropdownMenuItem(text = { Text("Can edit") }, onClick = { inviteRole = Role.EDITOR; roleMenuExpanded = false })
-                                        DropdownMenuItem(text = { Text("Read only") }, onClick = { inviteRole = Role.VIEWER; roleMenuExpanded = false })
-                                    }
+                                    FilterChip(
+                                        selected = inviteRole == Role.VIEWER,
+                                        onClick = { inviteRole = Role.VIEWER },
+                                        label = { Text("Read only") }
+                                    )
                                 }
                                 if (uiState.inviteError != null) {
                                     Text(uiState.inviteError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)

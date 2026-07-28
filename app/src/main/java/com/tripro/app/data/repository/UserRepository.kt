@@ -13,9 +13,9 @@ import kotlinx.coroutines.tasks.await
  * up "which uid owns this email" against Firebase Auth directly, but collaborator invites
  * are entered by email. Writing a profile doc on every login gives us something to query.
  *
- * Security rule: any signed-in user may read users/*, but may only write their own doc
- * (see firestore.rules) — so this can't be used to enumerate arbitrary account data beyond
- * what a user already chose to expose.
+ * Security rule: any signed-in user may read the users collection, but may only write
+ * their own doc (see firestore.rules) — so this can't be used to enumerate arbitrary
+ * account data beyond what a user already chose to expose.
  */
 class UserRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
