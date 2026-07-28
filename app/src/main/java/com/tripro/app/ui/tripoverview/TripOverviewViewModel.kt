@@ -1,5 +1,6 @@
 package com.tripro.app.ui.tripoverview
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tripro.app.data.model.Role
@@ -10,6 +11,7 @@ import com.tripro.app.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
@@ -36,7 +38,12 @@ class TripOverviewViewModel(
             combine(
                 tripRepository.observeTrip(tripId),
                 tripRepository.observeDays(tripId)
-            ) { trip, days -> trip to days }.collect { (trip, days) ->
+            ) { trip, days -> trip to days }
+                .catch { e ->
+                    Log.e("TripOverviewViewModel", "Error observing trip data: ${e.message}", e)
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
+                .collect { (trip, days) ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     trip = trip,

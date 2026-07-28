@@ -1,5 +1,6 @@
 package com.tripro.app.ui.auth
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
@@ -42,9 +43,20 @@ class AuthViewModel(
     fun signIn() {
         _uiState.value = AuthUiState.SigningIn()
         viewModelScope.launch {
-            val result = authRepository.signInWithGoogle()
-            result.onSuccess { user -> onUserAuthenticated(user) }
-                .onFailure { e -> _uiState.value = AuthUiState.SigningIn(error = e.message ?: "Sign-in failed") }
+            try {
+                val result = authRepository.signInWithGoogle()
+                result.onSuccess { user ->
+                    onUserAuthenticated(user)
+                }.onFailure { e ->
+                    val message = e.message ?: "Sign-in failed"
+                    Log.e("AuthViewModel", "Sign-in failure: $message", e)
+                    _uiState.value = AuthUiState.SigningIn(error = message)
+                }
+            } catch (e: Throwable) {
+                val message = e.message ?: "Unexpected sign-in error"
+                Log.e("AuthViewModel", "Fatal error during sign-in", e)
+                _uiState.value = AuthUiState.SigningIn(error = message)
+            }
         }
     }
 
@@ -66,10 +78,26 @@ class AuthViewModel(
     }
 
     private suspend fun onUserAuthenticated(user: FirebaseUser) {
-        // Keep the public users/{uid} directory doc fresh, then apply any collaborator
-        // invites that were sent to this email before the person ever signed in.
-        userRepository.ensureUserProfile(user)
-        userRepository.reconcilePendingInvites(user)
+        Log.d("AuthViewModel", "User authenticated: uid=${user.uid}, email=${user.email}")
+        
+        // 1. Keep the public users/{uid} directory doc fresh
+        try {
+            userRepository.ensureUserProfile(user)
+        } catch (e: Throwable) {
+            Log.e("AuthViewModel", "Failed to update user profile", e)
+            // Not fatal, but worth logging
+        }
+
+        // 2. Apply any collaborator invites that were sent to this email
+        try {
+            userRepository.reconcilePendingInvites(user)
+        } catch (e: Throwable) {
+            Log.e("AuthViewModel", "Failed to reconcile invites", e)
+            // This is likely the PERMISSION_DENIED we're seeing
+            _uiState.value = AuthUiState.SigningIn(error = "Invite sync failed: ${e.message}")
+            // We don't stop here, allow login anyway
+        }
+
         registerPushToken(user.uid)
         _uiState.value = AuthUiState.SignedIn(user)
     }

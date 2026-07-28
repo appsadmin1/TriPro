@@ -1,5 +1,6 @@
 package com.tripro.app.data.repository
 
+import android.util.Log
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -35,7 +36,11 @@ class TripRepository(
         val registration = trips
             .whereArrayContains("memberIds", uid)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
+                if (error != null) {
+                    Log.e("TripRepository", "Error observing user trips: ${error.message}", error)
+                    close(error)
+                    return@addSnapshotListener
+                }
                 trySend(snapshot?.toObjects(Trip::class.java).orEmpty())
             }
         awaitClose { registration.remove() }
@@ -43,7 +48,11 @@ class TripRepository(
 
     fun observeTrip(tripId: String): Flow<Trip?> = callbackFlow {
         val registration = trips.document(tripId).addSnapshotListener { snapshot, error ->
-            if (error != null) { close(error); return@addSnapshotListener }
+            if (error != null) {
+                Log.e("TripRepository", "Error observing trip $tripId: ${error.message}", error)
+                close(error)
+                return@addSnapshotListener
+            }
             trySend(snapshot?.toObject(Trip::class.java))
         }
         awaitClose { registration.remove() }
@@ -104,7 +113,11 @@ class TripRepository(
         val registration = trips.document(tripId).collection("days")
             .orderBy("dayIndex", Query.Direction.ASCENDING)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
+                if (error != null) {
+                    Log.e("TripRepository", "Error observing days for trip $tripId: ${error.message}", error)
+                    close(error)
+                    return@addSnapshotListener
+                }
                 trySend(snapshot?.toObjects(TripDay::class.java).orEmpty())
             }
         awaitClose { registration.remove() }
@@ -113,7 +126,11 @@ class TripRepository(
     fun observeDay(tripId: String, date: String): Flow<TripDay?> = callbackFlow {
         val registration = trips.document(tripId).collection("days").document(date)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
+                if (error != null) {
+                    Log.e("TripRepository", "Error observing day $date for trip $tripId: ${error.message}", error)
+                    close(error)
+                    return@addSnapshotListener
+                }
                 trySend(snapshot?.toObject(TripDay::class.java))
             }
         awaitClose { registration.remove() }
@@ -140,7 +157,11 @@ class TripRepository(
         val registration = trips.document(tripId).collection("days").document(date)
             .collection("items")
             .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
+                if (error != null) {
+                    Log.e("TripRepository", "Error observing items for trip $tripId on $date: ${error.message}", error)
+                    close(error)
+                    return@addSnapshotListener
+                }
                 val items = snapshot?.toObjects(ItineraryItem::class.java).orEmpty()
                     .sortedBy { it.sortMinutes() }
                 trySend(items)

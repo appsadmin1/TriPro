@@ -42,6 +42,17 @@ service cloud.firestore {
       allow write: if isSignedIn() && request.auth.uid == uid;
     }
 
+    // ---------------------------------------------------------------- pendingInvites
+
+    // Collection Group query support: allow users to find their own invites across all trips.
+    // Querying by field 'email' requires checking 'resource.data.email' in the rule.
+    match /{path=**}/pendingInvites/{inviteId} {
+      allow read: if isSignedIn() && (
+        resource.data.email == request.auth.token.email ||
+        inviteId == request.auth.token.email
+      );
+    }
+
     // ---------------------------------------------------------------- trips
 
     match /trips/{tripId} {
@@ -89,7 +100,7 @@ service cloud.firestore {
         allow read: if isSignedIn()
           && isMember(get(/databases/$(database)/documents/trips/$(tripId)).data);
         allow write: if isSignedIn()
-          && roleOf(get(/databases/$(database)/documents/trips/$(tripId)).data) in ['owner', 'editor'];
+          && roleOf(getAfter(/databases/$(database)/documents/trips/$(tripId)).data) in ['owner', 'editor'];
 
         // ----------------------------------------------------------- items
 
@@ -97,7 +108,7 @@ service cloud.firestore {
           allow read: if isSignedIn()
             && isMember(get(/databases/$(database)/documents/trips/$(tripId)).data);
           allow write: if isSignedIn()
-            && roleOf(get(/databases/$(database)/documents/trips/$(tripId)).data) in ['owner', 'editor'];
+            && roleOf(getAfter(/databases/$(database)/documents/trips/$(tripId)).data) in ['owner', 'editor'];
         }
       }
 
@@ -110,7 +121,7 @@ service cloud.firestore {
           email == request.auth.token.email
         );
         allow create, update: if isSignedIn()
-          && roleOf(get(/databases/$(database)/documents/trips/$(tripId)).data) == 'owner';
+          && roleOf(getAfter(/databases/$(database)/documents/trips/$(tripId)).data) == 'owner';
         allow delete: if isSignedIn() && (
           roleOf(get(/databases/$(database)/documents/trips/$(tripId)).data) == 'owner' ||
           email == request.auth.token.email

@@ -1,5 +1,6 @@
 package com.tripro.app.ui.collaborators
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tripro.app.data.model.Role
@@ -11,6 +12,7 @@ import com.tripro.app.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
@@ -42,7 +44,12 @@ class CollaboratorsViewModel(
             combine(
                 tripRepository.observeTrip(tripId),
                 tripRepository.observePendingInvites(tripId)
-            ) { trip, pending -> trip to pending }.collect { (trip, pending) ->
+            ) { trip, pending -> trip to pending }
+                .catch { e ->
+                    Log.e("CollaboratorsViewModel", "Error observing collaborator data: ${e.message}", e)
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
+                .collect { (trip, pending) ->
                 if (trip == null) {
                     _uiState.value = _uiState.value.copy(isLoading = false)
                     return@collect

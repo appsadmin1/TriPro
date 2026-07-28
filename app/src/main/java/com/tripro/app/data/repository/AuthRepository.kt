@@ -1,6 +1,7 @@
 package com.tripro.app.data.repository
 
 import android.content.Context
+import android.util.Log
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
@@ -43,6 +44,10 @@ class AuthRepository(
     }
 
     suspend fun signInWithGoogle(): Result<FirebaseUser> = try {
+        if (BuildConfig.WEB_CLIENT_ID.isEmpty()) {
+            throw IllegalStateException("WEB_CLIENT_ID is missing from local.properties. See local.properties.example.")
+        }
+
         val nonce = generateNonce()
         val signInOption = GetSignInWithGoogleOption.Builder(BuildConfig.WEB_CLIENT_ID)
             .setNonce(nonce)
@@ -51,17 +56,21 @@ class AuthRepository(
             .addCredentialOption(signInOption)
             .build()
 
+        Log.d("AuthRepository", "Starting Credential Manager request...")
         val credentialManager = CredentialManager.create(context)
         val response = credentialManager.getCredential(context, request)
         val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(response.credential.data)
 
+        Log.d("AuthRepository", "Exchanging Google token for Firebase credential...")
         val firebaseCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
         val authResult = firebaseAuth.signInWithCredential(firebaseCredential).await()
-        val user = authResult.user ?: return Result.failure(IllegalStateException("No user returned"))
+        val user = authResult.user ?: return Result.failure(IllegalStateException("No user returned from Firebase"))
         Result.success(user)
     } catch (e: GetCredentialException) {
+        Log.e("AuthRepository", "Credential Manager error: ${e.type}", e)
         Result.failure(e)
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
+        Log.e("AuthRepository", "Unexpected error during sign-in", e)
         Result.failure(e)
     }
 

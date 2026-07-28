@@ -2,6 +2,7 @@ package com.tripro.app.ui.daydetail
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tripro.app.data.model.Attachment
@@ -18,6 +19,7 @@ import com.tripro.app.data.repository.WeatherRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -49,18 +51,25 @@ class DayDetailViewModel(
 
     init {
         viewModelScope.launch {
-            tripRepository.observeTrip(tripId).collect { trip ->
-                _uiState.value = _uiState.value.copy(canEdit = trip?.roleOf(currentUid)?.canEdit() ?: false)
-            }
+            tripRepository.observeTrip(tripId)
+                .catch { e -> Log.e("DayDetailViewModel", "Error observing trip: ${e.message}", e) }
+                .collect { trip ->
+                    _uiState.value = _uiState.value.copy(canEdit = trip?.roleOf(currentUid)?.canEdit() ?: false)
+                }
         }
 
         viewModelScope.launch {
             combine(
                 tripRepository.observeDay(tripId, date),
                 tripRepository.observeItems(tripId, date)
-            ) { day, items -> day to items }.collect { (day, items) ->
-                _uiState.value = _uiState.value.copy(isLoading = false, day = day, items = items)
-            }
+            ) { day, items -> day to items }
+                .catch { e ->
+                    Log.e("DayDetailViewModel", "Error observing day details: ${e.message}", e)
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
+                .collect { (day, items) ->
+                    _uiState.value = _uiState.value.copy(isLoading = false, day = day, items = items)
+                }
         }
 
         // Refetch weather only when the day's location actually changes, not on every emission.

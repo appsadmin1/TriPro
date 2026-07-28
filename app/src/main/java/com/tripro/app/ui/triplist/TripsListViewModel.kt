@@ -1,5 +1,6 @@
 package com.tripro.app.ui.triplist
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tripro.app.data.model.Trip
@@ -8,6 +9,7 @@ import com.tripro.app.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -29,8 +31,13 @@ class TripsListViewModel(
 
     init {
         viewModelScope.launch {
-            tripRepository.observeUserTrips(currentUid).collect { trips ->
-                val today = LocalDate.now()
+            tripRepository.observeUserTrips(currentUid)
+                .catch { e ->
+                    Log.e("TripsListViewModel", "Error observing trips: ${e.message}", e)
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
+                .collect { trips ->
+                    val today = LocalDate.now()
                 val upcoming = trips.filter { runCatching { !LocalDate.parse(it.endDate).isBefore(today) }.getOrDefault(true) }
                     .sortedBy { it.startDate }
                 val past = trips.filter { runCatching { LocalDate.parse(it.endDate).isBefore(today) }.getOrDefault(false) }
