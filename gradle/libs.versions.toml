@@ -1,7 +1,7 @@
 [versions]
 # NOTE: These are known-good versions as of early 2026. Before your first build,
 # open this file in Android Studio — it will offer to update anything newer.
-agp = "8.6.1"
+agp = "8.13.2"
 kotlin = "2.0.21"
 coreKtx = "1.15.0"
 lifecycleRuntimeKtx = "2.8.7"
