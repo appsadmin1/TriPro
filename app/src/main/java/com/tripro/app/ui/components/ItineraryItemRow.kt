@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Hiking
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.Museum
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.TheaterComedy
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
@@ -60,22 +61,40 @@ fun ItineraryItemRow(
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier.fillMaxWidth()) {
-        // Time column
-        Column(modifier = Modifier.width(64.dp).padding(top = 4.dp)) {
+        // Time column. Widened from 64dp -> 80dp, and period labels ("Afternoon",
+        // "Evening", ...) now use the smaller `titleSmall` style instead of
+        // `headlineMedium` (20sp). At 20sp in 64dp, a 9-letter word like "Afternoon"
+        // doesn't fit on one line, so Android's text layout was force-wrapping it
+        // letter-by-letter — reading top-to-bottom instead of as a word. Exact/range
+        // times ("09:00") are short enough to keep the bigger, bolder look.
+        Column(modifier = Modifier.width(80.dp).padding(top = 4.dp)) {
             when (item.timeType) {
                 TimeType.EXACT -> Text(
                     item.startTime ?: "--:--",
                     style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1
                 )
                 TimeType.RANGE -> {
-                    Text(item.startTime ?: "--:--", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
-                    Text(item.endTime ?: "", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        item.startTime ?: "--:--",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1
+                    )
+                    Text(
+                        item.endTime ?: "",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
                 }
                 TimeType.PERIOD -> Text(
                     (item.period ?: DayPeriod.MORNING).label,
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         }
@@ -86,6 +105,9 @@ fun ItineraryItemRow(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
             border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
+            // A little resting elevation (the previous default was 0dp — perfectly flat)
+            // so cards read as physical, liftable objects instead of flat rectangles.
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             modifier = Modifier.weight(1f)
         ) {
             Column {
@@ -110,6 +132,15 @@ fun ItineraryItemRow(
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = MaterialTheme.colorScheme.primary
                             )
+                            // Custom items don't have a self-explanatory icon/title the
+                            // way "Flight" or "Hotel" do, so let the user say what it is.
+                            if (item.type == ItemType.CUSTOM && item.customLabel.isNotBlank()) {
+                                Text(
+                                    item.customLabel,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                             if (item.locationName.isNotBlank()) {
                                 Text(
                                     item.locationName,
@@ -206,5 +237,8 @@ private fun imageVectorForType(type: ItemType): ImageVector = when (type) {
     ItemType.ATTRACTION -> Icons.Filled.Museum
     ItemType.ACTIVITY -> Icons.Filled.Hiking
     ItemType.TRANSPORT -> Icons.Filled.DirectionsCar
+    // If TheaterComedy isn't present in your exact material-icons-extended version,
+    // swap for Icons.Filled.Theaters — both read as "a show" at a glance.
+    ItemType.SHOW -> Icons.Filled.TheaterComedy
     ItemType.CUSTOM -> Icons.Filled.Event
 }

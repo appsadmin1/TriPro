@@ -44,6 +44,7 @@ fun WeatherCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = modifier.fillMaxWidth()
     ) {
         Row(

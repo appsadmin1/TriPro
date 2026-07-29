@@ -14,6 +14,13 @@ firebaseBom = "33.7.0"
 googleServices = "4.4.2"
 playServicesMaps = "19.0.0"
 mapsCompose = "6.2.1"
+# Places SDK for Android — powers util/PlacesAutocomplete.kt's "search on Google Maps"
+# pickers (hotels, airports, itinerary stops). Check
+# https://developers.google.com/maps/documentation/places/android-sdk/releases for the
+# current version before your first build; the Autocomplete.IntentBuilder /
+# AutocompleteActivityMode / setTypesFilter APIs used here have been stable across the
+# 3.x line, but always worth a quick diff against a much later release.
+placesSdk = "3.5.0"
 playServicesLocation = "21.3.0"
 okhttp = "4.12.0"
 coilCompose = "2.7.0"
@@ -45,6 +52,7 @@ firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging
 
 play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
 maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "mapsCompose" }
+places = { group = "com.google.android.libraries.places", name = "places", version.ref = "placesSdk" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }

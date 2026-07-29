@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Collaborators &amp; Permissions - Paris 2023</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&amp;family=Work+Sans:wght@400&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#f8f9ff",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#ffba3f",
+                        "on-tertiary-container": "#909395",
+                        "on-secondary-fixed-variant": "#604100",
+                        "on-primary-container": "#7594ca",
+                        "surface-container-high": "#dce9ff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container": "#e5eeff",
+                        "surface-variant": "#d3e4fe",
+                        "on-secondary": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "primary": "#001736",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "on-secondary-fixed": "#281800",
+                        "tertiary": "#141819",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#264778",
+                        "on-background": "#0b1c30",
+                        "inverse-on-surface": "#eaf1ff",
+                        "tertiary-fixed": "#e0e3e5",
+                        "primary-fixed": "#d6e3ff",
+                        "secondary-container": "#f9ad00",
+                        "surface-bright": "#f8f9ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-tint": "#405f91",
+                        "on-primary-fixed": "#001b3d",
+                        "tertiary-container": "#292c2e",
+                        "on-error-container": "#93000a",
+                        "outline": "#747780",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-container": "#664500",
+                        "secondary-fixed": "#ffdeae",
+                        "on-tertiary-fixed": "#191c1e",
+                        "on-surface-variant": "#43474f",
+                        "background": "#f8f9ff",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "surface-dim": "#cbdbf5",
+                        "on-surface": "#0b1c30",
+                        "inverse-primary": "#a9c7ff",
+                        "secondary": "#7f5600",
+                        "primary-container": "#002b5b",
+                        "outline-variant": "#c4c6d0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "gutter": "24px",
+                        "margin-desktop": "40px",
+                        "stack-sm": "4px",
+                        "stack-md": "12px",
+                        "stack-lg": "24px",
+                        "margin-mobile": "16px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-sm": ["JetBrains Mono"],
+                        "body-sm": ["Work Sans"],
+                        "label-md": ["JetBrains Mono"],
+                        "body-md": ["Work Sans"],
+                        "body-lg": ["Work Sans"],
+                        "display-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-sm": ["10px", { "lineHeight": "14px", "fontWeight": "500" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Work Sans', sans-serif; background-color: #f8f9ff; }
+        h1, h2, h3, h4, h5, h6, .font-headline { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Glassmorphism utility */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col antialiased">
+<!-- Header (Suppressed main nav since this is a sub-page/task-focused) -->
+<header class="bg-surface sticky top-0 z-10 border-b border-surface-variant/50">
+<div class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop h-16 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<button aria-label="Go back" class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container-low transition-colors text-primary">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div>
+<h1 class="font-headline-md text-headline-md text-primary tracking-tight">Collaborators</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Paris 2023</p>
+</div>
+</div>
+<button aria-label="Share" class="hidden md:flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container-low transition-colors text-primary">
+<span class="material-symbols-outlined">ios_share</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow max-w-2xl mx-auto w-full px-margin-mobile md:px-0 py-stack-lg flex flex-col gap-stack-lg">
+<!-- Invite Section (Glass Panel) -->
+<section class="glass-panel rounded-xl p-6 shadow-sm flex flex-col gap-stack-md">
+<h2 class="font-headline-md text-headline-md text-primary">Invite Collaborators</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Add friends or family to help plan your Paris 2023 itinerary.</p>
+<div class="flex flex-col sm:flex-row gap-stack-sm sm:gap-4 mt-2">
+<div class="flex-grow relative">
+<label class="sr-only" for="invite-email">Email address</label>
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">mail</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-3 border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md placeholder-outline focus:outline-none focus:border-primary-fixed focus:ring-2 focus:ring-primary-fixed/30 transition-shadow" id="invite-email" placeholder="Email address" type="email"/>
+</div>
+<button class="bg-secondary-container text-on-secondary-container font-headline-md text-body-md font-bold px-6 py-3 rounded-lg hover:bg-secondary-fixed transition-colors flex items-center justify-center gap-2 whitespace-nowrap shadow-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+                    Send Invite
+                </button>
+</div>
+</section>
+<!-- Permissions Explainer -->
+<section class="bg-surface-container-low border border-surface-variant rounded-lg p-4 flex flex-col sm:flex-row gap-4 items-start">
+<div class="w-8 h-8 rounded-full bg-primary-fixed-dim/20 flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined">info</span>
+</div>
+<div class="flex flex-col gap-2">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div>
+<h3 class="font-label-md text-label-md text-primary mb-1">Editor Access</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Can add, edit, or remove itinerary items, bookings, and other collaborators.</p>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-primary mb-1">Read Only</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Can view the full itinerary and documents, but cannot make any changes.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Members List -->
+<section class="flex flex-col gap-stack-md">
+<h2 class="font-headline-md text-headline-md text-primary border-b border-surface-variant pb-2">Current Members (3)</h2>
+<div class="flex flex-col gap-stack-sm">
+<!-- Member: Owner -->
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-lg border border-surface-variant hover:shadow-[0_4px_20px_rgba(0,23,54,0.04)] transition-shadow duration-200">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden border-2 border-surface-container-lowest shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A close up portrait photo of a young professional in a bright modern office setting, smiling gently. The lighting is soft and natural, emphasizing a corporate yet approachable aesthetic. Light mode color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMwFDt6SpyvFTwhyxQ9InXLU8vV-ybVONGNpbRbkT2lADtwMHkNkKPDW1n9U2mn4UAog5w-Z_r5x4oeoyBYvVSntLc_sEijfsntqijgtAoYVOdAYmv4e6FqDblH5hWZlK2xgObRgnJI0mz84XhNJV_wc_SeEe7hPe9L7e8q1nI8V1mQlB7PtUSnQkYPRpIZZxdIfd7fLPfaMNHVIBzF03DwhiI8AY4dzv-xRVZed9otzwa0qVOb_4FxVb2fJ9YX_DA8M6IzSx0GJo"/>
+</div>
+<div>
+<p class="font-headline-md text-body-md text-primary font-semibold">You (Alex)</p>
+<p class="font-body-sm text-body-sm text-outline">alex@example.com</p>
+</div>
+</div>
+<div class="font-label-md text-label-md text-on-surface-variant bg-surface-container px-3 py-1 rounded-full">
+                        Owner
+                    </div>
+</div>
+<!-- Member: Editor -->
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-lg border border-surface-variant hover:shadow-[0_4px_20px_rgba(0,23,54,0.04)] transition-shadow duration-200">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden border-2 border-surface-container-lowest shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A portrait of a male traveler with a casual but stylish look, outdoors with a blurred urban background. Soft daytime lighting, clean corporate visual style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5pZMClqZMIxvGqm21BhyKpg-Imst-QkKCXNBPg1hPBy7Ian9V1OaGupwz54331LFg3wkLi39OcbaM5ojcXNENp69hduaIYrJHgVbIMOZyyvEcaFdkUx_8qWzIJZhn4Ct9D2uc9Zo9q7aW9PIBnnn2pQ_q_z44thTil5Ez2Ic5GlzaRHYltN3vNTlT79SAuiXl-ST8dlV_CprupDfm4nF9rEteifR4R6epzfGhXteEU8HfXeA0ad0azpH-xQhuX6lPbLxA08rlrHc"/>
+</div>
+<div>
+<p class="font-headline-md text-body-md text-primary font-semibold">Jordan Smith</p>
+<p class="font-body-sm text-body-sm text-outline">jordan.s@example.com</p>
+</div>
+</div>
+<div class="relative group">
+<select class="appearance-none bg-transparent border border-outline-variant text-primary font-label-md text-label-md rounded-lg py-2 pl-4 pr-10 hover:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors cursor-pointer">
+<option selected="" value="editor">Editor</option>
+<option value="readonly">Read Only</option>
+<option value="remove">Remove</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-primary">
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Member: Read Only -->
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-lg border border-surface-variant hover:shadow-[0_4px_20px_rgba(0,23,54,0.04)] transition-shadow duration-200">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden border-2 border-surface-container-lowest shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A headshot of a female graphic designer in a minimal, bright studio environment. She is looking slightly off-camera with a neutral expression. Crisp, airy, modern light mode styling." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwU3sxehzcP_7jL1V4u6_fn9LwusgxuENiuJK6Sj9Pnge39DdKLFukSgwtsmCjSqjZ0gha2FDFMaKtCE0L4wsjUf7ri5mDD7P-3fmEXXtEpFpPNjFekB9xfvpfUuMyxBZD8tNoigwkNA1BS1R_2wVO-wvbp2Y6TGoRmPpfdTOdkrt8azpr4ELyW6cIVX-om3FGJXrQnWN65gEA7-mk7bZnzQ2pFZhiZLVpdY8Y55osIEXkkeY09EBFBYd4GIqBO-hJOlBqbo-5BUg"/>
+</div>
+<div>
+<p class="font-headline-md text-body-md text-primary font-semibold">Casey Lee</p>
+<p class="font-body-sm text-body-sm text-outline">casey.lee@example.com</p>
+</div>
+</div>
+<div class="relative group">
+<select class="appearance-none bg-transparent border border-outline-variant text-primary font-label-md text-label-md rounded-lg py-2 pl-4 pr-10 hover:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors cursor-pointer">
+<option value="editor">Editor</option>
+<option selected="" value="readonly">Read Only</option>
+<option value="remove">Remove</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-primary">
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

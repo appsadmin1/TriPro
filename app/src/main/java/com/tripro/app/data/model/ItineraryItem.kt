@@ -9,6 +9,8 @@ enum class ItemType(val icon: String) {
     ATTRACTION("museum"),
     ACTIVITY("hiking"),
     TRANSPORT("directions_car"),
+    /** A concert, play, movie screening, or other ticketed performance. */
+    SHOW("theater_comedy"),
     CUSTOM("event")
 }
 
@@ -43,6 +45,11 @@ data class ItineraryItem(
     /** Special note/alert for this specific place, e.g. "18+ only" or
      *  "Closes early at 18:00 today" — rendered as the amber/red alert pill in the UI. */
     val note: String = "",
+    /** Free-text description of what a CUSTOM item actually is (e.g. "Grocery run",
+     *  "Laundry", "Visa appointment") — ignored for every other [type], since those are
+     *  already self-explanatory from their icon + title. Shown as a small subtitle in
+     *  ItineraryItemRow. */
+    val customLabel: String = "",
     val attachments: List<Attachment> = emptyList(),
     val order: Int = 0,
     val createdBy: String = "",

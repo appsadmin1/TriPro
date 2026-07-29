@@ -31,6 +31,10 @@ android {
         versionName = "1.0"
 
         manifestPlaceholders["MAPS_API_KEY"] = secret("MAPS_API_KEY")
+        // Same key, also exposed as a BuildConfig string so Kotlin code can call
+        // Places.initialize(...) at runtime (see TriProApplication) — the manifest
+        // placeholder above only reaches the Maps SDK's own <meta-data> tag, not code.
+        buildConfigField("String", "MAPS_API_KEY", "\"${secret("MAPS_API_KEY")}\"")
         buildConfigField("String", "WEB_CLIENT_ID", "\"${secret("WEB_CLIENT_ID")}\"")
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${secret("CLOUDINARY_CLOUD_NAME")}\"")
         buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"${secret("CLOUDINARY_UPLOAD_PRESET")}\"")
@@ -84,9 +88,12 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
 
-    // Maps
+    // Maps + Places (Places powers the "search on Google Maps" pickers for hotels,
+    // airports, and itinerary stops — see util/PlacesAutocomplete.kt. It's a separate
+    // artifact/API from the Maps SDK even though they share one Cloud project/key.)
     implementation(libs.play.services.maps)
     implementation(libs.maps.compose)
+    implementation(libs.places)
     implementation(libs.play.services.location)
     implementation(libs.kotlinx.coroutines.play.services)
 
