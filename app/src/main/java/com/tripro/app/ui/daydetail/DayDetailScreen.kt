@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Hotel
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.StickyNote2
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -35,6 +36,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -65,10 +67,12 @@ import com.tripro.app.ui.components.AttachmentViewerDialog
 import com.tripro.app.ui.components.DayMapPreview
 import com.tripro.app.ui.components.ItineraryItemRow
 import com.tripro.app.ui.components.MapPin
+import com.tripro.app.ui.components.SimpleTimePickerDialog
 import com.tripro.app.ui.components.WeatherCard
 import com.tripro.app.ui.theme.HorizonEthosColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.DateUtils
+import com.tripro.app.util.rememberPlacePicker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -286,6 +290,7 @@ private fun HotelCard(hotel: HotelInfo?, canEdit: Boolean, onEdit: () -> Unit) {
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -303,6 +308,13 @@ private fun HotelCard(hotel: HotelInfo?, canEdit: Boolean, onEdit: () -> Unit) {
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
+                    if (!hotel?.checkIn.isNullOrBlank() || !hotel?.checkOut.isNullOrBlank()) {
+                        Text(
+                            "Check-in ${hotel?.checkIn.orEmpty().ifBlank { "--" }}  ·  Check-out ${hotel?.checkOut.orEmpty().ifBlank { "--" }}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
             if (canEdit) {
@@ -319,19 +331,48 @@ private fun HotelCard(hotel: HotelInfo?, canEdit: Boolean, onEdit: () -> Unit) {
 private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave: (HotelInfo?) -> Unit) {
     var name by remember { mutableStateOf(existing?.name.orEmpty()) }
     var address by remember { mutableStateOf(existing?.address.orEmpty()) }
+    var lat by remember { mutableStateOf(existing?.lat) }
+    var lng by remember { mutableStateOf(existing?.lng) }
+    var placeId by remember { mutableStateOf(existing?.placeId) }
     var checkIn by remember { mutableStateOf(existing?.checkIn.orEmpty()) }
     var checkOut by remember { mutableStateOf(existing?.checkOut.orEmpty()) }
+    var showCheckInPicker by remember { mutableStateOf(false) }
+    var showCheckOutPicker by remember { mutableStateOf(false) }
+
+    // "Pick it from Google Maps" instead of typing the hotel name/address by hand —
+    // also the only place lat/lng ever gets set, which is what lights up the hotel pin
+    // in DayMapPreview above (previously this dialog never wrote lat/lng at all).
+    val searchHotel = rememberPlacePicker(typesFilter = listOf("lodging")) { picked ->
+        name = picked.name
+        address = picked.address
+        lat = picked.lat
+        lng = picked.lng
+        placeId = picked.placeId
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Hotel for this day") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Hotel name") })
-                OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") })
+                OutlinedButton(onClick = searchHotel, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Text(if (name.isBlank()) "Search for hotel on Google Maps" else "Change hotel")
+                }
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it; placeId = null },
+                    label = { Text("Hotel name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = checkIn, onValueChange = { checkIn = it }, label = { Text("Check-in") }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = checkOut, onValueChange = { checkOut = it }, label = { Text("Check-out") }, modifier = Modifier.weight(1f))
+                    OutlinedButton(onClick = { showCheckInPicker = true }, modifier = Modifier.weight(1f)) {
+                        Text(if (checkIn.isBlank()) "Check-in time" else "Check-in: $checkIn")
+                    }
+                    OutlinedButton(onClick = { showCheckOutPicker = true }, modifier = Modifier.weight(1f)) {
+                        Text(if (checkOut.isBlank()) "Check-out time" else "Check-out: $checkOut")
+                    }
                 }
             }
         },
@@ -339,12 +380,37 @@ private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave:
             TextButton(onClick = {
                 onSave(
                     if (name.isBlank()) null
-                    else (existing ?: HotelInfo()).copy(name = name, address = address, checkIn = checkIn, checkOut = checkOut)
+                    else (existing ?: HotelInfo()).copy(
+                        name = name,
+                        address = address,
+                        checkIn = checkIn,
+                        checkOut = checkOut,
+                        lat = lat,
+                        lng = lng,
+                        placeId = placeId
+                    )
                 )
             }) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
+
+    if (showCheckInPicker) {
+        SimpleTimePickerDialog(
+            title = "Check-in time",
+            initial = checkIn.ifBlank { "15:00" },
+            onDismiss = { showCheckInPicker = false },
+            onConfirm = { checkIn = it; showCheckInPicker = false }
+        )
+    }
+    if (showCheckOutPicker) {
+        SimpleTimePickerDialog(
+            title = "Check-out time",
+            initial = checkOut.ifBlank { "11:00" },
+            onDismiss = { showCheckOutPicker = false },
+            onConfirm = { checkOut = it; showCheckOutPicker = false }
+        )
+    }
 }
 
 private fun queryFileName(resolver: android.content.ContentResolver, uri: Uri): String? {
@@ -361,6 +427,7 @@ private fun FlightCard(flight: FlightInfo?, canEdit: Boolean, onEdit: () -> Unit
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -415,8 +482,27 @@ private fun FlightEditDialog(existing: FlightInfo?, onDismiss: () -> Unit, onSav
     var flightNumber by remember { mutableStateOf(existing?.flightNumber.orEmpty()) }
     var departureCode by remember { mutableStateOf(existing?.departureAirportCode.orEmpty()) }
     var arrivalCode by remember { mutableStateOf(existing?.arrivalAirportCode.orEmpty()) }
+    var departureLat by remember { mutableStateOf(existing?.departureAirportLat) }
+    var departureLng by remember { mutableStateOf(existing?.departureAirportLng) }
+    var arrivalLat by remember { mutableStateOf(existing?.arrivalAirportLat) }
+    var arrivalLng by remember { mutableStateOf(existing?.arrivalAirportLng) }
     var departureTime by remember { mutableStateOf(existing?.departureTime.orEmpty()) }
     var arrivalTime by remember { mutableStateOf(existing?.arrivalTime.orEmpty()) }
+    var showDeparturePicker by remember { mutableStateOf(false) }
+    var showArrivalPicker by remember { mutableStateOf(false) }
+
+    // Places doesn't return IATA codes, so the 3-letter code fields stay manual — but
+    // this is the only place departure/arrival lat/lng ever get set (both fields already
+    // existed on FlightInfo but nothing wrote them before), which is what would let a
+    // future map view plot the flight route.
+    val searchDepartureAirport = rememberPlacePicker(typesFilter = listOf("airport")) { picked ->
+        departureLat = picked.lat
+        departureLng = picked.lng
+    }
+    val searchArrivalAirport = rememberPlacePicker(typesFilter = listOf("airport")) { picked ->
+        arrivalLat = picked.lat
+        arrivalLng = picked.lng
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -428,12 +514,36 @@ private fun FlightEditDialog(existing: FlightInfo?, onDismiss: () -> Unit, onSav
                     OutlinedTextField(value = flightNumber, onValueChange = { flightNumber = it }, label = { Text("Flight #") }, modifier = Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = departureCode, onValueChange = { departureCode = it }, label = { Text("From (airport code)") }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = arrivalCode, onValueChange = { arrivalCode = it }, label = { Text("To (airport code)") }, modifier = Modifier.weight(1f))
+                    OutlinedTextField(
+                        value = departureCode,
+                        onValueChange = { departureCode = it.uppercase() },
+                        label = { Text("From (code)") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = arrivalCode,
+                        onValueChange = { arrivalCode = it.uppercase() },
+                        label = { Text("To (code)") },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = departureTime, onValueChange = { departureTime = it }, label = { Text("Departs (HH:mm)") }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = arrivalTime, onValueChange = { arrivalTime = it }, label = { Text("Arrives (HH:mm)") }, modifier = Modifier.weight(1f))
+                    OutlinedButton(onClick = searchDepartureAirport, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                        Text(if (departureLat == null) "Find departure airport" else "Departure ✓", maxLines = 1)
+                    }
+                    OutlinedButton(onClick = searchArrivalAirport, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                        Text(if (arrivalLat == null) "Find arrival airport" else "Arrival ✓", maxLines = 1)
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { showDeparturePicker = true }, modifier = Modifier.weight(1f)) {
+                        Text(if (departureTime.isBlank()) "Departs" else "Departs: $departureTime")
+                    }
+                    OutlinedButton(onClick = { showArrivalPicker = true }, modifier = Modifier.weight(1f)) {
+                        Text(if (arrivalTime.isBlank()) "Arrives" else "Arrives: $arrivalTime")
+                    }
                 }
             }
         },
@@ -446,6 +556,10 @@ private fun FlightEditDialog(existing: FlightInfo?, onDismiss: () -> Unit, onSav
                         flightNumber = flightNumber,
                         departureAirportCode = departureCode,
                         arrivalAirportCode = arrivalCode,
+                        departureAirportLat = departureLat,
+                        departureAirportLng = departureLng,
+                        arrivalAirportLat = arrivalLat,
+                        arrivalAirportLng = arrivalLng,
                         departureTime = departureTime,
                         arrivalTime = arrivalTime
                     )
@@ -454,6 +568,23 @@ private fun FlightEditDialog(existing: FlightInfo?, onDismiss: () -> Unit, onSav
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
+
+    if (showDeparturePicker) {
+        SimpleTimePickerDialog(
+            title = "Departure time",
+            initial = departureTime.ifBlank { "09:00" },
+            onDismiss = { showDeparturePicker = false },
+            onConfirm = { departureTime = it; showDeparturePicker = false }
+        )
+    }
+    if (showArrivalPicker) {
+        SimpleTimePickerDialog(
+            title = "Arrival time",
+            initial = arrivalTime.ifBlank { "11:00" },
+            onDismiss = { showArrivalPicker = false },
+            onConfirm = { arrivalTime = it; showArrivalPicker = false }
+        )
+    }
 }
 
 @Composable
@@ -462,6 +593,7 @@ private fun DayNoteCard(note: String, canEdit: Boolean, onEdit: () -> Unit) {
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(

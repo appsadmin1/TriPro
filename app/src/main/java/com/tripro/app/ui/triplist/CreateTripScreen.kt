@@ -1,17 +1,30 @@
 package com.tripro.app.ui.triplist
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -27,13 +40,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
+import coil.compose.AsyncImage
 import com.tripro.app.TriProApplication
+import com.tripro.app.ui.theme.HorizonEthosColors
 import com.tripro.app.ui.theme.TriProSpacing
 import java.time.Instant
 import java.time.LocalDate
@@ -52,10 +70,11 @@ fun CreateTripRoute(
     val container = app.container
     val viewModel: CreateTripViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { CreateTripViewModel(container.tripRepository, ownerId, ownerName) }
+            initializer { CreateTripViewModel(container.tripRepository, container.cloudinaryRepository, ownerId, ownerName) }
         }
     )
     val uiState by viewModel.uiState.collectAsState()
+    val contentResolver = LocalContext.current.contentResolver
 
     LaunchedEffect(uiState.createdTripId) {
         uiState.createdTripId?.let { onTripCreated(it) }
@@ -63,11 +82,17 @@ fun CreateTripRoute(
 
     var name by remember { mutableStateOf("") }
     var destination by remember { mutableStateOf("") }
-    var coverImageUrl by remember { mutableStateOf("") }
+    var coverImageUri by remember { mutableStateOf<Uri?>(null) }
     var startDate by remember { mutableStateOf<LocalDate?>(null) }
     var endDate by remember { mutableStateOf<LocalDate?>(null) }
     var pickingStart by remember { mutableStateOf(false) }
     var pickingEnd by remember { mutableStateOf(false) }
+
+    // Android's built-in Photo Picker — no storage permission needed on any API level,
+    // which is why this replaces what used to be a plain "paste a URL" text field.
+    val photoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri -> if (uri != null) coverImageUri = uri }
 
     Scaffold(
         topBar = {
@@ -99,12 +124,49 @@ fun CreateTripRoute(
                 label = { Text("Destination") },
                 modifier = Modifier.fillMaxWidth()
             )
-            OutlinedTextField(
-                value = coverImageUrl,
-                onValueChange = { coverImageUrl = it },
-                label = { Text("Cover image URL (optional)") },
-                modifier = Modifier.fillMaxWidth()
-            )
+
+            Text("Cover photo", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(160.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .border(1.dp, HorizonEthosColors.CardBorder, RoundedCornerShape(16.dp))
+                    .clickable {
+                        photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                if (coverImageUri != null) {
+                    AsyncImage(
+                        model = coverImageUri,
+                        contentDescription = "Selected cover photo",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .align(Alignment.BottomEnd)
+                            .clip(RoundedCornerShape(percent = 50))
+                            .background(MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.9f))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text("Tap to change", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                    }
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Filled.AddAPhoto, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Text(
+                            "Add a photo from your device",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+            }
 
             Row(horizontalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)) {
                 OutlinedButton(onClick = { pickingStart = true }, modifier = Modifier.weight(1f)) {
@@ -123,7 +185,9 @@ fun CreateTripRoute(
                 onClick = {
                     val s = startDate
                     val e = endDate
-                    if (s != null && e != null) viewModel.createTrip(name, destination, coverImageUrl, s, e)
+                    if (s != null && e != null) {
+                        viewModel.createTrip(contentResolver, name, destination, coverImageUri, s, e)
+                    }
                 },
                 enabled = !uiState.isSaving && name.isNotBlank() && startDate != null && endDate != null,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)

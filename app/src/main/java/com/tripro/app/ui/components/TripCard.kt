@@ -40,6 +40,9 @@ fun TripCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         border = BorderStroke(1.dp, com.tripro.app.ui.theme.HorizonEthosColors.CardBorder),
+        // A little resting lift (was 0dp) plus a stronger press response, so the list
+        // reads as a stack of cards rather than flat rectangles on the background.
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isPast) 1.dp else 3.dp, pressedElevation = 6.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column {
