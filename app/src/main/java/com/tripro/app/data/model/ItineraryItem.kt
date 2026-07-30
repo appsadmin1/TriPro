@@ -9,54 +9,48 @@ enum class ItemType(val icon: String) {
     ATTRACTION("museum"),
     ACTIVITY("hiking"),
     TRANSPORT("directions_car"),
-    /** A concert, play, movie screening, or other ticketed performance. */
     SHOW("theater_comedy"),
     CUSTOM("event")
 }
 
-/** How the user chose to specify timing for this item, per the "add specific hour(s) or
- *  proposed range or day time like morning/noon" requirement. */
 enum class TimeType { EXACT, RANGE, PERIOD }
 
 enum class DayPeriod(val label: String) {
-    MORNING("Morning"),
-    NOON("Noon"),
-    AFTERNOON("Afternoon"),
-    EVENING("Evening"),
-    NIGHT("Night")
+    MORNING("Morning"), NOON("Noon"), AFTERNOON("Afternoon"), EVENING("Evening"), NIGHT("Night")
 }
 
-/**
- * Firestore document: trips/{tripId}/days/{date}/items/{itemId}
- */
+/** Item 3: whether [ItineraryItem.note] renders as a red "Alert" (warning icon) or a
+ *  green "Note" (exclamation icon). Defaults to ALERT so every note written before this
+ *  field existed keeps its old red/warning look. */
+enum class NoteType { ALERT, NOTE }
+
 data class ItineraryItem(
     @DocumentId
     val id: String = "",
     val title: String = "",
     val type: ItemType = ItemType.CUSTOM,
     val timeType: TimeType = TimeType.PERIOD,
-    val startTime: String? = null, // "HH:mm", used when timeType == EXACT or RANGE
-    val endTime: String? = null,   // "HH:mm", used when timeType == RANGE
-    val period: DayPeriod? = null, // used when timeType == PERIOD
+    val startTime: String? = null,
+    val endTime: String? = null,
+    val period: DayPeriod? = null,
     val locationName: String = "",
     val address: String = "",
     val lat: Double? = null,
     val lng: Double? = null,
-    /** Special note/alert for this specific place, e.g. "18+ only" or
-     *  "Closes early at 18:00 today" — rendered as the amber/red alert pill in the UI. */
     val note: String = "",
-    /** Free-text description of what a CUSTOM item actually is (e.g. "Grocery run",
-     *  "Laundry", "Visa appointment") — ignored for every other [type], since those are
-     *  already self-explanatory from their icon + title. Shown as a small subtitle in
-     *  ItineraryItemRow. */
+    val noteType: NoteType = NoteType.ALERT,
     val customLabel: String = "",
     val attachments: List<Attachment> = emptyList(),
     val order: Int = 0,
+    /** Denormalized parent trip id — lets the "View Docs" screen run one
+     *  collectionGroup("items") query scoped to a single trip instead of reading every
+     *  day's items subcollection one at a time. Only set going forward (see
+     *  TripRepository.addItem/updateItem); items created before this field existed read
+     *  back as "" and are simply skipped by that screen. */
+    val tripId: String = "",
     val createdBy: String = "",
-    val updatedBy: String = "" // uid of the last editor — used to exclude them from the
-                                // "itinerary changed" push notification
+    val updatedBy: String = ""
 ) {
-    /** Sort key so items render in chronological order regardless of how time was entered. */
     fun sortMinutes(): Int = when (timeType) {
         TimeType.EXACT, TimeType.RANGE -> startTime?.let { toMinutes(it) } ?: (order + 10_000)
         TimeType.PERIOD -> when (period) {

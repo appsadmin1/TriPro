@@ -12,10 +12,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -39,8 +41,10 @@ import com.tripro.app.ui.theme.TriProSpacing
 @Composable
 fun TripsListRoute(
     currentUid: String,
+    filter: String,
     onOpenTrip: (String) -> Unit,
-    onCreateTrip: () -> Unit
+    onCreateTrip: () -> Unit,
+    onOpenDrawer: () -> Unit
 ) {
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
@@ -51,6 +55,14 @@ fun TripsListRoute(
         }
     )
     val uiState by viewModel.uiState.collectAsState()
+
+    val (title, subtitle) = when (filter) {
+        "upcoming" -> "Upcoming Trips" to "Everything still ahead of you."
+        "past" -> "Old Trips" to "Everywhere you've already been."
+        else -> "My Trips" to "Your upcoming and past adventures."
+    }
+    val showUpcoming = filter != "past"
+    val showPast = filter != "upcoming"
 
     Scaffold(
         floatingActionButton = {
@@ -75,55 +87,56 @@ fun TripsListRoute(
             contentPadding = PaddingValues(
                 start = TriProSpacing.marginMobile,
                 end = TriProSpacing.marginMobile,
-                top = padding.calculateTopPadding() + 24.dp,
+                top = padding.calculateTopPadding() + 8.dp,
                 bottom = padding.calculateBottomPadding() + 24.dp
             ),
             verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackLg)
         ) {
             item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
                 Column {
-                    Text(
-                        "My Trips",
-                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        "Your upcoming and past adventures.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(title, style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp), color = MaterialTheme.colorScheme.primary)
+                    Text(subtitle, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
-            if (uiState.upcoming.isNotEmpty()) {
-                item {
-                    SectionHeader(icon = Icons.Filled.Add, title = "Upcoming")
-                }
-                items(uiState.upcoming, key = { it.id }) { trip ->
-                    TripCard(
-                        trip = trip,
-                        collaboratorPhotoUrls = uiState.memberAvatars[trip.id].orEmpty(),
-                        onClick = { onOpenTrip(trip.id) }
-                    )
-                }
-            } else {
-                item {
-                    EmptyState()
+            if (showUpcoming) {
+                if (uiState.upcoming.isNotEmpty()) {
+                    item { SectionHeader(icon = Icons.Filled.Add, title = "Upcoming") }
+                    items(uiState.upcoming, key = { it.id }) { trip ->
+                        TripCard(
+                            trip = trip,
+                            collaboratorPhotoUrls = uiState.memberAvatars[trip.id].orEmpty(),
+                            onClick = { onOpenTrip(trip.id) }
+                        )
+                    }
+                } else if (filter == "upcoming") {
+                    item { EmptyState("No upcoming trips — tap the + button to plan your next one.") }
                 }
             }
 
-            if (uiState.past.isNotEmpty()) {
-                item {
-                    SectionHeader(icon = Icons.Filled.History, title = "Past Adventures")
+            if (showPast) {
+                if (uiState.past.isNotEmpty()) {
+                    item { SectionHeader(icon = Icons.Filled.History, title = "Past Adventures") }
+                    items(uiState.past, key = { it.id }) { trip ->
+                        TripCard(
+                            trip = trip,
+                            collaboratorPhotoUrls = uiState.memberAvatars[trip.id].orEmpty(),
+                            onClick = { onOpenTrip(trip.id) },
+                            isPast = true
+                        )
+                    }
+                } else if (filter == "past") {
+                    item { EmptyState("No past trips yet.") }
                 }
-                items(uiState.past, key = { it.id }) { trip ->
-                    TripCard(
-                        trip = trip,
-                        collaboratorPhotoUrls = uiState.memberAvatars[trip.id].orEmpty(),
-                        onClick = { onOpenTrip(trip.id) },
-                        isPast = true
-                    )
-                }
+            }
+
+            if (filter == "all" && uiState.upcoming.isEmpty() && uiState.past.isEmpty()) {
+                item { EmptyState("No trips yet — tap the + button to plan your first one.") }
             }
         }
     }
@@ -133,20 +146,11 @@ fun TripsListRoute(
 private fun SectionHeader(icon: ImageVector, title: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Text(
-            title,
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 8.dp)
-        )
+        Text(title, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp))
     }
 }
 
 @Composable
-private fun EmptyState() {
-    Text(
-        "No trips yet — tap the + button to plan your first one.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
+private fun EmptyState(message: String) {
+    Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }

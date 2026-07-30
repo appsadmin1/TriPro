@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Hiking
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.Museum
+import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.TheaterComedy
 import androidx.compose.material.icons.filled.UploadFile
@@ -47,6 +48,7 @@ import com.tripro.app.data.model.Attachment
 import com.tripro.app.data.model.DayPeriod
 import com.tripro.app.data.model.ItemType
 import com.tripro.app.data.model.ItineraryItem
+import com.tripro.app.data.model.NoteType
 import com.tripro.app.data.model.TimeType
 import com.tripro.app.ui.theme.HorizonEthosColors
 
@@ -61,33 +63,12 @@ fun ItineraryItemRow(
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier.fillMaxWidth()) {
-        // Time column. Widened from 64dp -> 80dp, and period labels ("Afternoon",
-        // "Evening", ...) now use the smaller `titleSmall` style instead of
-        // `headlineMedium` (20sp). At 20sp in 64dp, a 9-letter word like "Afternoon"
-        // doesn't fit on one line, so Android's text layout was force-wrapping it
-        // letter-by-letter — reading top-to-bottom instead of as a word. Exact/range
-        // times ("09:00") are short enough to keep the bigger, bolder look.
         Column(modifier = Modifier.width(80.dp).padding(top = 4.dp)) {
             when (item.timeType) {
-                TimeType.EXACT -> Text(
-                    item.startTime ?: "--:--",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1
-                )
+                TimeType.EXACT -> Text(item.startTime ?: "--:--", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1)
                 TimeType.RANGE -> {
-                    Text(
-                        item.startTime ?: "--:--",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1
-                    )
-                    Text(
-                        item.endTime ?: "",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
-                    )
+                    Text(item.startTime ?: "--:--", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+                    Text(item.endTime ?: "", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 }
                 TimeType.PERIOD -> Text(
                     (item.period ?: DayPeriod.MORNING).label,
@@ -105,76 +86,53 @@ fun ItineraryItemRow(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
             border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
-            // A little resting elevation (the previous default was 0dp — perfectly flat)
-            // so cards read as physical, liftable objects instead of flat rectangles.
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             modifier = Modifier.weight(1f)
         ) {
             Column {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Row(modifier = Modifier.weight(1f)) {
                         Icon(
                             imageVectorForType(item.type),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .padding(8.dp)
+                            modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant).padding(8.dp)
                         )
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text(
-                                item.title,
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            // Custom items don't have a self-explanatory icon/title the
-                            // way "Flight" or "Hotel" do, so let the user say what it is.
+                            Text(item.title, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
                             if (item.type == ItemType.CUSTOM && item.customLabel.isNotBlank()) {
-                                Text(
-                                    item.customLabel,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                Text(item.customLabel, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             if (item.locationName.isNotBlank()) {
-                                Text(
-                                    item.locationName,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                Text(item.locationName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
+
+                            // Item 3: alert = red/warning, note = green/exclamation.
                             if (item.note.isNotBlank()) {
+                                val isAlert = item.noteType == NoteType.ALERT
+                                val bg = if (isAlert) MaterialTheme.colorScheme.errorContainer else HorizonEthosColors.Success.copy(alpha = 0.15f)
+                                val fg = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else HorizonEthosColors.Success
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
                                         .padding(top = 6.dp)
                                         .clip(RoundedCornerShape(4.dp))
-                                        .background(MaterialTheme.colorScheme.errorContainer)
+                                        .background(bg)
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
                                     Icon(
-                                        Icons.Filled.Warning,
+                                        if (isAlert) Icons.Filled.Warning else Icons.Filled.PriorityHigh,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                        tint = fg,
                                         modifier = Modifier.padding(end = 4.dp)
                                     )
-                                    Text(
-                                        item.note,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onErrorContainer
-                                    )
+                                    Text(item.note, style = MaterialTheme.typography.labelSmall, color = fg)
                                 }
                             }
+
                             if (item.attachments.isNotEmpty()) {
-                                LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.padding(top = 8.dp)
-                                ) {
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
                                     items(item.attachments) { attachment ->
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
@@ -184,12 +142,7 @@ fun ItineraryItemRow(
                                                 .clickable { onAttachmentClick(attachment) }
                                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                                         ) {
-                                            Icon(
-                                                Icons.Filled.AttachFile,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.padding(end = 4.dp)
-                                            )
+                                            Icon(Icons.Filled.AttachFile, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 4.dp))
                                             Text(attachment.fileName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                                         }
                                     }
@@ -197,6 +150,9 @@ fun ItineraryItemRow(
                             }
                         }
                     }
+                    // Item 2: pencil only shows in edit mode — `canEdit` here already
+                    // means "has permission AND the screen is in edit mode" (see
+                    // DayDetailScreen, which ANDs those together before passing it in).
                     if (canEdit) {
                         IconButton(onClick = onEdit) {
                             Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -206,10 +162,7 @@ fun ItineraryItemRow(
 
                 if (canEdit) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(BorderStroke(1.dp, HorizonEthosColors.CardBorder))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                        modifier = Modifier.fillMaxWidth().border(BorderStroke(1.dp, HorizonEthosColors.CardBorder)).padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         TextButton(onClick = onEdit) {
                             Icon(Icons.Filled.EditNote, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
@@ -237,8 +190,6 @@ private fun imageVectorForType(type: ItemType): ImageVector = when (type) {
     ItemType.ATTRACTION -> Icons.Filled.Museum
     ItemType.ACTIVITY -> Icons.Filled.Hiking
     ItemType.TRANSPORT -> Icons.Filled.DirectionsCar
-    // If TheaterComedy isn't present in your exact material-icons-extended version,
-    // swap for Icons.Filled.Theaters — both read as "a show" at a glance.
     ItemType.SHOW -> Icons.Filled.TheaterComedy
     ItemType.CUSTOM -> Icons.Filled.Event
 }
