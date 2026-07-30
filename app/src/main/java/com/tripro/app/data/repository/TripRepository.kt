@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.tripro.app.data.model.Attachment
 import com.tripro.app.data.model.FlightInfo
 import com.tripro.app.data.model.HotelInfo
 import com.tripro.app.data.model.ItineraryItem
@@ -17,13 +18,13 @@ import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-/**
- * All real-time collaboration in TriPro comes from Firestore's addSnapshotListener:
- * every observe* function below wraps one in a callbackFlow, so any device with the
- * trip open recomposes automatically the instant another collaborator writes a change.
- * Firestore also caches writes locally and syncs when connectivity returns, so this
- * gets offline support for free.
- */
+/** One row for the "View Docs" screen — an attachment plus enough context to show it. */
+data class TripAttachmentEntry(
+    val date: String,
+    val itemTitle: String,
+    val attachment: Attachment
+)
+
 class TripRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
@@ -58,10 +59,6 @@ class TripRepository(
         awaitClose { registration.remove() }
     }
 
-    /**
-     * Creates the trip document and one day document per calendar date in range,
-     * all in a single atomic batch so the trip never briefly appears with zero days.
-     */
     suspend fun createTrip(
         name: String,
         destination: String,
@@ -73,16 +70,10 @@ class TripRepository(
     ): String {
         val tripRef = trips.document()
         val trip = Trip(
-            id = tripRef.id,
-            name = name,
-            destination = destination,
-            coverImageUrl = coverImageUrl,
-            startDate = startDate.format(dateFormatter),
-            endDate = endDate.format(dateFormatter),
-            ownerId = ownerId,
-            ownerName = ownerName,
-            members = mapOf(ownerId to Role.OWNER.value),
-            memberIds = listOf(ownerId)
+            id = tripRef.id, name = name, destination = destination, coverImageUrl = coverImageUrl,
+            startDate = startDate.format(dateFormatter), endDate = endDate.format(dateFormatter),
+            ownerId = ownerId, ownerName = ownerName,
+            members = mapOf(ownerId to Role.OWNER.value), memberIds = listOf(ownerId)
         )
 
         val batch = firestore.batch()
@@ -100,11 +91,16 @@ class TripRepository(
         return tripRef.id
     }
 
+    /** Item 5: swap the cover photo any time after creation, not just at trip creation. */
+    suspend fun updateCoverImage(tripId: String, url: String) {
+        trips.document(tripId).update("coverImageUrl", url).await()
+    }
+
+    /** Item 7: owner-only, confirmed in the UI before this is ever called. */
     suspend fun deleteTrip(tripId: String) {
         trips.document(tripId).delete().await()
-        // Note: this does not recursively delete subcollections (days/items/pendingInvites) —
-        // Firestore doesn't cascade-delete client-side. For production, do this from a Cloud
-        // Function trigger, or run the recursive delete from the Firebase console/CLI.
+        // Note: this does not recursively delete subcollections (days/items/pendingInvites/
+        // activity) — Firestore doesn't cascade-delete client-side. See README "Next steps".
     }
 
     // ----------------------------------------------------------------- Days
@@ -171,13 +167,13 @@ class TripRepository(
 
     suspend fun addItem(tripId: String, date: String, item: ItineraryItem): String {
         val ref = trips.document(tripId).collection("days").document(date).collection("items").document()
-        ref.set(item.copy(id = ref.id, updatedBy = item.createdBy)).await()
+        ref.set(item.copy(id = ref.id, tripId = tripId, updatedBy = item.createdBy)).await()
         return ref.id
     }
 
     suspend fun updateItem(tripId: String, date: String, item: ItineraryItem, updatedBy: String) {
         trips.document(tripId).collection("days").document(date)
-            .collection("items").document(item.id).set(item.copy(updatedBy = updatedBy)).await()
+            .collection("items").document(item.id).set(item.copy(tripId = tripId, updatedBy = updatedBy)).await()
     }
 
     suspend fun deleteItem(tripId: String, date: String, itemId: String) {
@@ -185,29 +181,42 @@ class TripRepository(
             .collection("items").document(itemId).delete().await()
     }
 
+    /** Item 1c "View Docs" — every attachment across the whole trip, one live query. */
+    fun observeAllAttachments(tripId: String): Flow<List<TripAttachmentEntry>> = callbackFlow {
+        val registration = firestore.collectionGroup("items")
+            .whereEqualTo("tripId", tripId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("TripRepository", "Error observing attachments for trip $tripId: ${error.message}", error)
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val entries = snapshot?.documents.orEmpty().flatMap { doc ->
+                    val item = doc.toObject(ItineraryItem::class.java) ?: return@flatMap emptyList()
+                    // Path shape: trips/{tripId}/days/{date}/items/{itemId} — the date is
+                    // the grandparent segment.
+                    val date = doc.reference.parent.parent?.id ?: ""
+                    item.attachments.map { attachment -> TripAttachmentEntry(date, item.title, attachment) }
+                }.sortedBy { it.date }
+                trySend(entries)
+            }
+        awaitClose { registration.remove() }
+    }
+
     // ------------------------------------------------------------ Members
 
     suspend fun setMemberRole(tripId: String, uid: String, role: Role) {
         trips.document(tripId).update(
-            mapOf(
-                "members.$uid" to role.value,
-                "memberIds" to FieldValue.arrayUnion(uid)
-            )
+            mapOf("members.$uid" to role.value, "memberIds" to FieldValue.arrayUnion(uid))
         ).await()
     }
 
     suspend fun removeMember(tripId: String, uid: String) {
         trips.document(tripId).update(
-            mapOf(
-                "members.$uid" to FieldValue.delete(),
-                "memberIds" to FieldValue.arrayRemove(uid)
-            )
+            mapOf("members.$uid" to FieldValue.delete(), "memberIds" to FieldValue.arrayRemove(uid))
         ).await()
     }
 
-    /** Existing user found immediately -> add them directly. Unknown email -> queue a
-     *  pendingInvite (doc ID = the email itself, see firestore.rules for why), reconciled
-     *  automatically the first time that person signs in (see UserRepository.reconcilePendingInvites). */
     suspend fun inviteByEmail(tripId: String, email: String, role: Role, invitedBy: String, existingUid: String?) {
         if (existingUid != null) {
             setMemberRole(tripId, existingUid, role)
@@ -215,17 +224,14 @@ class TripRepository(
             val normalizedEmail = email.trim().lowercase()
             trips.document(tripId).collection("pendingInvites").document(normalizedEmail).set(
                 mapOf(
-                    "email" to normalizedEmail,
-                    "role" to role.value,
-                    "invitedBy" to invitedBy,
-                    "invitedAt" to FieldValue.serverTimestamp()
+                    "email" to normalizedEmail, "role" to role.value,
+                    "invitedBy" to invitedBy, "invitedAt" to FieldValue.serverTimestamp()
                 )
             ).await()
         }
     }
 
     fun observePendingInvites(tripId: String): Flow<List<Pair<String, String>>> = callbackFlow {
-        // Pair<email, role>, for showing "Invite pending" rows in the Collaborators screen.
         val registration = trips.document(tripId).collection("pendingInvites")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) { close(error); return@addSnapshotListener }

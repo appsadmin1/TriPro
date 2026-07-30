@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Hotel
@@ -61,6 +62,7 @@ import com.tripro.app.TriProApplication
 import com.tripro.app.data.model.Attachment
 import com.tripro.app.data.model.FlightInfo
 import com.tripro.app.data.model.HotelInfo
+import com.tripro.app.data.model.ItemType
 import com.tripro.app.data.model.ItineraryItem
 import com.tripro.app.data.model.WeatherStatus
 import com.tripro.app.ui.components.AttachmentViewerDialog
@@ -69,10 +71,13 @@ import com.tripro.app.ui.components.ItineraryItemRow
 import com.tripro.app.ui.components.MapPin
 import com.tripro.app.ui.components.SimpleTimePickerDialog
 import com.tripro.app.ui.components.WeatherCard
+import com.tripro.app.ui.components.hueForItemType
 import com.tripro.app.ui.theme.HorizonEthosColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.DateUtils
-import com.tripro.app.util.rememberPlacePicker
+import com.tripro.app.util.PickedPlace
+import com.tripro.app.util.PlaceSearchMapDialog
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,6 +85,7 @@ fun DayDetailRoute(
     tripId: String,
     date: String,
     currentUid: String,
+    currentUserName: String,
     onBack: () -> Unit
 ) {
     val app = LocalContext.current.applicationContext as TriProApplication
@@ -88,17 +94,20 @@ fun DayDetailRoute(
         factory = viewModelFactory {
             initializer {
                 DayDetailViewModel(
-                    container.tripRepository,
-                    container.weatherRepository,
-                    container.cloudinaryRepository,
-                    container.pushNotificationRepository,
-                    tripId, date, currentUid
+                    container.tripRepository, container.weatherRepository, container.cloudinaryRepository,
+                    container.pushNotificationRepository, container.activityRepository,
+                    tripId, date, currentUid, currentUserName
                 )
             }
         }
     )
     val uiState by viewModel.uiState.collectAsState()
     val contentResolver = LocalContext.current.contentResolver
+
+    // Item 2: the screen opens read-only; editing tools (pencils/trash/add note/upload
+    // file) only appear once this is flipped on via the TopAppBar toggle below.
+    var isEditMode by remember { mutableStateOf(false) }
+    val editingAllowed = uiState.canEdit && isEditMode
 
     var showAddItemSheet by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<ItineraryItem?>(null) }
@@ -108,14 +117,9 @@ fun DayDetailRoute(
     var pendingAttachmentItemId by remember { mutableStateOf<String?>(null) }
     var viewingAttachment by remember { mutableStateOf<Pair<String, Attachment>?>(null) }
 
-    // WRITE_EXTERNAL_STORAGE is only needed on API 26-28 (see manifest maxSdkVersion) —
-    // on API 29+ DownloadManager writes to the public Downloads dir without it.
-    val storagePermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { /* no-op: if denied, the download silently won't start on old OS versions */ }
-
+    val storagePermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) { // API 28 and below
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
             storagePermissionLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }
     }
@@ -138,58 +142,66 @@ fun DayDetailRoute(
                         Text(DateUtils.formatFullDayLabel(date), style = MaterialTheme.typography.headlineMedium)
                     }
                 },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") }
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") } },
+                actions = {
+                    if (uiState.canEdit) {
+                        IconButton(onClick = { isEditMode = !isEditMode }) {
+                            Icon(
+                                if (isEditMode) Icons.Filled.Close else Icons.Filled.Edit,
+                                contentDescription = if (isEditMode) "Done editing" else "Edit this day",
+                                tint = if (isEditMode) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
             )
         },
         floatingActionButton = {
-            if (uiState.canEdit) {
+            if (editingAllowed) {
                 FloatingActionButton(
                     onClick = { editingItem = null; showAddItemSheet = true },
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = "Add to itinerary")
-                }
+                ) { Icon(Icons.Filled.Add, contentDescription = "Add to itinerary") }
             }
         }
     ) { padding ->
         if (uiState.isLoading) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             return@Scaffold
         }
 
         val day = uiState.day
         val pins = buildList {
-            day?.hotel?.let { h -> if (h.lat != null && h.lng != null) add(MapPin("Hotel: ${h.name}", h.address, h.lat, h.lng)) }
-            uiState.items.forEach { i -> if (i.lat != null && i.lng != null) add(MapPin(i.title, i.locationName, i.lat, i.lng)) }
+            day?.hotel?.let { h ->
+                if (h.lat != null && h.lng != null) add(MapPin("Hotel: ${h.name}", h.address, h.lat, h.lng, hueForItemType(ItemType.HOTEL)))
+            }
+            uiState.items.forEach { i ->
+                if (i.lat != null && i.lng != null) add(MapPin(i.title, i.locationName, i.lat, i.lng, hueForItemType(i.type)))
+            }
         }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
-                start = TriProSpacing.marginMobile,
-                end = TriProSpacing.marginMobile,
-                top = padding.calculateTopPadding() + 12.dp,
-                bottom = padding.calculateBottomPadding() + 96.dp
+                start = TriProSpacing.marginMobile, end = TriProSpacing.marginMobile,
+                top = padding.calculateTopPadding() + 12.dp, bottom = padding.calculateBottomPadding() + 96.dp
             ),
             verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)
         ) {
-            item {
-                HotelCard(hotel = day?.hotel, canEdit = uiState.canEdit, onEdit = { showHotelDialog = true })
-            }
+            item { HotelCard(hotel = day?.hotel, canEdit = editingAllowed, onEdit = { showHotelDialog = true }) }
 
-            item {
-                FlightCard(flight = day?.flight, canEdit = uiState.canEdit, onEdit = { showFlightDialog = true })
+            // Item 4: only show a Flight box if one exists; in edit mode with no flight,
+            // show a slim "+ Add Flight" affordance instead so there's still a way in.
+            if (day?.flight != null) {
+                item { FlightCard(flight = day.flight, canEdit = editingAllowed, onEdit = { showFlightDialog = true }) }
+            } else if (editingAllowed) {
+                item { AddFlightButton(onClick = { showFlightDialog = true }) }
             }
 
             item {
                 WeatherCard(
-                    weather = uiState.weather,
-                    isLoading = uiState.weatherLoading,
+                    weather = uiState.weather, isLoading = uiState.weatherLoading,
                     forecastAvailableFromLabel = if (uiState.weather?.status == WeatherStatus.NOT_YET_AVAILABLE) viewModel.forecastAvailableFromLabel() else null
                 )
             }
@@ -198,38 +210,21 @@ fun DayDetailRoute(
                 item { DayMapPreview(pins = pins) }
             }
 
-            item {
-                DayNoteCard(note = day?.dayNote.orEmpty(), canEdit = uiState.canEdit, onEdit = { showDayNoteDialog = true })
-            }
+            item { DayNoteCard(note = day?.dayNote.orEmpty(), canEdit = editingAllowed, onEdit = { showDayNoteDialog = true }) }
 
-            item {
-                Text(
-                    "Schedule",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+            item { Text("Schedule", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary) }
 
             if (uiState.items.isEmpty()) {
-                item {
-                    Text(
-                        "Nothing planned yet for this day.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                item { Text("Nothing planned yet for this day.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
 
             items(uiState.items, key = { it.id }) { item ->
                 ItineraryItemRow(
                     item = item,
-                    canEdit = uiState.canEdit,
+                    canEdit = editingAllowed,
                     onEdit = { editingItem = item; showAddItemSheet = true },
                     onDelete = { viewModel.deleteItem(item.id) },
-                    onAddAttachment = {
-                        pendingAttachmentItemId = item.id
-                        filePicker.launch(arrayOf("*/*"))
-                    },
+                    onAddAttachment = { pendingAttachmentItemId = item.id; filePicker.launch(arrayOf("*/*")) },
                     onAttachmentClick = { attachment -> viewingAttachment = item.id to attachment }
                 )
             }
@@ -249,34 +244,22 @@ fun DayDetailRoute(
     }
 
     if (showHotelDialog) {
-        HotelEditDialog(
-            existing = uiState.day?.hotel,
-            onDismiss = { showHotelDialog = false },
-            onSave = { hotel -> viewModel.updateHotel(hotel); showHotelDialog = false }
-        )
+        HotelEditDialog(existing = uiState.day?.hotel, onDismiss = { showHotelDialog = false }, onSave = { hotel -> viewModel.updateHotel(hotel); showHotelDialog = false })
     }
 
     if (showFlightDialog) {
-        FlightEditDialog(
-            existing = uiState.day?.flight,
-            onDismiss = { showFlightDialog = false },
-            onSave = { flight -> viewModel.updateFlight(flight); showFlightDialog = false }
-        )
+        FlightEditDialog(existing = uiState.day?.flight, onDismiss = { showFlightDialog = false }, onSave = { flight -> viewModel.updateFlight(flight); showFlightDialog = false })
     }
 
     if (showDayNoteDialog) {
-        DayNoteEditDialog(
-            existing = uiState.day?.dayNote.orEmpty(),
-            onDismiss = { showDayNoteDialog = false },
-            onSave = { note -> viewModel.updateDayNote(note); showDayNoteDialog = false }
-        )
+        DayNoteEditDialog(existing = uiState.day?.dayNote.orEmpty(), onDismiss = { showDayNoteDialog = false }, onSave = { note -> viewModel.updateDayNote(note); showDayNoteDialog = false })
     }
 
     viewingAttachment?.let { (itemId, attachment) ->
         AttachmentViewerDialog(
             attachment = attachment,
             onDismiss = { viewingAttachment = null },
-            onRemove = if (uiState.canEdit) ({ viewModel.removeAttachment(itemId, attachment) }) else null
+            onRemove = if (editingAllowed) ({ viewModel.removeAttachment(itemId, attachment) }) else null
         )
     }
 }
@@ -293,11 +276,7 @@ private fun HotelCard(hotel: HotelInfo?, canEdit: Boolean, onEdit: () -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Hotel, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(12.dp))
@@ -305,24 +284,28 @@ private fun HotelCard(hotel: HotelInfo?, canEdit: Boolean, onEdit: () -> Unit) {
                     Text("BASE CAMP", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         hotel?.name?.takeIf { it.isNotBlank() } ?: "No hotel set for this day",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary
                     )
                     if (!hotel?.checkIn.isNullOrBlank() || !hotel?.checkOut.isNullOrBlank()) {
                         Text(
                             "Check-in ${hotel?.checkIn.orEmpty().ifBlank { "--" }}  ·  Check-out ${hotel?.checkOut.orEmpty().ifBlank { "--" }}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
             if (canEdit) {
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Filled.Edit, contentDescription = "Edit hotel", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, contentDescription = "Edit hotel", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
+    }
+}
+
+@Composable
+private fun AddFlightButton(onClick: () -> Unit) {
+    OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Icon(Icons.Filled.FlightTakeoff, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+        Text("Add a flight for this day")
     }
 }
 
@@ -338,41 +321,22 @@ private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave:
     var checkOut by remember { mutableStateOf(existing?.checkOut.orEmpty()) }
     var showCheckInPicker by remember { mutableStateOf(false) }
     var showCheckOutPicker by remember { mutableStateOf(false) }
-
-    // "Pick it from Google Maps" instead of typing the hotel name/address by hand —
-    // also the only place lat/lng ever gets set, which is what lights up the hotel pin
-    // in DayMapPreview above (previously this dialog never wrote lat/lng at all).
-    val searchHotel = rememberPlacePicker(typesFilter = listOf("lodging")) { picked ->
-        name = picked.name
-        address = picked.address
-        lat = picked.lat
-        lng = picked.lng
-        placeId = picked.placeId
-    }
+    var showSearch by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Hotel for this day") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = searchHotel, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { showSearch = true }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                     Text(if (name.isBlank()) "Search for hotel on Google Maps" else "Change hotel")
                 }
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it; placeId = null },
-                    label = { Text("Hotel name") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = name, onValueChange = { name = it; placeId = null }, label = { Text("Hotel name") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { showCheckInPicker = true }, modifier = Modifier.weight(1f)) {
-                        Text(if (checkIn.isBlank()) "Check-in time" else "Check-in: $checkIn")
-                    }
-                    OutlinedButton(onClick = { showCheckOutPicker = true }, modifier = Modifier.weight(1f)) {
-                        Text(if (checkOut.isBlank()) "Check-out time" else "Check-out: $checkOut")
-                    }
+                    OutlinedButton(onClick = { showCheckInPicker = true }, modifier = Modifier.weight(1f)) { Text(if (checkIn.isBlank()) "Check-in time" else "Check-in: $checkIn") }
+                    OutlinedButton(onClick = { showCheckOutPicker = true }, modifier = Modifier.weight(1f)) { Text(if (checkOut.isBlank()) "Check-out time" else "Check-out: $checkOut") }
                 }
             }
         },
@@ -380,37 +344,19 @@ private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave:
             TextButton(onClick = {
                 onSave(
                     if (name.isBlank()) null
-                    else (existing ?: HotelInfo()).copy(
-                        name = name,
-                        address = address,
-                        checkIn = checkIn,
-                        checkOut = checkOut,
-                        lat = lat,
-                        lng = lng,
-                        placeId = placeId
-                    )
+                    else (existing ?: HotelInfo()).copy(name = name, address = address, checkIn = checkIn, checkOut = checkOut, lat = lat, lng = lng, placeId = placeId)
                 )
             }) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 
-    if (showCheckInPicker) {
-        SimpleTimePickerDialog(
-            title = "Check-in time",
-            initial = checkIn.ifBlank { "15:00" },
-            onDismiss = { showCheckInPicker = false },
-            onConfirm = { checkIn = it; showCheckInPicker = false }
-        )
-    }
-    if (showCheckOutPicker) {
-        SimpleTimePickerDialog(
-            title = "Check-out time",
-            initial = checkOut.ifBlank { "11:00" },
-            onDismiss = { showCheckOutPicker = false },
-            onConfirm = { checkOut = it; showCheckOutPicker = false }
-        )
-    }
+    if (showCheckInPicker) SimpleTimePickerDialog("Check-in time", checkIn.ifBlank { "15:00" }, { showCheckInPicker = false }, { checkIn = it; showCheckInPicker = false })
+    if (showCheckOutPicker) SimpleTimePickerDialog("Check-out time", checkOut.ifBlank { "11:00" }, { showCheckOutPicker = false }, { checkOut = it; showCheckOutPicker = false })
+    PlaceSearchMapDialog(
+        visible = showSearch, typesFilter = listOf("lodging"), onDismiss = { showSearch = false },
+        onPlacePicked = { picked: PickedPlace -> name = picked.name; address = picked.address; lat = picked.lat; lng = picked.lng; placeId = picked.placeId; showSearch = false }
+    )
 }
 
 private fun queryFileName(resolver: android.content.ContentResolver, uri: Uri): String? {
@@ -430,46 +376,22 @@ private fun FlightCard(flight: FlightInfo?, canEdit: Boolean, onEdit: () -> Unit
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.FlightTakeoff, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(12.dp))
                 Column {
                     Text("FLIGHT", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (flight != null && (flight.airline.isNotBlank() || flight.flightNumber.isNotBlank())) {
-                        Text(
-                            "${flight.airline} ${flight.flightNumber}".trim(),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        val route = listOfNotNull(
-                            flight.departureAirportCode.takeIf { it.isNotBlank() },
-                            flight.arrivalAirportCode.takeIf { it.isNotBlank() }
-                        ).joinToString(" → ")
-                        val times = listOfNotNull(
-                            flight.departureTime.takeIf { it.isNotBlank() },
-                            flight.arrivalTime.takeIf { it.isNotBlank() }
-                        ).joinToString(" – ")
-                        if (route.isNotBlank() || times.isNotBlank()) {
-                            Text(
-                                listOf(route, times).filter { it.isNotBlank() }.joinToString("  ·  "),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    } else {
-                        Text("No flight for this day", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+                    Text("${flight?.airline.orEmpty()} ${flight?.flightNumber.orEmpty()}".trim(), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+                    val route = listOfNotNull(flight?.departureAirportCode?.takeIf { it.isNotBlank() }, flight?.arrivalAirportCode?.takeIf { it.isNotBlank() }).joinToString(" → ")
+                    val times = listOfNotNull(flight?.departureTime?.takeIf { it.isNotBlank() }, flight?.arrivalTime?.takeIf { it.isNotBlank() }).joinToString(" – ")
+                    if (route.isNotBlank() || times.isNotBlank()) {
+                        Text(listOf(route, times).filter { it.isNotBlank() }.joinToString("  ·  "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
             if (canEdit) {
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Filled.Edit, contentDescription = "Edit flight", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, contentDescription = "Edit flight", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
     }
@@ -490,19 +412,8 @@ private fun FlightEditDialog(existing: FlightInfo?, onDismiss: () -> Unit, onSav
     var arrivalTime by remember { mutableStateOf(existing?.arrivalTime.orEmpty()) }
     var showDeparturePicker by remember { mutableStateOf(false) }
     var showArrivalPicker by remember { mutableStateOf(false) }
-
-    // Places doesn't return IATA codes, so the 3-letter code fields stay manual — but
-    // this is the only place departure/arrival lat/lng ever get set (both fields already
-    // existed on FlightInfo but nothing wrote them before), which is what would let a
-    // future map view plot the flight route.
-    val searchDepartureAirport = rememberPlacePicker(typesFilter = listOf("airport")) { picked ->
-        departureLat = picked.lat
-        departureLng = picked.lng
-    }
-    val searchArrivalAirport = rememberPlacePicker(typesFilter = listOf("airport")) { picked ->
-        arrivalLat = picked.lat
-        arrivalLng = picked.lng
-    }
+    var showDepartureSearch by remember { mutableStateOf(false) }
+    var showArrivalSearch by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -514,36 +425,22 @@ private fun FlightEditDialog(existing: FlightInfo?, onDismiss: () -> Unit, onSav
                     OutlinedTextField(value = flightNumber, onValueChange = { flightNumber = it }, label = { Text("Flight #") }, modifier = Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = departureCode,
-                        onValueChange = { departureCode = it.uppercase() },
-                        label = { Text("From (code)") },
-                        modifier = Modifier.weight(1f)
-                    )
-                    OutlinedTextField(
-                        value = arrivalCode,
-                        onValueChange = { arrivalCode = it.uppercase() },
-                        label = { Text("To (code)") },
-                        modifier = Modifier.weight(1f)
-                    )
+                    OutlinedTextField(value = departureCode, onValueChange = { departureCode = it.uppercase() }, label = { Text("From (code)") }, modifier = Modifier.weight(1f))
+                    OutlinedTextField(value = arrivalCode, onValueChange = { arrivalCode = it.uppercase() }, label = { Text("To (code)") }, modifier = Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = searchDepartureAirport, modifier = Modifier.weight(1f)) {
+                    OutlinedButton(onClick = { showDepartureSearch = true }, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                         Text(if (departureLat == null) "Find departure airport" else "Departure ✓", maxLines = 1)
                     }
-                    OutlinedButton(onClick = searchArrivalAirport, modifier = Modifier.weight(1f)) {
+                    OutlinedButton(onClick = { showArrivalSearch = true }, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                         Text(if (arrivalLat == null) "Find arrival airport" else "Arrival ✓", maxLines = 1)
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { showDeparturePicker = true }, modifier = Modifier.weight(1f)) {
-                        Text(if (departureTime.isBlank()) "Departs" else "Departs: $departureTime")
-                    }
-                    OutlinedButton(onClick = { showArrivalPicker = true }, modifier = Modifier.weight(1f)) {
-                        Text(if (arrivalTime.isBlank()) "Arrives" else "Arrives: $arrivalTime")
-                    }
+                    OutlinedButton(onClick = { showDeparturePicker = true }, modifier = Modifier.weight(1f)) { Text(if (departureTime.isBlank()) "Departs" else "Departs: $departureTime") }
+                    OutlinedButton(onClick = { showArrivalPicker = true }, modifier = Modifier.weight(1f)) { Text(if (arrivalTime.isBlank()) "Arrives" else "Arrives: $arrivalTime") }
                 }
             }
         },
@@ -552,39 +449,26 @@ private fun FlightEditDialog(existing: FlightInfo?, onDismiss: () -> Unit, onSav
                 onSave(
                     if (airline.isBlank() && flightNumber.isBlank()) null
                     else (existing ?: FlightInfo()).copy(
-                        airline = airline,
-                        flightNumber = flightNumber,
-                        departureAirportCode = departureCode,
-                        arrivalAirportCode = arrivalCode,
-                        departureAirportLat = departureLat,
-                        departureAirportLng = departureLng,
-                        arrivalAirportLat = arrivalLat,
-                        arrivalAirportLng = arrivalLng,
-                        departureTime = departureTime,
-                        arrivalTime = arrivalTime
+                        airline = airline, flightNumber = flightNumber,
+                        departureAirportCode = departureCode, arrivalAirportCode = arrivalCode,
+                        departureAirportLat = departureLat, departureAirportLng = departureLng,
+                        arrivalAirportLat = arrivalLat, arrivalAirportLng = arrivalLng,
+                        departureTime = departureTime, arrivalTime = arrivalTime
                     )
                 )
             }) { Text("Save") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = {
+            TextButton(onClick = { onSave(null); onDismiss() }) { Text("Remove flight") }
+        }
     )
 
-    if (showDeparturePicker) {
-        SimpleTimePickerDialog(
-            title = "Departure time",
-            initial = departureTime.ifBlank { "09:00" },
-            onDismiss = { showDeparturePicker = false },
-            onConfirm = { departureTime = it; showDeparturePicker = false }
-        )
-    }
-    if (showArrivalPicker) {
-        SimpleTimePickerDialog(
-            title = "Arrival time",
-            initial = arrivalTime.ifBlank { "11:00" },
-            onDismiss = { showArrivalPicker = false },
-            onConfirm = { arrivalTime = it; showArrivalPicker = false }
-        )
-    }
+    if (showDeparturePicker) SimpleTimePickerDialog("Departure time", departureTime.ifBlank { "09:00" }, { showDeparturePicker = false }, { departureTime = it; showDeparturePicker = false })
+    if (showArrivalPicker) SimpleTimePickerDialog("Arrival time", arrivalTime.ifBlank { "11:00" }, { showArrivalPicker = false }, { arrivalTime = it; showArrivalPicker = false })
+    PlaceSearchMapDialog(visible = showDepartureSearch, typesFilter = listOf("airport"), onDismiss = { showDepartureSearch = false },
+        onPlacePicked = { picked -> departureLat = picked.lat; departureLng = picked.lng; showDepartureSearch = false })
+    PlaceSearchMapDialog(visible = showArrivalSearch, typesFilter = listOf("airport"), onDismiss = { showArrivalSearch = false },
+        onPlacePicked = { picked -> arrivalLat = picked.lat; arrivalLng = picked.lng; showArrivalSearch = false })
 }
 
 @Composable
@@ -596,11 +480,7 @@ private fun DayNoteCard(note: String, canEdit: Boolean, onEdit: () -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                 Icon(Icons.Filled.StickyNote2, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.width(12.dp))
@@ -611,9 +491,7 @@ private fun DayNoteCard(note: String, canEdit: Boolean, onEdit: () -> Unit) {
                 )
             }
             if (canEdit) {
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Filled.Edit, contentDescription = "Edit day note", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, contentDescription = "Edit day note", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
     }
@@ -626,15 +504,7 @@ private fun DayNoteEditDialog(existing: String, onDismiss: () -> Unit, onSave: (
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Note for this day") },
-        text = {
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                label = { Text("Note") }
-            )
-        },
+        text = { OutlinedTextField(value = note, onValueChange = { note = it }, modifier = Modifier.fillMaxWidth(), minLines = 3, label = { Text("Note") }) },
         confirmButton = { TextButton(onClick = { onSave(note) }) { Text("Save") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )

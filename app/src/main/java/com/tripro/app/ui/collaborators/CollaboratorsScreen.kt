@@ -64,13 +64,14 @@ import com.tripro.app.ui.theme.TriProSpacing
 fun CollaboratorsRoute(
     tripId: String,
     currentUid: String,
+    currentUserName: String,
     onBack: () -> Unit
 ) {
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
     val viewModel: CollaboratorsViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { CollaboratorsViewModel(container.tripRepository, container.userRepository, container.pushNotificationRepository, tripId, currentUid) }
+            initializer { CollaboratorsViewModel(container.tripRepository, container.userRepository, container.pushNotificationRepository, container.activityRepository, tripId, currentUid, currentUserName) }
         }
     )
     val uiState by viewModel.uiState.collectAsState()
