@@ -100,4 +100,6 @@ dependencies {
     // Weather (Open-Meteo, plain REST call) + image loading
     implementation(libs.okhttp)
     implementation(libs.coil.compose)
+
+    implementation(libs.core.splashscreen)
 }

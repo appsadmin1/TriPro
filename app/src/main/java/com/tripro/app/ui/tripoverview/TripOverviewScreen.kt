@@ -1,9 +1,5 @@
 package com.tripro.app.ui.tripoverview
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,31 +12,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.HourglassTop
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -58,16 +50,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import coil.compose.AsyncImage
+import com.google.android.gms.maps.model.LatLng
 import com.tripro.app.TriProApplication
+import com.tripro.app.data.model.HotelInfo
 import com.tripro.app.data.model.Role
 import com.tripro.app.data.model.TripDay
 import com.tripro.app.ui.components.AvatarStack
+import com.tripro.app.ui.daydetail.AddEditItemSheet
 import com.tripro.app.ui.theme.HorizonEthosColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.DateUtils
@@ -82,23 +78,30 @@ fun TripOverviewRoute(
     onBack: () -> Unit,
     onOpenDay: (String) -> Unit,
     onOpenCollaborators: () -> Unit,
-    onOpenDocuments: (String) -> Unit,
+    onOpenDocs: (String) -> Unit,
     onTripDeleted: () -> Unit
 ) {
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
     val viewModel: TripOverviewViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { TripOverviewViewModel(container.tripRepository, container.userRepository, container.cloudinaryRepository, tripId, currentUid) }
+            initializer {
+                TripOverviewViewModel(
+                    container.tripRepository, container.userRepository,
+                    container.cloudinaryRepository, container.pushNotificationRepository,
+                    tripId, currentUid
+                )
+            }
         }
     )
     val uiState by viewModel.uiState.collectAsState()
     val contentResolver = LocalContext.current.contentResolver
-    var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    val coverPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-        if (uri != null) viewModel.updateCoverImage(contentResolver, uri)
-    }
+    var showEditSheet by remember { mutableStateOf(false) }
+    var showAddItemSheet by remember { mutableStateOf(false) }
+    var newItemDate by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(uiState.isDeleted) { if (uiState.isDeleted) onTripDeleted() }
 
     Scaffold(
         topBar = {
@@ -108,14 +111,13 @@ fun TripOverviewRoute(
                     IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary) }
                 },
                 actions = {
+                    if (uiState.myRole == Role.OWNER) {
+                        IconButton(onClick = { showEditSheet = true }) {
+                            Icon(Icons.Filled.Edit, contentDescription = "Edit trip", tint = MaterialTheme.colorScheme.onPrimary)
+                        }
+                    }
                     IconButton(onClick = onOpenCollaborators) {
                         Icon(Icons.Filled.Group, contentDescription = "Collaborators", tint = MaterialTheme.colorScheme.onPrimary)
-                    }
-                    // Item 7: only the owner sees the delete option.
-                    if (uiState.myRole == Role.OWNER) {
-                        IconButton(onClick = { showDeleteConfirm = true }) {
-                            Icon(Icons.Filled.Delete, contentDescription = "Delete trip", tint = MaterialTheme.colorScheme.onPrimary)
-                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -132,38 +134,11 @@ fun TripOverviewRoute(
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(bottom = 24.dp)) {
             item {
                 Box {
-                    AsyncImage(
-                        model = trip.coverImageUrl, contentDescription = trip.destination, contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxWidth().height(240.dp)
-                    )
-                    Box(
-                        modifier = Modifier.fillMaxWidth().height(240.dp)
-                            .background(Brush.verticalGradient(listOf(HorizonEthosColors.Primary.copy(alpha = 0.75f), Color.Transparent)))
-                    )
+                    AsyncImage(model = trip.coverImageUrl, contentDescription = trip.destination, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(240.dp))
+                    Box(modifier = Modifier.fillMaxWidth().height(240.dp).background(Brush.verticalGradient(listOf(HorizonEthosColors.Primary.copy(alpha = 0.75f), Color.Transparent))))
                     Column(modifier = Modifier.align(Alignment.BottomStart).padding(20.dp)) {
                         Text(trip.destination, style = MaterialTheme.typography.displayLarge.copy(fontSize = 32.sp), color = HorizonEthosColors.OnPrimary)
                         Text(DateUtils.formatRange(trip.startDate, trip.endDate), style = MaterialTheme.typography.bodyLarge, color = HorizonEthosColors.InverseOnSurface)
-                    }
-                    // Item 5: tap the camera chip to swap the cover photo any time.
-                    if (uiState.myRole == Role.OWNER || uiState.myRole == Role.EDITOR) {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(16.dp)
-                                .clip(CircleShape)
-                                .background(HorizonEthosColors.Surface.copy(alpha = 0.85f))
-                                .size(40.dp)
-                                .clickable {
-                                    coverPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (uiState.isUpdatingCover) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            } else {
-                                Icon(Icons.Filled.CameraAlt, contentDescription = "Change cover photo", tint = HorizonEthosColors.Primary)
-                            }
-                        }
                     }
                 }
             }
@@ -181,76 +156,95 @@ fun TripOverviewRoute(
             }
 
             item {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = TriProSpacing.marginMobile)
-                        .clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainerLowest).padding(16.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = TriProSpacing.marginMobile).clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerLowest).padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                        Column {
-                            Text("Travelers", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                            Spacer(Modifier.height(6.dp))
-                            AvatarStack(photoUrls = uiState.collaboratorAvatars, avatarSize = 36)
-                        }
-                        if (uiState.myRole == Role.OWNER) {
-                            IconButton(onClick = onOpenCollaborators) {
-                                Icon(Icons.Filled.Group, contentDescription = "Manage collaborators", tint = MaterialTheme.colorScheme.primary)
-                            }
+                    Column {
+                        Text("Travelers", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Spacer(Modifier.height(6.dp))
+                        AvatarStack(photoUrls = uiState.collaboratorAvatars, avatarSize = 36)
+                    }
+                    if (uiState.myRole == Role.OWNER) {
+                        IconButton(onClick = onOpenCollaborators) {
+                            Icon(Icons.Filled.Group, contentDescription = "Manage collaborators", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
-                    // Item 1c: the mockup's "Add Activity" / "View Docs" row, previously missing here.
-                    Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        androidx.compose.material3.Button(
-                            onClick = { viewModel.defaultDayForNewActivity()?.let(onOpenDay) },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(Icons.Filled.AddCircle, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                            Text("Add Activity")
-                        }
-                        androidx.compose.material3.OutlinedButton(onClick = { onOpenDocuments(tripId) }, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Filled.FolderOpen, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                            Text("View Docs")
-                        }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = TriProSpacing.marginMobile, vertical = TriProSpacing.stackMd),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            val today = runCatching { LocalDate.now().toString() }.getOrNull().orEmpty()
+                            newItemDate = uiState.days.firstOrNull { it.date >= today }?.date ?: uiState.days.firstOrNull()?.date
+                            showAddItemSheet = true
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Add Activity") }
+                    OutlinedButton(onClick = { onOpenDocs(tripId) }, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Filled.Folder, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                        Text("View Docs")
                     }
                 }
                 Spacer(Modifier.height(TriProSpacing.stackLg))
             }
 
             item {
-                Text(
-                    "Itinerary", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = TriProSpacing.marginMobile, vertical = 8.dp)
-                )
+                Text("Itinerary", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = TriProSpacing.marginMobile, vertical = 8.dp))
             }
 
             items(uiState.days, key = { it.date }) { day -> DayRow(day = day, onClick = { onOpenDay(day.date) }) }
         }
     }
 
-    if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete this trip?") },
-            text = { Text("This removes \"${uiState.trip?.name}\" for every collaborator. This can't be undone.") },
-            confirmButton = {
-                TextButton(
-                    onClick = { showDeleteConfirm = false; viewModel.deleteTrip(onDeleted = onTripDeleted) },
-                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) { Text("Delete") }
+    if (showAddItemSheet) {
+        AddEditItemSheet(
+            existing = null,
+            defaultMapCenter = mapCenterOrDefault(uiState.days.firstOrNull { it.date == newItemDate }?.hotel),
+            onDismiss = { showAddItemSheet = false },
+            onSave = { item -> newItemDate?.let { date -> viewModel.addItem(date, item) }; showAddItemSheet = false },
+            dateOptions = uiState.days.map { it.date to "${DateUtils.formatWeekdayShort(it.date)} ${DateUtils.formatDayNumber(it.date)}" },
+            selectedDate = newItemDate,
+            onDateSelected = { newItemDate = it }
+        )
+    }
+
+    if (showEditSheet) {
+        TripEditSheet(
+            trip = uiState.trip,
+            onDismiss = { showEditSheet = false },
+            onSave = { name, destination, coverUri, start, end ->
+                viewModel.updateTripDetails(contentResolver, name, destination, coverUri, start, end)
+                showEditSheet = false
             },
-            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") } }
+            onDeleteTrip = { viewModel.deleteTrip(); showEditSheet = false }
         )
     }
 }
 
+private fun mapCenterOrDefault(hotel: HotelInfo?): LatLng =
+    if (hotel?.lat != null && hotel.lng != null) LatLng(hotel.lat, hotel.lng) else LatLng(48.8566, 2.3522)
+
 @Composable
 private fun StatChip(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainerLowest).padding(vertical = 16.dp),
+        modifier = modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainerLowest).padding(vertical = 16.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primaryContainer)
-        Text(value, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+        // textAlign = Center fixes the misalignment: when this wraps to two lines (e.g.
+        // "14 DAYS" / "AWAY"), Text auto-sizes its box to the widest line, and without an
+        // explicit center alignment the shorter second line defaults to Start (left) —
+        // that's what looked "off center" even though the block itself was centered.
+        Text(value, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -258,8 +252,8 @@ private fun StatChip(icon: ImageVector, value: String, label: String, modifier: 
 private fun DayRow(day: TripDay, onClick: () -> Unit) {
     val isToday = runCatching { DateUtils.parse(day.date) == LocalDate.now() }.getOrDefault(false)
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = TriProSpacing.marginMobile, vertical = 4.dp)
-            .clip(RoundedCornerShape(12.dp)).let { if (isToday) it.background(MaterialTheme.colorScheme.surfaceVariant) else it }
+        modifier = Modifier.fillMaxWidth().padding(horizontal = TriProSpacing.marginMobile, vertical = 4.dp).clip(RoundedCornerShape(12.dp))
+            .let { if (isToday) it.background(MaterialTheme.colorScheme.surfaceVariant) else it }
             .clickable(onClick = onClick).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

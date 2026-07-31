@@ -78,6 +78,10 @@ import com.tripro.app.util.DateUtils
 import com.tripro.app.util.PickedPlace
 import com.tripro.app.util.PlaceSearchMapDialog
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.tripro.app.data.model.MarkerColorKey
+import com.tripro.app.data.model.toMarkerColorKey
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,9 +98,12 @@ fun DayDetailRoute(
         factory = viewModelFactory {
             initializer {
                 DayDetailViewModel(
-                    container.tripRepository, container.weatherRepository, container.cloudinaryRepository,
-                    container.pushNotificationRepository, container.activityRepository,
-                    tripId, date, currentUid, currentUserName
+                    container.tripRepository,
+                    container.weatherRepository,
+                    container.cloudinaryRepository,
+                    container.pushNotificationRepository,
+                    container.userRepository,
+                    tripId, date, currentUid
                 )
             }
         }
@@ -124,11 +131,14 @@ fun DayDetailRoute(
         }
     }
 
+    var pendingUpload by remember { mutableStateOf<Pair<String, Uri>?>(null) }
+    var pendingUploadName by remember { mutableStateOf("") }
+
     val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         val itemId = pendingAttachmentItemId
         if (uri != null && itemId != null) {
-            val name = queryFileName(contentResolver, uri) ?: "file"
-            viewModel.uploadAttachment(contentResolver, itemId, uri, name)
+            pendingUploadName = queryFileName(contentResolver, uri) ?: "file"
+            pendingUpload = itemId to uri
         }
         pendingAttachmentItemId = null
     }
@@ -172,12 +182,17 @@ fun DayDetailRoute(
         }
 
         val day = uiState.day
+        val activityColors = uiState.activityColors
         val pins = buildList {
             day?.hotel?.let { h ->
-                if (h.lat != null && h.lng != null) add(MapPin("Hotel: ${h.name}", h.address, h.lat, h.lng, hueForItemType(ItemType.HOTEL)))
+                if (h.lat != null && h.lng != null) {
+                    add(MapPin("Hotel: ${h.name}", h.address, h.lat, h.lng, colorInt = activityColors.colorInt(MarkerColorKey.HOTEL)))
+                }
             }
             uiState.items.forEach { i ->
-                if (i.lat != null && i.lng != null) add(MapPin(i.title, i.locationName, i.lat, i.lng, hueForItemType(i.type)))
+                if (i.lat != null && i.lng != null) {
+                    add(MapPin(i.title, i.locationName, i.lat, i.lng, colorInt = activityColors.colorInt(i.type.toMarkerColorKey())))
+                }
             }
         }
 
@@ -259,7 +274,30 @@ fun DayDetailRoute(
         AttachmentViewerDialog(
             attachment = attachment,
             onDismiss = { viewingAttachment = null },
-            onRemove = if (editingAllowed) ({ viewModel.removeAttachment(itemId, attachment) }) else null
+            onRemove = if (uiState.canEdit) ({ viewModel.removeAttachment(itemId, attachment) }) else null,
+            onRename = if (uiState.canEdit) ({ newName -> viewModel.renameAttachment(itemId, attachment, newName) }) else null
+        )
+    }
+
+    pendingUpload?.let { (itemId, uri) ->
+        AlertDialog(
+            onDismissRequest = { pendingUpload = null },
+            title = { Text("Name this file") },
+            text = {
+                OutlinedTextField(
+                    value = pendingUploadName,
+                    onValueChange = { pendingUploadName = it },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.uploadAttachment(contentResolver, itemId, uri, pendingUploadName.ifBlank { "file" })
+                    pendingUpload = null
+                }) { Text("Upload") }
+            },
+            dismissButton = { TextButton(onClick = { pendingUpload = null }) { Text("Cancel") } }
         )
     }
 }

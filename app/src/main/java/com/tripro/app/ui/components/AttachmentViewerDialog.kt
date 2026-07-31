@@ -17,15 +17,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -53,27 +57,28 @@ import com.tripro.app.util.FileDownloader
 import com.tripro.app.util.PdfPageRenderer
 import kotlinx.coroutines.launch
 
-/**
- * Full-screen viewer opened by tapping an attachment pill. Renders images and PDFs
- * in-app; anything else falls back to "Open with…" (via a FileProvider content:// URI,
- * since Android requires that for sharing files with other apps) plus Download.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AttachmentViewerDialog(attachment: Attachment, onDismiss: () -> Unit, onRemove: (() -> Unit)? = null) {
+fun AttachmentViewerDialog(
+    attachment: Attachment,
+    onDismiss: () -> Unit,
+    onRemove: (() -> Unit)? = null,
+    onRename: ((String) -> Unit)? = null
+) {
     val context = LocalContext.current
+    var renaming by remember { mutableStateOf(false) }
+    var currentName by remember(attachment.id) { mutableStateOf(attachment.fileName) }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(modifier = Modifier.fillMaxSize()) {
             TopAppBar(
-                title = { Text(attachment.fileName, maxLines = 1) },
-                navigationIcon = {
-                    IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = "Close") }
-                },
+                title = { Text(currentName, maxLines = 1) },
+                navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = "Close") } },
                 actions = {
-                    IconButton(onClick = {
-                        FileDownloader.downloadToDeviceDownloads(context, attachment.downloadUrl, attachment.fileName)
-                    }) {
+                    if (onRename != null) {
+                        IconButton(onClick = { renaming = true }) { Icon(Icons.Filled.Edit, contentDescription = "Rename file") }
+                    }
+                    IconButton(onClick = { FileDownloader.downloadToDeviceDownloads(context, attachment.downloadUrl, currentName) }) {
                         Icon(Icons.Filled.Download, contentDescription = "Download")
                     }
                     if (onRemove != null) {
@@ -82,11 +87,8 @@ fun AttachmentViewerDialog(attachment: Attachment, onDismiss: () -> Unit, onRemo
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
             )
-
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 when {
                     attachment.mimeType.startsWith("image/") -> ZoomableImage(url = attachment.downloadUrl)
@@ -96,6 +98,21 @@ fun AttachmentViewerDialog(attachment: Attachment, onDismiss: () -> Unit, onRemo
             }
         }
     }
+
+    if (renaming) {
+        AlertDialog(
+            onDismissRequest = { renaming = false },
+            title = { Text("Rename file") },
+            text = {
+                var text by remember { mutableStateOf(currentName) }
+                OutlinedTextField(value = text, onValueChange = { text = it; currentName = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            },
+            confirmButton = {
+                TextButton(onClick = { onRename?.invoke(currentName); renaming = false }) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = { renaming = false }) { Text("Cancel") } }
+        )
+    }
 }
 
 @Composable
@@ -103,20 +120,10 @@ private fun ZoomableImage(url: String) {
     var scale by remember { mutableStateOf(1f) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
-
     AsyncImage(
-        model = url,
-        contentDescription = null,
-        contentScale = ContentScale.Fit,
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(1f, 5f)
-                    offsetX += pan.x
-                    offsetY += pan.y
-                }
-            }
+        model = url, contentDescription = null, contentScale = ContentScale.Fit,
+        modifier = Modifier.fillMaxSize()
+            .pointerInput(Unit) { detectTransformGestures { _, pan, zoom, _ -> scale = (scale * zoom).coerceIn(1f, 5f); offsetX += pan.x; offsetY += pan.y } }
             .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offsetX, translationY = offsetY)
     )
 }
@@ -142,18 +149,8 @@ private fun PdfViewer(attachment: Attachment) {
             CircularProgressIndicator()
             Text("Opening PDF…", modifier = Modifier.padding(top = 12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        else -> LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(pages!!) { bitmap ->
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+        else -> LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(pages!!) { bitmap -> Image(bitmap = bitmap.asImageBitmap(), contentDescription = null, modifier = Modifier.fillMaxWidth()) }
         }
     }
 }
@@ -162,27 +159,15 @@ private fun PdfViewer(attachment: Attachment) {
 private fun GenericFileFallback(attachment: Attachment) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
-        Icon(
-            Icons.Filled.InsertDriveFile,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.outline,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        Text(
-            "Preview isn't available for this file type in-app.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Icon(Icons.Filled.InsertDriveFile, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(bottom = 16.dp))
+        Text("Preview isn't available for this file type in-app.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Button(
             onClick = {
                 scope.launch {
                     val file = FileDownloader.downloadToCache(context, attachment.downloadUrl, attachment.fileName)
                     val uri = FileProvider.getUriForFile(context, "${BuildConfig.APPLICATION_ID}.fileprovider", file)
-                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(uri, attachment.mimeType.ifBlank { "*/*" })
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
+                    val intent = Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, attachment.mimeType.ifBlank { "*/*" }); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }
                     context.startActivity(Intent.createChooser(intent, "Open with"))
                 }
             },

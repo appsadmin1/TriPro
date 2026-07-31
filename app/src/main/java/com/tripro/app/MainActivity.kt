@@ -1,5 +1,6 @@
 package com.tripro.app
 
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -17,45 +18,54 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.tripro.app.navigation.PendingDeepLink
 import com.tripro.app.navigation.TriProNavGraph
 import com.tripro.app.notifications.NotificationHelper
 import com.tripro.app.ui.auth.AuthUiState
 import com.tripro.app.ui.auth.AuthViewModel
 import com.tripro.app.ui.theme.TriProTheme
+import com.tripro.app.util.forcedEnglish
 
 class MainActivity : ComponentActivity() {
 
-    // Held at the Activity level (not inside the composable) so onNewIntent can update it
-    // directly — Compose state can be written from anywhere and still triggers recomposition
-    // of whoever reads it with `by`, so this avoids recreating the whole Activity on a
-    // notification tap while the app is already running.
     private val deepLinkState = mutableStateOf<PendingDeepLink?>(null)
+    private lateinit var authViewModel: AuthViewModel
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(newBase.forcedEnglish())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         deepLinkState.value = deepLinkFrom(intent)
         val container = (application as TriProApplication).container
 
+        authViewModel = ViewModelProvider(
+            this,
+            viewModelFactory { initializer { AuthViewModel(container.authRepository, container.userRepository) } }
+        )[AuthViewModel::class.java]
+
+        // Keeps the OS splash on screen until we know whether there's a cached signed-in
+        // user, so there's no frame where Compose could draw the login screen only to
+        // immediately replace it with the trips list.
+        splashScreen.setKeepOnScreenCondition { authViewModel.uiState.value is AuthUiState.CheckingSession }
+
         setContent {
             TriProTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    val authViewModel: AuthViewModel = viewModel(
-                        factory = viewModelFactory {
-                            initializer { AuthViewModel(container.authRepository, container.userRepository) }
-                        }
-                    )
                     val authState by authViewModel.uiState.collectAsState()
                     val pendingDeepLink by deepLinkState
 
                     val notificationPermissionLauncher = rememberLauncherForActivityResult(
                         ActivityResultContracts.RequestPermission()
-                    ) { /* no-op either way — worst case, no pushes show up */ }
+                    ) { /* no-op either way */ }
 
                     LaunchedEffect(authState) {
                         if (authState is AuthUiState.SignedIn &&
