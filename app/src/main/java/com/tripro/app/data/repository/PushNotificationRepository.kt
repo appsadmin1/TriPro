@@ -66,6 +66,14 @@ class PushNotificationRepository(
         })
     }
 
+    suspend fun notifyTripUpdate(tripId: String, what: String) {
+        post("notify", JSONObject().apply {
+            put("type", "trip_update")
+            put("tripId", tripId)
+            put("what", what)
+        })
+    }
+
     private suspend fun post(functionName: String, body: JSONObject) = withContext(Dispatchers.IO) {
         runCatching {
             if (baseUrl.isBlank()) return@runCatching // notifications backend not configured — skip silently

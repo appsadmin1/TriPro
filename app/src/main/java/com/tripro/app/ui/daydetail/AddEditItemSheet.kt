@@ -11,9 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -43,12 +41,10 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.tripro.app.data.model.DayPeriod
 import com.tripro.app.data.model.ItemType
 import com.tripro.app.data.model.ItineraryItem
-import com.tripro.app.data.model.NoteType
 import com.tripro.app.data.model.TimeType
 import com.tripro.app.ui.components.SimpleTimePickerDialog
-import com.tripro.app.ui.theme.HorizonEthosColors
 import com.tripro.app.ui.theme.TriProSpacing
-import com.tripro.app.util.PlaceSearchMapDialog
+import com.tripro.app.util.rememberPlacePicker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,7 +52,10 @@ fun AddEditItemSheet(
     existing: ItineraryItem?,
     defaultMapCenter: LatLng,
     onDismiss: () -> Unit,
-    onSave: (ItineraryItem) -> Unit
+    onSave: (ItineraryItem) -> Unit,
+    dateOptions: List<Pair<String, String>> = emptyList(),
+    selectedDate: String? = null,
+    onDateSelected: ((String) -> Unit)? = null
 ) {
     var title by remember { mutableStateOf(existing?.title.orEmpty()) }
     var type by remember { mutableStateOf(existing?.type ?: ItemType.CUSTOM) }
@@ -68,16 +67,22 @@ fun AddEditItemSheet(
     var locationName by remember { mutableStateOf(existing?.locationName.orEmpty()) }
     var address by remember { mutableStateOf(existing?.address.orEmpty()) }
     var pin by remember {
-        mutableStateOf(if (existing?.lat != null && existing.lng != null) LatLng(existing.lat, existing.lng) else null)
+        mutableStateOf(
+            if (existing?.lat != null && existing.lng != null) LatLng(existing.lat, existing.lng) else null
+        )
     }
     var note by remember { mutableStateOf(existing?.note.orEmpty()) }
-    var noteType by remember { mutableStateOf(existing?.noteType ?: NoteType.ALERT) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
-    var showLocationSearch by remember { mutableStateOf(false) }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(pin ?: defaultMapCenter, 13f)
+    }
+
+    val searchLocation = rememberPlacePicker { picked ->
+        locationName = picked.name
+        address = picked.address
+        pin = LatLng(picked.lat, picked.lng)
     }
 
     LaunchedEffect(pin) {
@@ -86,24 +91,60 @@ fun AddEditItemSheet(
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
-            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(TriProSpacing.marginMobile),
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(TriProSpacing.marginMobile),
             verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)
         ) {
-            Text(if (existing == null) "Add to itinerary" else "Edit item", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+            Text(
+                if (existing == null) "Add to itinerary" else "Edit item",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
 
-            OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
+            // Only shown when the caller (Trip Overview's "Add Activity") passes a list of
+            // the trip's dates — DayDetailScreen's own add/edit flow already knows which
+            // date it's on, so it never passes dateOptions and this block simply doesn't render.
+            if (dateOptions.isNotEmpty() && onDateSelected != null) {
+                Text("Which day?", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    dateOptions.forEach { (date, label) ->
+                        FilterChip(selected = date == selectedDate, onClick = { onDateSelected(date) }, label = { Text(label) })
+                    }
+                }
+            }
+
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Title") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Text("Type", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-            Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 ItemType.entries.forEach { option ->
-                    FilterChip(selected = type == option, onClick = { type = option }, label = { Text(option.name.lowercase().replaceFirstChar { it.uppercase() }) })
+                    FilterChip(
+                        selected = type == option,
+                        onClick = { type = option },
+                        label = { Text(option.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                    )
                 }
             }
 
             if (type == ItemType.CUSTOM) {
                 OutlinedTextField(
-                    value = customLabel, onValueChange = { customLabel = it },
-                    label = { Text("What is this? (e.g. Grocery run, Laundry)") }, modifier = Modifier.fillMaxWidth()
+                    value = customLabel,
+                    onValueChange = { customLabel = it },
+                    label = { Text("What is this? (e.g. Grocery run, Laundry)") },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
@@ -115,8 +156,13 @@ fun AddEditItemSheet(
             }
 
             when (timeType) {
-                TimeType.PERIOD -> Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    DayPeriod.entries.forEach { p -> FilterChip(selected = period == p, onClick = { period = p }, label = { Text(p.label) }) }
+                TimeType.PERIOD -> Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    DayPeriod.entries.forEach { p ->
+                        FilterChip(selected = period == p, onClick = { period = p }, label = { Text(p.label) })
+                    }
                 }
                 TimeType.EXACT -> OutlinedButton(onClick = { showStartTimePicker = true }) { Text("Start: $startTime") }
                 TimeType.RANGE -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -126,81 +172,89 @@ fun AddEditItemSheet(
             }
 
             Text("Location", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-            OutlinedButton(onClick = { showLocationSearch = true }, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = searchLocation, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                 Text(if (locationName.isBlank()) "Search on Google Maps" else "Change location")
             }
-            OutlinedTextField(value = locationName, onValueChange = { locationName = it }, label = { Text("Place name") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address (optional)") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                value = locationName,
+                onValueChange = { locationName = it },
+                label = { Text("Place name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = address,
+                onValueChange = { address = it },
+                label = { Text("Address (optional)") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-            Text("Fine-tune by tapping the map", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "Fine-tune by tapping the map",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             GoogleMap(
-                modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(12.dp)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(12.dp)),
                 cameraPositionState = cameraPositionState,
                 onMapClick = { latLng -> pin = latLng }
             ) {
                 pin?.let { Marker(state = MarkerState(position = it)) }
             }
 
-            // Item 3: alert (red/warning) vs. note (green/exclamation).
-            Text("Note type", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = noteType == NoteType.ALERT,
-                    onClick = { noteType = NoteType.ALERT },
-                    label = { Text("Alert") },
-                    leadingIcon = { Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
-                )
-                FilterChip(
-                    selected = noteType == NoteType.NOTE,
-                    onClick = { noteType = NoteType.NOTE },
-                    label = { Text("Note") },
-                    leadingIcon = { Icon(Icons.Filled.PriorityHigh, contentDescription = null, tint = HorizonEthosColors.Success) }
-                )
-            }
             OutlinedTextField(
-                value = note, onValueChange = { note = it },
-                label = { Text(if (noteType == NoteType.ALERT) "Alert text (e.g. \"18+ only\", \"closes early at 18:00\")" else "Note text") },
-                modifier = Modifier.fillMaxWidth(), minLines = 2
+                value = note,
+                onValueChange = { note = it },
+                label = { Text("Note or alert (e.g. \"18+ only\", \"closes early at 18:00\")") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2
             )
 
             Button(
                 onClick = {
                     onSave(
                         (existing ?: ItineraryItem()).copy(
-                            title = title, type = type,
+                            title = title,
+                            type = type,
                             customLabel = if (type == ItemType.CUSTOM) customLabel else "",
                             timeType = timeType,
                             startTime = if (timeType != TimeType.PERIOD) startTime else null,
                             endTime = if (timeType == TimeType.RANGE) endTime else null,
                             period = if (timeType == TimeType.PERIOD) period else null,
-                            locationName = locationName, address = address,
-                            lat = pin?.latitude, lng = pin?.longitude,
-                            note = note, noteType = noteType
+                            locationName = locationName,
+                            address = address,
+                            lat = pin?.latitude,
+                            lng = pin?.longitude,
+                            note = note
                         )
                     )
                 },
-                enabled = title.isNotBlank(),
+                enabled = title.isNotBlank() && (dateOptions.isEmpty() || selectedDate != null),
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("Save") }
+            ) {
+                Text("Save")
+            }
             TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Cancel") }
         }
     }
 
     if (showStartTimePicker) {
-        SimpleTimePickerDialog(title = "Start time", initial = startTime, onDismiss = { showStartTimePicker = false }, onConfirm = { startTime = it; showStartTimePicker = false })
+        SimpleTimePickerDialog(
+            title = "Start time",
+            initial = startTime,
+            onDismiss = { showStartTimePicker = false },
+            onConfirm = { startTime = it; showStartTimePicker = false }
+        )
     }
     if (showEndTimePicker) {
-        SimpleTimePickerDialog(title = "End time", initial = endTime, onDismiss = { showEndTimePicker = false }, onConfirm = { endTime = it; showEndTimePicker = false })
+        SimpleTimePickerDialog(
+            title = "End time",
+            initial = endTime,
+            onDismiss = { showEndTimePicker = false },
+            onConfirm = { endTime = it; showEndTimePicker = false }
+        )
     }
-    PlaceSearchMapDialog(
-        visible = showLocationSearch,
-        onDismiss = { showLocationSearch = false },
-        onPlacePicked = { picked ->
-            locationName = picked.name
-            address = picked.address
-            pin = LatLng(picked.lat, picked.lng)
-            showLocationSearch = false
-        }
-    )
 }

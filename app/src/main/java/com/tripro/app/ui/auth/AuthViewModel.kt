@@ -32,7 +32,11 @@ class AuthViewModel(
         viewModelScope.launch {
             authRepository.authState().collect { user ->
                 if (user != null) {
-                    onUserAuthenticated(user)
+                    // Show the trips list immediately — profile sync, invite reconciliation,
+                    // and push-token registration are best-effort background work and must
+                    // never delay getting an already-logged-in user to the app.
+                    _uiState.value = AuthUiState.SignedIn(user)
+                    launch { syncAfterSignIn(user) }
                 } else {
                     _uiState.value = AuthUiState.SignedOut
                 }
@@ -46,7 +50,8 @@ class AuthViewModel(
             try {
                 val result = authRepository.signInWithGoogle()
                 result.onSuccess { user ->
-                    onUserAuthenticated(user)
+                    _uiState.value = AuthUiState.SignedIn(user)
+                    launch { syncAfterSignIn(user) }
                 }.onFailure { e ->
                     val message = e.message ?: "Sign-in failed"
                     Log.e("AuthViewModel", "Sign-in failure: $message", e)
@@ -62,9 +67,6 @@ class AuthViewModel(
 
     fun signOut() {
         viewModelScope.launch {
-            // Best-effort: stop this device from receiving pushes for the account we're
-            // leaving. Not fatal if it fails (e.g. offline) — a stale token just means an
-            // extra no-op send next time Cloud Functions tries it.
             val uid = authRepository.currentUser?.uid
             if (uid != null) {
                 runCatching {
@@ -77,38 +79,14 @@ class AuthViewModel(
         }
     }
 
-    private suspend fun onUserAuthenticated(user: FirebaseUser) {
-        Log.d("AuthViewModel", "User authenticated: uid=${user.uid}, email=${user.email}")
-        
-        // 1. Keep the public users/{uid} directory doc fresh
-        try {
-            userRepository.ensureUserProfile(user)
-        } catch (e: Throwable) {
-            Log.e("AuthViewModel", "Failed to update user profile", e)
-            // Not fatal, but worth logging
-        }
-
-        // 2. Apply any collaborator invites that were sent to this email
-        try {
-            userRepository.reconcilePendingInvites(user)
-        } catch (e: Throwable) {
-            Log.e("AuthViewModel", "Failed to reconcile invites", e)
-            // This is likely the PERMISSION_DENIED we're seeing
-            _uiState.value = AuthUiState.SigningIn(error = "Invite sync failed: ${e.message}")
-            // We don't stop here, allow login anyway
-        }
-
-        registerPushToken(user.uid)
-        _uiState.value = AuthUiState.SignedIn(user)
-    }
-
-    /** Fetches the current FCM token and stores it — covers the case where a token was
-     *  already generated before this device ever signed in (onNewToken only fires on
-     *  token creation/rotation, not on every login). */
-    private suspend fun registerPushToken(uid: String) {
+    private suspend fun syncAfterSignIn(user: FirebaseUser) {
+        runCatching { userRepository.ensureUserProfile(user) }
+            .onFailure { Log.e("AuthViewModel", "Failed to update user profile", it) }
+        runCatching { userRepository.reconcilePendingInvites(user) }
+            .onFailure { Log.e("AuthViewModel", "Failed to reconcile invites", it) }
         runCatching {
             val token = FirebaseMessaging.getInstance().token.await()
-            userRepository.registerFcmToken(uid, token)
-        }
+            userRepository.registerFcmToken(user.uid, token)
+        }.onFailure { Log.e("AuthViewModel", "Failed to register push token", it) }
     }
 }

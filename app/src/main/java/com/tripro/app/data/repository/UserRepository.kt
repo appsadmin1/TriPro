@@ -3,20 +3,17 @@ package com.tripro.app.data.repository
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.tripro.app.data.model.ActivityColorPrefs
+import com.tripro.app.data.model.DefaultActivityColorHex
+import com.tripro.app.data.model.MarkerColorKey
+import com.tripro.app.data.model.NotificationPreferences
 import com.tripro.app.data.model.UserProfile
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
-/**
- * Firestore document: users/{uid} — { email, displayName, photoUrl }
- *
- * This tiny public directory exists for exactly one reason: the client SDK cannot look
- * up "which uid owns this email" against Firebase Auth directly, but collaborator invites
- * are entered by email. Writing a profile doc on every login gives us something to query.
- *
- * Security rule: any signed-in user may read the users collection, but may only write
- * their own doc (see firestore.rules) — so this can't be used to enumerate arbitrary
- * account data beyond what a user already chose to expose.
- */
 class UserRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
@@ -28,21 +25,20 @@ class UserRepository(
             "displayName" to (user.displayName ?: user.email.orEmpty()),
             "photoUrl" to (user.photoUrl?.toString() ?: "")
         )
-        // merge = true: don't clobber anything else we might store on this doc later
-        users.document(user.uid).set(doc, com.google.firebase.firestore.SetOptions.merge()).await()
+        users.document(user.uid).set(doc, SetOptions.merge()).await()
     }
 
-    /** Returns the uid for [email], or null if nobody with that email has ever signed in. */
     suspend fun findUidByEmail(email: String): String? {
         val snapshot = users.whereEqualTo("email", email.trim().lowercase()).limit(1).get().await()
         return snapshot.documents.firstOrNull()?.id
     }
 
     /**
-     * Applies any pending invites addressed to [user]'s email — i.e. invites created before
-     * that person ever signed in. Call this once right after login. Uses a collectionGroup
-     * query across every trip's pendingInvites subcollection, scoped by security rules to
-     * only the caller's own email (see firestore.rules).
+     * Applies any pending invites addressed to [user]'s email. Uses a single .update()
+     * covering both `members.{uid}` and `memberIds` — a previous version issued two
+     * separate batch.update() calls against the SAME trip document in one WriteBatch,
+     * which Firestore rejects (one write per document per batch), so this threw on every
+     * reconciliation attempt and silently left invited people out of the trip.
      */
     suspend fun reconcilePendingInvites(user: FirebaseUser) {
         val email = user.email ?: return
@@ -55,8 +51,13 @@ class UserRepository(
             val tripRef = inviteDoc.reference.parent.parent ?: continue
             val role = inviteDoc.getString("role") ?: "viewer"
             firestore.runBatch { batch ->
-                batch.update(tripRef, "members.${user.uid}", role)
-                batch.update(tripRef, "memberIds", com.google.firebase.firestore.FieldValue.arrayUnion(user.uid))
+                batch.update(
+                    tripRef,
+                    mapOf(
+                        "members.${user.uid}" to role,
+                        "memberIds" to com.google.firebase.firestore.FieldValue.arrayUnion(user.uid)
+                    )
+                )
                 batch.delete(inviteDoc.reference)
             }.await()
         }
@@ -64,7 +65,6 @@ class UserRepository(
 
     suspend fun getProfiles(uids: List<String>): Map<String, UserProfile> {
         if (uids.isEmpty()) return emptyMap()
-        // Firestore whereIn supports at most 30 values per query.
         val result = mutableMapOf<String, UserProfile>()
         uids.distinct().chunked(30).forEach { chunk ->
             val snapshot = users.whereIn(FieldPath.documentId(), chunk).get().await()
@@ -80,23 +80,71 @@ class UserRepository(
         return result
     }
 
-    /**
-     * Adds an FCM registration token to users/{uid}.fcmTokens (a plain string array —
-     * arrayUnion so multiple devices per person just accumulate distinct tokens). Called
-     * both right after login (TriProApplication) and whenever FCM rotates the token
-     * (TriProMessagingService.onNewToken).
-     */
     suspend fun registerFcmToken(uid: String, token: String) {
         users.document(uid).set(
             mapOf("fcmTokens" to com.google.firebase.firestore.FieldValue.arrayUnion(token)),
-            com.google.firebase.firestore.SetOptions.merge()
+            SetOptions.merge()
         ).await()
     }
 
-    /** Called on sign-out so a shared/borrowed device stops receiving this user's pushes. */
     suspend fun unregisterFcmToken(uid: String, token: String) {
         users.document(uid).update(
             "fcmTokens", com.google.firebase.firestore.FieldValue.arrayRemove(token)
+        ).await()
+    }
+
+    // ---------------------------------------------------- Notification preferences
+
+    fun observeNotificationPreferences(uid: String): Flow<NotificationPreferences> = callbackFlow {
+        val registration = users.document(uid).addSnapshotListener { snap, error ->
+            if (error != null) { close(error); return@addSnapshotListener }
+            @Suppress("UNCHECKED_CAST")
+            val map = snap?.get("notificationPrefs") as? Map<String, Any?>
+            trySend(
+                NotificationPreferences(
+                    tripInvites = map?.get("tripInvites") as? Boolean ?: true,
+                    itineraryChanges = map?.get("itineraryChanges") as? Boolean ?: true,
+                    dayInfoChanges = map?.get("dayInfoChanges") as? Boolean ?: true
+                )
+            )
+        }
+        awaitClose { registration.remove() }
+    }
+
+    suspend fun updateNotificationPreferences(uid: String, prefs: NotificationPreferences) {
+        users.document(uid).set(
+            mapOf(
+                "notificationPrefs" to mapOf(
+                    "tripInvites" to prefs.tripInvites,
+                    "itineraryChanges" to prefs.itineraryChanges,
+                    "dayInfoChanges" to prefs.dayInfoChanges
+                )
+            ),
+            SetOptions.merge()
+        ).await()
+    }
+
+    // ---------------------------------------------------------- Activity marker colors
+
+    fun observeActivityColors(uid: String): Flow<ActivityColorPrefs> = callbackFlow {
+        val registration = users.document(uid).addSnapshotListener { snap, error ->
+            if (error != null) { close(error); return@addSnapshotListener }
+            @Suppress("UNCHECKED_CAST")
+            val stored = snap?.get("activityColors") as? Map<String, String>
+            val hexByKey = MarkerColorKey.entries.associateWith { key ->
+                stored?.get(key.name) ?: DefaultActivityColorHex.getValue(key)
+            }
+            trySend(ActivityColorPrefs(hexByKey))
+        }
+        awaitClose { registration.remove() }
+    }
+
+    /** Dotted field path (same pattern as `members.$uid` in TripRepository) so this only
+     *  ever touches one color key, never clobbering the others. */
+    suspend fun updateActivityColor(uid: String, key: MarkerColorKey, hex: String) {
+        users.document(uid).set(
+            mapOf("activityColors.${key.name}" to hex),
+            SetOptions.merge()
         ).await()
     }
 }

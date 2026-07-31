@@ -14,23 +14,23 @@ object DateUtils {
     fun formatRange(start: String, end: String): String {
         val s = parse(start)
         val e = parse(end)
-        val monthDay = DateTimeFormatter.ofPattern("MMM d")
+        val monthDay = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH)
         return if (s.year == e.year) {
             "${s.format(monthDay)} - ${e.format(monthDay)}, ${e.year}"
         } else {
-            "${s.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))} - ${e.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))}"
+            "${s.format(DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH))} - ${e.format(DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH))}"
         }
     }
 
     /** "Tuesday, Oct 14" */
     fun formatFullDayLabel(date: String): String {
         val d = parse(date)
-        return "${d.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}, ${d.format(DateTimeFormatter.ofPattern("MMM d"))}"
+        return "${d.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH)}, ${d.format(DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH))}"
     }
 
     /** "Thu" */
     fun formatWeekdayShort(date: String): String =
-        parse(date).dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()).uppercase()
+        parse(date).dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).uppercase(Locale.ENGLISH)
 
     /** "12" */
     fun formatDayNumber(date: String): String = parse(date).dayOfMonth.toString()
