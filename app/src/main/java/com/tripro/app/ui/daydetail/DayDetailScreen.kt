@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -81,6 +82,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import com.tripro.app.data.model.MarkerColorKey
 import com.tripro.app.data.model.toMarkerColorKey
+import com.tripro.app.ui.rememberAppContainer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -262,7 +264,7 @@ fun DayDetailRoute(
     }
 
     if (showFlightDialog) {
-        FlightEditDialog(tripId = tripId, date = date, existing = uiState.day?.flight, onDismiss = { showFlightDialog = false }, onSave = { flight -> viewModel.updateFlight(flight); showFlightDialog = false })
+        FlightEditDialog(existing = uiState.day?.flight, date = date, onDismiss = { showFlightDialog = false }, onSave = { flight -> viewModel.updateFlight(flight); showFlightDialog = false })
     }
 
     if (showDayNoteDialog) {
@@ -436,7 +438,10 @@ private fun FlightCard(flight: FlightInfo?, canEdit: Boolean, onEdit: () -> Unit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FlightEditDialog(tripId: String, date: String, existing: FlightInfo?, onDismiss: () -> Unit, onSave: (FlightInfo?) -> Unit) {
+private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () -> Unit, onSave: (FlightInfo?) -> Unit) {
+    val container = rememberAppContainer()
+    val scope = rememberCoroutineScope()
+
     var airline by remember { mutableStateOf(existing?.airline.orEmpty()) }
     var flightNumber by remember { mutableStateOf(existing?.flightNumber.orEmpty()) }
     var departureCode by remember { mutableStateOf(existing?.departureAirportCode.orEmpty()) }
@@ -451,46 +456,66 @@ private fun FlightEditDialog(tripId: String, date: String, existing: FlightInfo?
     var showArrivalPicker by remember { mutableStateOf(false) }
     var showDepartureSearch by remember { mutableStateOf(false) }
     var showArrivalSearch by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    val flightLookupRepository = (LocalContext.current.applicationContext as com.tripro.app.TriProApplication).container.flightLookupRepository
-    var lookupInProgress by remember { mutableStateOf(false) }
+
+    // Look up a scheduled flight by its number (e.g. "LY324") via AeroDataBox, proxied
+    // through the flight-lookup Netlify Function so the RapidAPI key never ships in the
+    // APK (see netlify/functions/flight-lookup.mjs and FlightLookupRepository).
+    var flightNumberQuery by remember { mutableStateOf(existing?.flightNumber.orEmpty().replace(" ", "")) }
+    var isLookingUp by remember { mutableStateOf(false) }
     var lookupError by remember { mutableStateOf<String?>(null) }
+
+    fun lookupFlight() {
+        val query = flightNumberQuery.trim()
+        if (query.isBlank() || isLookingUp) return
+        isLookingUp = true
+        lookupError = null
+        scope.launch {
+            container.flightLookupRepository.lookup(query, date)
+                .onSuccess { result ->
+                    airline = result.airline.ifBlank { airline }
+                    flightNumber = result.flightNumber.ifBlank { flightNumber }
+                    if (result.departureAirportCode.isNotBlank()) departureCode = result.departureAirportCode
+                    if (result.arrivalAirportCode.isNotBlank()) arrivalCode = result.arrivalAirportCode
+                    result.departureAirportLat?.let { departureLat = it }
+                    result.departureAirportLng?.let { departureLng = it }
+                    result.arrivalAirportLat?.let { arrivalLat = it }
+                    result.arrivalAirportLng?.let { arrivalLng = it }
+                    if (result.departureTime.isNotBlank()) departureTime = result.departureTime
+                    if (result.arrivalTime.isNotBlank()) arrivalTime = result.arrivalTime
+                }
+                .onFailure { e -> lookupError = e.message ?: "Couldn't find that flight" }
+            isLookingUp = false
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Flight for this day") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = flightNumber, onValueChange = { flightNumber = it.uppercase() }, label = { Text("Flight # (e.g. LH441)") }, modifier = Modifier.weight(1f))
-                    OutlinedButton(
-                        enabled = flightNumber.isNotBlank() && !lookupInProgress,
-                        onClick = {
-                            lookupInProgress = true
-                            lookupError = null
-                            scope.launch {
-                                val result = flightLookupRepository.lookupFlight(tripId, flightNumber, date)
-                                if (result != null) {
-                                    airline = result.airline
-                                    departureCode = result.departureAirportCode
-                                    arrivalCode = result.arrivalAirportCode
-                                    departureLat = result.departureAirportLat
-                                    departureLng = result.departureAirportLng
-                                    arrivalLat = result.arrivalAirportLat
-                                    arrivalLng = result.arrivalAirportLng
-                                    departureTime = result.departureTime
-                                    arrivalTime = result.arrivalTime
-                                } else {
-                                    lookupError = "Couldn't find that flight — fill in the details manually."
-                                }
-                                lookupInProgress = false
-                            }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = flightNumberQuery,
+                        onValueChange = { flightNumberQuery = it.uppercase() },
+                        label = { Text("Flight number (e.g. LY324)") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedButton(onClick = { lookupFlight() }, enabled = !isLookingUp && flightNumberQuery.isNotBlank()) {
+                        if (isLookingUp) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text("Look up")
                         }
-                    ) { Text(if (lookupInProgress) "Looking up…" else "Auto-fill") }
+                    }
                 }
-                OutlinedTextField(value = airline, onValueChange = { airline = it }, label = { Text("Airline") }, modifier = Modifier.fillMaxWidth())
                 if (lookupError != null) {
                     Text(lookupError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = airline, onValueChange = { airline = it }, label = { Text("Airline") }, modifier = Modifier.weight(1f))
+                    OutlinedTextField(value = flightNumber, onValueChange = { flightNumber = it }, label = { Text("Flight #") }, modifier = Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(value = departureCode, onValueChange = { departureCode = it.uppercase() }, label = { Text("From (code)") }, modifier = Modifier.weight(1f))

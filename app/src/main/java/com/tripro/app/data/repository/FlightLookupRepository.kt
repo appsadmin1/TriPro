@@ -2,50 +2,99 @@ package com.tripro.app.data.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.tripro.app.BuildConfig
-import com.tripro.app.data.model.FlightInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.io.IOException
 
+data class FlightLookupResult(
+    val airline: String,
+    val flightNumber: String,
+    val departureAirportCode: String,
+    val departureAirportLat: Double?,
+    val departureAirportLng: Double?,
+    val departureTime: String, // "HH:mm" local to the departure airport
+    val arrivalAirportCode: String,
+    val arrivalAirportLat: Double?,
+    val arrivalAirportLng: Double?,
+    val arrivalTime: String // "HH:mm" local to the arrival airport
+)
+
+/**
+ * Looks up a scheduled flight by flight number + date via AeroDataBox (RapidAPI),
+ * proxied through a Netlify Function so the RapidAPI key never ships in the APK — same
+ * reasoning as CloudinaryRepository/PushNotificationRepository and the Cloudinary API
+ * Secret. See netlify/functions/flight-lookup.mjs.
+ */
 class FlightLookupRepository(
     private val httpClient: OkHttpClient = OkHttpClient(),
     private val baseUrl: String = BuildConfig.NETLIFY_FUNCTIONS_BASE_URL
 ) {
-    /** Returns null if the backend isn't configured, the flight isn't found, or the
-     *  lookup fails — callers should show a plain "couldn't find that flight" message. */
-    suspend fun lookupFlight(tripId: String, flightNumber: String, date: String): FlightInfo? = withContext(Dispatchers.IO) {
-        if (baseUrl.isBlank() || flightNumber.isBlank()) return@withContext null
-        runCatching {
-            val idToken = FirebaseAuth.getInstance().currentUser?.getIdToken(false)?.await()?.token ?: return@withContext null
+    suspend fun lookup(flightNumber: String, date: String): Result<FlightLookupResult> = withContext(Dispatchers.IO) {
+        try {
+            if (baseUrl.isBlank()) {
+                return@withContext Result.failure(IllegalStateException("Flight lookup isn't configured (NETLIFY_FUNCTIONS_BASE_URL missing)."))
+            }
+            val idToken = FirebaseAuth.getInstance().currentUser?.getIdToken(false)?.await()?.token
+                ?: return@withContext Result.failure(IllegalStateException("You need to be signed in to look up a flight."))
 
-            val url = "$baseUrl/.netlify/functions/flight-lookup".toHttpUrl().newBuilder()
-                .addQueryParameter("tripId", tripId)
-                .addQueryParameter("flightNumber", flightNumber)
-                .addQueryParameter("date", date)
+            val requestBody = JSONObject().apply {
+                put("flightNumber", flightNumber)
+                put("date", date)
+            }
+            val request = Request.Builder()
+                .url("$baseUrl/.netlify/functions/flight-lookup")
+                .addHeader("Authorization", "Bearer $idToken")
+                .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
                 .build()
 
-            val request = Request.Builder().url(url).addHeader("Authorization", "Bearer $idToken").get().build()
             httpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@withContext null
-                val body = response.body?.string() ?: return@withContext null
-                val json = JSONObject(body)
-                FlightInfo(
-                    airline = json.optString("airline"),
-                    flightNumber = json.optString("flightNumber", flightNumber),
-                    departureAirportCode = json.optString("departureAirportCode"),
-                    arrivalAirportCode = json.optString("arrivalAirportCode"),
-                    departureAirportLat = json.optDouble("departureAirportLat").takeUnless { it.isNaN() },
-                    departureAirportLng = json.optDouble("departureAirportLng").takeUnless { it.isNaN() },
-                    arrivalAirportLat = json.optDouble("arrivalAirportLat").takeUnless { it.isNaN() },
-                    arrivalAirportLng = json.optDouble("arrivalAirportLng").takeUnless { it.isNaN() },
-                    departureTime = json.optString("departureTime"),
-                    arrivalTime = json.optString("arrivalTime")
-                )
+                val responseText = response.body?.string() ?: throw IOException("Empty response")
+                if (!response.isSuccessful) {
+                    val message = runCatching { JSONObject(responseText).optString("error") }.getOrNull()
+                    return@withContext Result.failure(IOException(message?.takeIf { it.isNotBlank() } ?: "Flight lookup failed"))
+                }
+                val flight = JSONObject(responseText).getJSONObject("flight")
+                Result.success(parseFlight(flight))
             }
-        }.getOrNull()
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private fun parseFlight(flight: JSONObject): FlightLookupResult {
+        val departure = flight.getJSONObject("departure")
+        val arrival = flight.getJSONObject("arrival")
+        val departureAirport = departure.getJSONObject("airport")
+        val arrivalAirport = arrival.getJSONObject("airport")
+        val airline = flight.optJSONObject("airline")
+
+        return FlightLookupResult(
+            airline = airline?.optString("name").orEmpty(),
+            flightNumber = flight.optString("number").trim(),
+            departureAirportCode = departureAirport.optString("iata").uppercase(),
+            departureAirportLat = latLngOf(departureAirport, "lat"),
+            departureAirportLng = latLngOf(departureAirport, "lon"),
+            departureTime = localTimeOf(departure.optJSONObject("scheduledTime")?.optString("local")),
+            arrivalAirportCode = arrivalAirport.optString("iata").uppercase(),
+            arrivalAirportLat = latLngOf(arrivalAirport, "lat"),
+            arrivalAirportLng = latLngOf(arrivalAirport, "lon"),
+            arrivalTime = localTimeOf(arrival.optJSONObject("scheduledTime")?.optString("local"))
+        )
+    }
+
+    private fun latLngOf(airport: JSONObject, key: String): Double? =
+        airport.optJSONObject("location")?.optDouble(key)?.takeUnless { it.isNaN() }
+
+    /** AeroDataBox's "local" timestamps look like "2026-08-02 15:35+02:00" — this pulls
+     *  just the HH:mm portion, which is all TriPro's FlightInfo stores. */
+    private fun localTimeOf(local: String?): String {
+        if (local.isNullOrBlank()) return ""
+        return local.substringAfter(" ", "").take(5)
     }
 }

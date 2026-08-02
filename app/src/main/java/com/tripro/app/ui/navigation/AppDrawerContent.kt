@@ -61,8 +61,6 @@ fun AppDrawerContent(
 
             DrawerItem("Main page", Icons.Filled.Explore) { onNavigate(Destinations.tripsList()) }
             DrawerItem("Profile", Icons.Filled.Person) { onNavigate(Destinations.PROFILE) }
-            DrawerItem("Upcoming trips", Icons.Filled.FlightTakeoff) { onNavigate(Destinations.tripsList("upcoming")) }
-            DrawerItem("Old trips", Icons.Filled.History) { onNavigate(Destinations.tripsList("past")) }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             DrawerItem("Invite friends", Icons.Filled.PersonAdd, onClick = onInviteFriends)

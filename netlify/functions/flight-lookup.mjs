@@ -1,61 +1,70 @@
-import { verifyCallerIsTripMember } from "./_shared/verifyTripMember.mjs";
+import { verifyCallerIsSignedIn } from "./_shared/verifyTripMember.mjs";
 
 /**
- * GET /.netlify/functions/flight-lookup?tripId=...&flightNumber=LH441&date=2026-08-01
- * Looks up a flight by number via AeroDataBox (RapidAPI). Field names below match
- * AeroDataBox's "Flights by flight number" endpoint as of writing — double check
- * against your own RapidAPI sandbox response before relying on this, since third-party
- * schemas do shift over time.
+ * POST /.netlify/functions/flight-lookup
+ * Headers: Authorization: Bearer <Firebase ID token>
+ * Body: { flightNumber, date }  // date: yyyy-MM-dd
+ *
+ * Proxies AeroDataBox's "flight number" lookup (via RapidAPI) for the Flight edit
+ * dialog's "Look up flight" button — this is what keeps the RapidAPI key out of the
+ * APK, same reasoning as delete-attachment.mjs and the Cloudinary API Secret. The
+ * lookup itself is generic public flight-schedule data, not scoped to one trip, so this
+ * only checks that the caller is a signed-in TriPro user (verifyCallerIsSignedIn),
+ * rather than trip membership like verifyCallerIsTripMember.
  */
 export default async (request) => {
-  if (request.method !== "GET") return new Response("Method not allowed", { status: 405 });
+  if (request.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
 
-  const url = new URL(request.url);
-  const tripId = url.searchParams.get("tripId");
-  const flightNumber = url.searchParams.get("flightNumber")?.trim().toUpperCase();
-  const date = url.searchParams.get("date"); // yyyy-MM-dd, optional
+  let payload;
+  try {
+    payload = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
-  if (!tripId || !flightNumber) {
-    return Response.json({ error: "Missing tripId or flightNumber" }, { status: 400 });
+  const { flightNumber, date } = payload;
+  if (!flightNumber || !date) {
+    return Response.json({ error: "Missing flightNumber or date" }, { status: 400 });
   }
 
   try {
-    await verifyCallerIsTripMember(request, tripId); // membership check only, no trip data needed here
+    await verifyCallerIsSignedIn(request);
 
     const apiKey = process.env.AERODATABOX_RAPIDAPI_KEY;
-    if (!apiKey) throw Object.assign(new Error("AERODATABOX_RAPIDAPI_KEY not configured"), { status: 500 });
+    if (!apiKey) {
+      throw Object.assign(new Error("AERODATABOX_RAPIDAPI_KEY not configured"), { status: 500 });
+    }
 
-    const path = date
-      ? `/flights/number/${flightNumber}/${date}`
-      : `/flights/number/${flightNumber}`;
+    const normalizedFlightNumber = flightNumber.replace(/\s+/g, "").toUpperCase();
+    const url =
+      `https://aerodatabox.p.rapidapi.com/flights/number/${normalizedFlightNumber}/${date}` +
+      "?withAircraftImage=false&withLocation=false&withFlightPlan=false&dateLocalRole=Both";
 
-    const response = await fetch(`https://aerodatabox.p.rapidapi.com${path}`, {
+    const aeroResponse = await fetch(url, {
       headers: {
-        "X-RapidAPI-Key": apiKey,
-        "X-RapidAPI-Host": "aerodatabox.p.rapidapi.com",
+        "x-rapidapi-key": apiKey,
+        "x-rapidapi-host": "aerodatabox.p.rapidapi.com",
       },
     });
 
-    if (!response.ok) {
-      return Response.json({ error: `Flight lookup failed (${response.status})` }, { status: response.status === 404 ? 404 : 502 });
+    if (!aeroResponse.ok) {
+      const text = await aeroResponse.text().catch(() => "");
+      throw Object.assign(
+        new Error(`AeroDataBox lookup failed: ${aeroResponse.status} ${text}`),
+        { status: 502 }
+      );
     }
 
-    const results = await response.json();
-    const flight = Array.isArray(results) ? results[0] : results;
-    if (!flight) return Response.json({ error: "Flight not found" }, { status: 404 });
+    const flights = await aeroResponse.json();
+    if (!Array.isArray(flights) || flights.length === 0) {
+      return Response.json({ error: "No flight found for that number and date" }, { status: 404 });
+    }
 
-    return Response.json({
-      airline: flight.airline?.name ?? "",
-      flightNumber: flight.number ?? flightNumber,
-      departureAirportCode: flight.departure?.airport?.iata ?? "",
-      arrivalAirportCode: flight.arrival?.airport?.iata ?? "",
-      departureAirportLat: flight.departure?.airport?.location?.lat ?? null,
-      departureAirportLng: flight.departure?.airport?.location?.lon ?? null,
-      arrivalAirportLat: flight.arrival?.airport?.location?.lat ?? null,
-      arrivalAirportLng: flight.arrival?.airport?.location?.lon ?? null,
-      departureTime: (flight.departure?.scheduledTime?.local ?? "").slice(11, 16),
-      arrivalTime: (flight.arrival?.scheduledTime?.local ?? "").slice(11, 16),
-    });
+    // A designator+date can have multiple legs/codeshares; AeroDataBox's first result is
+    // its own best match, which is plenty for an itinerary autofill.
+    return Response.json({ flight: flights[0] });
   } catch (error) {
     const status = error.status || 500;
     if (status === 500) console.error("flight-lookup function error:", error);

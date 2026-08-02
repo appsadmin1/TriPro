@@ -2,4 +2,49 @@
     <string name="app_name">TriPro</string>
     <string name="notification_channel_id" translatable="false">trip_updates</string>
     <string name="notification_channel_name">Trip updates</string>
+
+    <!-- Navigation drawer -->
+    <string name="drawer_main_page">Main page</string>
+    <string name="drawer_profile">Profile</string>
+    <string name="drawer_settings">Settings</string>
+    <string name="drawer_language">Language</string>
+    <string name="drawer_invite_friends">Invite friends</string>
+    <string name="drawer_log_out">Log out</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_trips">Trips</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_alerts">Alerts</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Login screen -->
+    <string name="login_tagline">Your collaborative journey starts here.</string>
+    <string name="login_subtitle">Plan, share, and experience travel like never before. High-density organization meets the wonder of discovery.</string>
+    <string name="login_sign_in_google">Sign in with Google</string>
+
+    <!-- Trips list -->
+    <string name="trips_title">My Trips</string>
+    <string name="trips_subtitle">Your upcoming and past adventures.</string>
+    <string name="trips_section_upcoming">Upcoming</string>
+    <string name="trips_section_past">Past Adventures</string>
+    <string name="trips_empty_state">No trips yet — tap the + button to plan your first one.</string>
+    <string name="trips_create_cd">Create new vacation</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_trip_invites_title">Trip invites</string>
+    <string name="settings_trip_invites_subtitle">When you\'re added to a trip</string>
+    <string name="settings_itinerary_changes_title">Itinerary changes</string>
+    <string name="settings_itinerary_changes_subtitle">When someone adds, edits, or removes an activity</string>
+    <string name="settings_day_updates_title">Trip &amp; day updates</string>
+    <string name="settings_day_updates_subtitle">Hotel, flight, day notes, and trip detail changes</string>
+    <string name="settings_marker_colors">Map marker colors</string>
+    <string name="settings_choose_color">Choose a color</string>
+    <string name="settings_sign_out">Sign out</string>
+
+    <!-- Common actions -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
 </resources>

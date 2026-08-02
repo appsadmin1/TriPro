@@ -1,0 +1,43 @@
+<resources>
+    <string name="app_name">TriPro</string>
+    <string name="notification_channel_name">עדכוני טיול</string>
+
+    <string name="drawer_main_page">עמוד ראשי</string>
+    <string name="drawer_profile">פרופיל</string>
+    <string name="drawer_settings">הגדרות</string>
+    <string name="drawer_language">שפה</string>
+    <string name="drawer_invite_friends">הזמן חברים</string>
+    <string name="drawer_log_out">התנתק</string>
+
+    <string name="nav_trips">טיולים</string>
+    <string name="nav_search">חיפוש</string>
+    <string name="nav_alerts">התראות</string>
+    <string name="nav_profile">פרופיל</string>
+
+    <string name="login_tagline">המסע המשותף שלך מתחיל כאן.</string>
+    <string name="login_subtitle">תכננו, שתפו וחוו טיולים כמו מעולם לא. ארגון ברמה גבוהה, לצד הקסם שבגילוי מקומות חדשים.</string>
+    <string name="login_sign_in_google">התחברות עם Google</string>
+
+    <string name="trips_title">הטיולים שלי</string>
+    <string name="trips_subtitle">ההרפתקאות הקרובות והעבר שלך.</string>
+    <string name="trips_section_upcoming">קרובים</string>
+    <string name="trips_section_past">טיולים שהיו</string>
+    <string name="trips_empty_state">עדיין אין טיולים — הקישו על כפתור ה-+ כדי לתכנן את הראשון.</string>
+    <string name="trips_create_cd">יצירת חופשה חדשה</string>
+
+    <string name="settings_title">הגדרות</string>
+    <string name="settings_notifications">התראות</string>
+    <string name="settings_trip_invites_title">הזמנות לטיול</string>
+    <string name="settings_trip_invites_subtitle">כשמצרפים אותך לטיול</string>
+    <string name="settings_itinerary_changes_title">שינויים במסלול</string>
+    <string name="settings_itinerary_changes_subtitle">כשמישהו מוסיף, עורך או מוחק פעילות</string>
+    <string name="settings_day_updates_title">עדכוני טיול ויום</string>
+    <string name="settings_day_updates_subtitle">מלון, טיסה, הערות יום ופרטי טיול</string>
+    <string name="settings_marker_colors">צבעי סימונים במפה</string>
+    <string name="settings_choose_color">בחירת צבע</string>
+    <string name="settings_sign_out">התנתקות</string>
+
+    <string name="action_save">שמירה</string>
+    <string name="action_cancel">ביטול</string>
+    <string name="action_close">סגירה</string>
+</resources>
