@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,7 +45,8 @@ fun TripsListRoute(
     currentUid: String,
     onOpenTrip: (String) -> Unit,
     onCreateTrip: () -> Unit,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    onOpenDrawer: () -> Unit
 ) {
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
@@ -90,17 +92,22 @@ fun TripsListRoute(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Top
                 ) {
-                    Column {
-                        Text(
-                            "My Trips",
-                            style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            "Your upcoming and past adventures.",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onOpenDrawer) {
+                            Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.primary)
+                        }
+                        Column {
+                            Text(
+                                "My Trips",
+                                style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                "Your upcoming and past adventures.",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.primary)

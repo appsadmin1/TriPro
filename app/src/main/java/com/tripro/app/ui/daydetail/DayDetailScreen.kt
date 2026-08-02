@@ -71,7 +71,6 @@ import com.tripro.app.ui.components.ItineraryItemRow
 import com.tripro.app.ui.components.MapPin
 import com.tripro.app.ui.components.SimpleTimePickerDialog
 import com.tripro.app.ui.components.WeatherCard
-import com.tripro.app.ui.components.hueForItemType
 import com.tripro.app.ui.theme.HorizonEthosColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.DateUtils
@@ -263,7 +262,7 @@ fun DayDetailRoute(
     }
 
     if (showFlightDialog) {
-        FlightEditDialog(existing = uiState.day?.flight, onDismiss = { showFlightDialog = false }, onSave = { flight -> viewModel.updateFlight(flight); showFlightDialog = false })
+        FlightEditDialog(tripId = tripId, date = date, existing = uiState.day?.flight, onDismiss = { showFlightDialog = false }, onSave = { flight -> viewModel.updateFlight(flight); showFlightDialog = false })
     }
 
     if (showDayNoteDialog) {
@@ -437,7 +436,7 @@ private fun FlightCard(flight: FlightInfo?, canEdit: Boolean, onEdit: () -> Unit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FlightEditDialog(existing: FlightInfo?, onDismiss: () -> Unit, onSave: (FlightInfo?) -> Unit) {
+private fun FlightEditDialog(tripId: String, date: String, existing: FlightInfo?, onDismiss: () -> Unit, onSave: (FlightInfo?) -> Unit) {
     var airline by remember { mutableStateOf(existing?.airline.orEmpty()) }
     var flightNumber by remember { mutableStateOf(existing?.flightNumber.orEmpty()) }
     var departureCode by remember { mutableStateOf(existing?.departureAirportCode.orEmpty()) }
@@ -452,6 +451,10 @@ private fun FlightEditDialog(existing: FlightInfo?, onDismiss: () -> Unit, onSav
     var showArrivalPicker by remember { mutableStateOf(false) }
     var showDepartureSearch by remember { mutableStateOf(false) }
     var showArrivalSearch by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val flightLookupRepository = (LocalContext.current.applicationContext as com.tripro.app.TriProApplication).container.flightLookupRepository
+    var lookupInProgress by remember { mutableStateOf(false) }
+    var lookupError by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -459,8 +462,35 @@ private fun FlightEditDialog(existing: FlightInfo?, onDismiss: () -> Unit, onSav
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = airline, onValueChange = { airline = it }, label = { Text("Airline") }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = flightNumber, onValueChange = { flightNumber = it }, label = { Text("Flight #") }, modifier = Modifier.weight(1f))
+                    OutlinedTextField(value = flightNumber, onValueChange = { flightNumber = it.uppercase() }, label = { Text("Flight # (e.g. LH441)") }, modifier = Modifier.weight(1f))
+                    OutlinedButton(
+                        enabled = flightNumber.isNotBlank() && !lookupInProgress,
+                        onClick = {
+                            lookupInProgress = true
+                            lookupError = null
+                            scope.launch {
+                                val result = flightLookupRepository.lookupFlight(tripId, flightNumber, date)
+                                if (result != null) {
+                                    airline = result.airline
+                                    departureCode = result.departureAirportCode
+                                    arrivalCode = result.arrivalAirportCode
+                                    departureLat = result.departureAirportLat
+                                    departureLng = result.departureAirportLng
+                                    arrivalLat = result.arrivalAirportLat
+                                    arrivalLng = result.arrivalAirportLng
+                                    departureTime = result.departureTime
+                                    arrivalTime = result.arrivalTime
+                                } else {
+                                    lookupError = "Couldn't find that flight — fill in the details manually."
+                                }
+                                lookupInProgress = false
+                            }
+                        }
+                    ) { Text(if (lookupInProgress) "Looking up…" else "Auto-fill") }
+                }
+                OutlinedTextField(value = airline, onValueChange = { airline = it }, label = { Text("Airline") }, modifier = Modifier.fillMaxWidth())
+                if (lookupError != null) {
+                    Text(lookupError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(value = departureCode, onValueChange = { departureCode = it.uppercase() }, label = { Text("From (code)") }, modifier = Modifier.weight(1f))
