@@ -12,6 +12,7 @@
     <string name="drawer_log_out">Log out</string>
 
     <!-- Bottom navigation -->
+    <string name="nav_menu_cd">Menu</string>
     <string name="nav_trips">Trips</string>
     <string name="nav_search">Search</string>
     <string name="nav_alerts">Alerts</string>

@@ -32,6 +32,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.IconButton
 import com.tripro.app.R
 import com.tripro.app.TriProApplication
 import com.tripro.app.ui.components.TripCard
@@ -42,7 +45,8 @@ import com.tripro.app.ui.theme.TriProSpacing
 fun TripsListRoute(
     currentUid: String,
     onOpenTrip: (String) -> Unit,
-    onCreateTrip: () -> Unit
+    onCreateTrip: () -> Unit,
+    onOpenDrawer: () -> Unit
 ) {
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
@@ -83,17 +87,22 @@ fun TripsListRoute(
             verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackLg)
         ) {
             item {
-                Column {
-                    Text(
-                        stringResource(R.string.trips_title),
-                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        stringResource(R.string.trips_subtitle),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu_cd), tint = MaterialTheme.colorScheme.primary)
+                    }
+                    Column {
+                        Text(
+                            stringResource(R.string.trips_title),
+                            style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            stringResource(R.string.trips_subtitle),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 

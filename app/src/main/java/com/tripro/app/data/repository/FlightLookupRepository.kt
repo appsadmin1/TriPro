@@ -1,5 +1,6 @@
 package com.tripro.app.data.repository
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.tripro.app.BuildConfig
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +36,7 @@ class FlightLookupRepository(
     private val httpClient: OkHttpClient = OkHttpClient(),
     private val baseUrl: String = BuildConfig.NETLIFY_FUNCTIONS_BASE_URL
 ) {
+    private val tag = "FlightLookupRepository"
     suspend fun lookup(flightNumber: String, date: String): Result<FlightLookupResult> = withContext(Dispatchers.IO) {
         try {
             if (baseUrl.isBlank()) {
@@ -57,12 +59,19 @@ class FlightLookupRepository(
                 val responseText = response.body?.string() ?: throw IOException("Empty response")
                 if (!response.isSuccessful) {
                     val message = runCatching { JSONObject(responseText).optString("error") }.getOrNull()
-                    return@withContext Result.failure(IOException(message?.takeIf { it.isNotBlank() } ?: "Flight lookup failed"))
+                        ?.takeIf { it.isNotBlank() }
+                    // Surface the raw status/body when the function didn't return our own
+                    // JSON error shape — e.g. a 404 "Page not found" means the function
+                    // isn't deployed yet, distinct from a 500 with a real error message.
+                    val detail = message ?: "HTTP ${response.code}: ${responseText.take(200).ifBlank { "(empty body)" }}"
+                    Log.e(tag, "flight-lookup request failed: $detail")
+                    return@withContext Result.failure(IOException(detail))
                 }
                 val flight = JSONObject(responseText).getJSONObject("flight")
                 Result.success(parseFlight(flight))
             }
         } catch (e: Exception) {
+            Log.e(tag, "flight-lookup threw", e)
             Result.failure(e)
         }
     }

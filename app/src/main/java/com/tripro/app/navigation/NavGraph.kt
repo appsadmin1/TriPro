@@ -157,7 +157,8 @@ fun TriProNavGraph(
                             TripsListRoute(
                                 currentUid = uid,
                                 onOpenTrip = { tripId -> navController.navigate(Destinations.tripOverview(tripId)) },
-                                onCreateTrip = { navController.navigate(Destinations.CREATE_TRIP) }
+                                onCreateTrip = { navController.navigate(Destinations.CREATE_TRIP) },
+                                onOpenDrawer = { drawerScope.launch { drawerState.open() } }
                             )
                         }
                         composable(Destinations.ALERTS) {
