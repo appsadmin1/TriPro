@@ -44,7 +44,7 @@ import com.tripro.app.data.model.ItineraryItem
 import com.tripro.app.data.model.TimeType
 import com.tripro.app.ui.components.SimpleTimePickerDialog
 import com.tripro.app.ui.theme.TriProSpacing
-import com.tripro.app.util.rememberPlacePicker
+import com.tripro.app.util.PlaceSearchMapDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,15 +74,12 @@ fun AddEditItemSheet(
     var note by remember { mutableStateOf(existing?.note.orEmpty()) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
+    // Replaces the old rememberPlacePicker() API (removed from PlacesAutocomplete.kt) —
+    // same inline search-box+map dialog DayDetailScreen's Hotel/Flight edit dialogs use.
+    var showLocationSearch by remember { mutableStateOf(false) }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(pin ?: defaultMapCenter, 13f)
-    }
-
-    val searchLocation = rememberPlacePicker { picked ->
-        locationName = picked.name
-        address = picked.address
-        pin = LatLng(picked.lat, picked.lng)
     }
 
     LaunchedEffect(pin) {
@@ -172,7 +169,7 @@ fun AddEditItemSheet(
             }
 
             Text("Location", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-            OutlinedButton(onClick = searchLocation, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = { showLocationSearch = true }, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                 Text(if (locationName.isBlank()) "Search on Google Maps" else "Change location")
             }
@@ -257,4 +254,15 @@ fun AddEditItemSheet(
             onConfirm = { endTime = it; showEndTimePicker = false }
         )
     }
+
+    PlaceSearchMapDialog(
+        visible = showLocationSearch,
+        onDismiss = { showLocationSearch = false },
+        onPlacePicked = { picked ->
+            locationName = picked.name
+            address = picked.address
+            pin = LatLng(picked.lat, picked.lng)
+            showLocationSearch = false
+        }
+    )
 }
