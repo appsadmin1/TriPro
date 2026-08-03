@@ -11,12 +11,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.FlightTakeoff
-import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,13 +25,22 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.tripro.app.R
 import com.tripro.app.navigation.Destinations
+import com.tripro.app.util.AppLanguage
+import com.tripro.app.util.currentAppLanguage
+import com.tripro.app.util.setAppLanguage
 
 @Composable
 fun AppDrawerContent(
@@ -41,6 +51,8 @@ fun AppDrawerContent(
     onInviteFriends: () -> Unit,
     onSignOut: () -> Unit
 ) {
+    var currentLanguage by remember { mutableStateOf(currentAppLanguage()) }
+
     ModalDrawerSheet {
         Column(modifier = Modifier.fillMaxHeight().padding(vertical = 24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 24.dp)) {
@@ -59,17 +71,46 @@ fun AppDrawerContent(
             HorizontalDivider()
             Spacer(Modifier.height(8.dp))
 
-            DrawerItem("Main page", Icons.Filled.Explore) { onNavigate(Destinations.tripsList()) }
-            DrawerItem("Profile", Icons.Filled.Person) { onNavigate(Destinations.PROFILE) }
-            DrawerItem("Upcoming trips", Icons.Filled.FlightTakeoff) { onNavigate(Destinations.tripsList("upcoming")) }
-            DrawerItem("Old trips", Icons.Filled.History) { onNavigate(Destinations.tripsList("past")) }
+            DrawerItem(stringResource(R.string.drawer_main_page), Icons.Filled.Explore) { onNavigate(Destinations.tripsList()) }
+            DrawerItem(stringResource(R.string.drawer_profile), Icons.Filled.Person) { onNavigate(Destinations.PROFILE) }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            DrawerItem("Invite friends", Icons.Filled.PersonAdd, onClick = onInviteFriends)
+
+            DrawerItem(stringResource(R.string.drawer_settings), Icons.Filled.Settings) { onNavigate(Destinations.SETTINGS) }
+
+            Text(
+                stringResource(R.string.drawer_language),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 28.dp, top = 12.dp, bottom = 4.dp)
+            )
+            AppLanguage.entries.forEach { language ->
+                NavigationDrawerItem(
+                    label = { Text(language.displayName) },
+                    selected = language == currentLanguage,
+                    icon = { Icon(Icons.Filled.Language, contentDescription = null) },
+                    badge = {
+                        if (language == currentLanguage) {
+                            Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        }
+                    },
+                    onClick = {
+                        if (language != currentLanguage) {
+                            currentLanguage = language
+                            // AppCompatDelegate recreates whichever activities need it to
+                            // pick up the new locale — no manual Activity.recreate() call.
+                            setAppLanguage(language)
+                        }
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+            }
+
+            DrawerItem(stringResource(R.string.drawer_invite_friends), Icons.Filled.PersonAdd, onClick = onInviteFriends)
 
             Spacer(Modifier.weight(1f))
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            DrawerItem("Log out", Icons.Filled.ExitToApp, onClick = onSignOut)
+            DrawerItem(stringResource(R.string.drawer_log_out), Icons.Filled.ExitToApp, onClick = onSignOut)
         }
     }
 }

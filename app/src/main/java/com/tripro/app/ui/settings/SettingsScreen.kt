@@ -53,6 +53,9 @@ import com.tripro.app.data.model.MarkerColorPalette
 import com.tripro.app.ui.theme.TriProSpacing
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.res.stringResource
+import com.tripro.app.R
+import com.tripro.app.util.localizedLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,8 +73,8 @@ fun SettingsRoute(currentUid: String, onBack: () -> Unit, onSignOut: () -> Unit)
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") } }
+                title = { Text(stringResource(R.string.settings_title)) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd)) } }
             )
         }
     ) { padding ->
@@ -94,18 +97,19 @@ fun SettingsRoute(currentUid: String, onBack: () -> Unit, onSignOut: () -> Unit)
                 }
             }
 
-            item { Text("Notifications", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary) }
+            item { Text(stringResource(R.string.settings_notifications), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary) }
             item {
-                SettingsToggleRow("Trip invites", "When you're added to a trip", uiState.notificationPrefs.tripInvites, viewModel::setTripInvites)
+                SettingsToggleRow(stringResource(R.string.settings_trip_invites_title), stringResource(R.string.settings_trip_invites_subtitle), uiState.notificationPrefs.tripInvites, viewModel::setTripInvites)
             }
             item {
-                SettingsToggleRow("Itinerary changes", "When someone adds, edits, or removes an activity", uiState.notificationPrefs.itineraryChanges, viewModel::setItineraryChanges)
+                SettingsToggleRow(stringResource(R.string.settings_itinerary_changes_title), stringResource(R.string.settings_itinerary_changes_subtitle), uiState.notificationPrefs.itineraryChanges, viewModel::setItineraryChanges)
             }
             item {
-                SettingsToggleRow("Trip & day updates", "Hotel, flight, day notes, and trip detail changes", uiState.notificationPrefs.dayInfoChanges, viewModel::setDayInfoChanges)
+                SettingsToggleRow(stringResource(R.string.settings_day_updates_title), stringResource(R.string.settings_day_updates_subtitle), uiState.notificationPrefs.dayInfoChanges, viewModel::setDayInfoChanges)
+
             }
 
-            item { Text("Map marker colors", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary) }
+            item { Text(stringResource(R.string.settings_marker_colors), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary) }
             items(MarkerColorKey.entries) { key ->
                 Row(
                     modifier = Modifier
@@ -116,7 +120,7 @@ fun SettingsRoute(currentUid: String, onBack: () -> Unit, onSignOut: () -> Unit)
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(key.displayLabel, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(key.localizedLabel(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                     Box(
                         modifier = Modifier
                             .size(28.dp)
@@ -132,7 +136,7 @@ fun SettingsRoute(currentUid: String, onBack: () -> Unit, onSignOut: () -> Unit)
                     onClick = onSignOut,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer),
                     modifier = Modifier.fillMaxWidth().padding(top = 24.dp)
-                ) { Text("Sign out") }
+                ) { Text(stringResource(R.string.settings_sign_out)) }
             }
         }
     }
@@ -140,7 +144,7 @@ fun SettingsRoute(currentUid: String, onBack: () -> Unit, onSignOut: () -> Unit)
     colorPickerFor?.let { key ->
         AlertDialog(
             onDismissRequest = { colorPickerFor = null },
-            title = { Text("Choose a color") },
+            title = { Text(stringResource(R.string.settings_choose_color)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     MarkerColorPalette.chunked(4).forEach { rowColors ->
@@ -164,7 +168,7 @@ fun SettingsRoute(currentUid: String, onBack: () -> Unit, onSignOut: () -> Unit)
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { colorPickerFor = null }) { Text("Close") } }
+            confirmButton = { TextButton(onClick = { colorPickerFor = null }) { Text(stringResource(R.string.action_close)) } } // was "Close"
         )
     }
 }

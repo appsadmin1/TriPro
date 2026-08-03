@@ -5,8 +5,22 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
+/** Raw result of comparing a trip's date range against today. Kept as plain data (not a
+ *  formatted String) so the actual display text can be localized where a Composable is
+ *  available — see [localizedLabel] in DisplayLabels.kt for the plurals-aware
+ *  "N days away" formatting. */
+sealed class TripCountdown {
+    data class DaysAway(val days: Long) : TripCountdown()
+    data object HappeningNow : TripCountdown()
+    data object Completed : TripCountdown()
+}
+
 object DateUtils {
     private val isoFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+
+    /** The current in-app language's Locale, used for weekday/month names so switching
+     *  to Hebrew from the drawer affects dates too, not just static UI strings. */
+    private fun displayLocale(): Locale = Locale(currentAppLanguage().code)
 
     fun parse(date: String): LocalDate = LocalDate.parse(date, isoFormatter)
 
@@ -14,39 +28,41 @@ object DateUtils {
     fun formatRange(start: String, end: String): String {
         val s = parse(start)
         val e = parse(end)
-        val monthDay = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH)
+        val locale = displayLocale()
+        val monthDay = DateTimeFormatter.ofPattern("MMM d", locale)
         return if (s.year == e.year) {
             "${s.format(monthDay)} - ${e.format(monthDay)}, ${e.year}"
         } else {
-            "${s.format(DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH))} - ${e.format(DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH))}"
+            "${s.format(DateTimeFormatter.ofPattern("MMM d, yyyy", locale))} - ${e.format(DateTimeFormatter.ofPattern("MMM d, yyyy", locale))}"
         }
     }
 
     /** "Tuesday, Oct 14" */
     fun formatFullDayLabel(date: String): String {
         val d = parse(date)
-        return "${d.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH)}, ${d.format(DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH))}"
+        val locale = displayLocale()
+        return "${d.dayOfWeek.getDisplayName(TextStyle.FULL, locale)}, ${d.format(DateTimeFormatter.ofPattern("MMM d", locale))}"
     }
 
     /** "Thu" */
-    fun formatWeekdayShort(date: String): String =
-        parse(date).dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).uppercase(Locale.ENGLISH)
+    fun formatWeekdayShort(date: String): String {
+        val locale = displayLocale()
+        return parse(date).dayOfWeek.getDisplayName(TextStyle.SHORT, locale).uppercase(locale)
+    }
 
     /** "12" */
     fun formatDayNumber(date: String): String = parse(date).dayOfMonth.toString()
 
-    /** "4 days away" / "Today" / "In progress" style countdown for the trips list. */
-    fun countdownLabel(startDate: String, endDate: String): String {
+    /** Raw comparison result for the trips-list countdown badge — turn into display text
+     *  via [localizedLabel] (DisplayLabels.kt), which needs a Composable context. */
+    fun countdown(startDate: String, endDate: String): TripCountdown {
         val today = LocalDate.now()
         val start = parse(startDate)
         val end = parse(endDate)
         return when {
-            today.isBefore(start) -> {
-                val days = java.time.temporal.ChronoUnit.DAYS.between(today, start)
-                if (days == 1L) "1 DAY AWAY" else "$days DAYS AWAY"
-            }
-            !today.isAfter(end) -> "HAPPENING NOW"
-            else -> "COMPLETED"
+            today.isBefore(start) -> TripCountdown.DaysAway(java.time.temporal.ChronoUnit.DAYS.between(today, start))
+            !today.isAfter(end) -> TripCountdown.HappeningNow
+            else -> TripCountdown.Completed
         }
     }
 }

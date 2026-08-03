@@ -43,7 +43,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.tripro.app.R
 import com.tripro.app.data.model.Attachment
 import com.tripro.app.data.model.DayPeriod
 import com.tripro.app.data.model.ItemType
@@ -51,6 +53,7 @@ import com.tripro.app.data.model.ItineraryItem
 import com.tripro.app.data.model.NoteType
 import com.tripro.app.data.model.TimeType
 import com.tripro.app.ui.theme.HorizonEthosColors
+import com.tripro.app.util.localizedLabel
 
 @Composable
 fun ItineraryItemRow(
@@ -71,7 +74,7 @@ fun ItineraryItemRow(
                     Text(item.endTime ?: "", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 }
                 TimeType.PERIOD -> Text(
-                    (item.period ?: DayPeriod.MORNING).label,
+                    (item.period ?: DayPeriod.MORNING).localizedLabel(),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1,
@@ -150,12 +153,9 @@ fun ItineraryItemRow(
                             }
                         }
                     }
-                    // Item 2: pencil only shows in edit mode — `canEdit` here already
-                    // means "has permission AND the screen is in edit mode" (see
-                    // DayDetailScreen, which ANDs those together before passing it in).
                     if (canEdit) {
                         IconButton(onClick = onEdit) {
-                            Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.itinerary_row_edit_cd), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -166,15 +166,15 @@ fun ItineraryItemRow(
                     ) {
                         TextButton(onClick = onEdit) {
                             Icon(Icons.Filled.EditNote, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                            Text("Add Note", style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(R.string.itinerary_row_add_note), style = MaterialTheme.typography.labelSmall)
                         }
                         TextButton(onClick = onAddAttachment) {
                             Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                            Text("Upload File", style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(R.string.itinerary_row_upload_file), style = MaterialTheme.typography.labelSmall)
                         }
                         Spacer(Modifier.weight(1f))
                         IconButton(onClick = onDelete) {
-                            Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                            Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.itinerary_row_delete_cd), tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 }

@@ -14,6 +14,12 @@ import java.time.LocalDate
 
 data class CreateTripUiState(
     val isSaving: Boolean = false,
+    /** Static, always-localizable validation failure — resolved to text by
+     *  CreateTripScreen via stringResource(), since a ViewModel has no Composable
+     *  context of its own. */
+    val validationError: Boolean = false,
+    /** Exception-derived message (Firebase/Cloudinary), left in whatever language the
+     *  underlying SDK throws in — a known localization gap, not fixed here. */
     val error: String? = null,
     val createdTripId: String? = null
 )
@@ -37,16 +43,12 @@ class CreateTripViewModel(
         endDate: LocalDate
     ) {
         if (name.isBlank() || endDate.isBefore(startDate)) {
-            _uiState.value = _uiState.value.copy(error = "Please check the trip name and dates.")
+            _uiState.value = _uiState.value.copy(validationError = true)
             return
         }
-        _uiState.value = _uiState.value.copy(isSaving = true, error = null)
+        _uiState.value = _uiState.value.copy(isSaving = true, error = null, validationError = false)
         viewModelScope.launch {
             try {
-                // A cover photo picked on-device is only a content:// Uri, which only
-                // resolves on the phone that picked it. Upload it to Cloudinary first —
-                // the same place every other attachment in the app lives — so every
-                // collaborator's device can actually load the cover image.
                 val coverImageUrl = coverImageUri?.let { uri ->
                     cloudinaryRepository.upload(
                         contentResolver = contentResolver,

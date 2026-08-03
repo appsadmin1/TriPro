@@ -12,11 +12,10 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.tripro.app.R
 import com.tripro.app.navigation.Destinations
 
-/** [currentRoute] is the NavBackStackEntry's route *pattern* (e.g. "trips/list/{filter}"),
- *  not a resolved path — that's what makes the equality checks below stable regardless
- *  of which filter/trip/day is actually open. */
 @Composable
 fun AppBottomNav(
     currentRoute: String?,
@@ -31,13 +30,13 @@ fun AppBottomNav(
             selected = currentRoute == Destinations.TRIPS_LIST,
             onClick = onTripsClick,
             icon = { Icon(Icons.Filled.Explore, contentDescription = null) },
-            label = { Text("Trips") }
+            label = { Text(stringResource(R.string.nav_trips)) }
         )
         NavigationBarItem(
-            selected = false, // opens a popup, never "the current screen"
+            selected = false,
             onClick = onSearchClick,
             icon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            label = { Text("Search") }
+            label = { Text(stringResource(R.string.nav_search)) }
         )
         NavigationBarItem(
             selected = currentRoute == Destinations.ALERTS,
@@ -47,13 +46,13 @@ fun AppBottomNav(
                     Icon(Icons.Filled.Notifications, contentDescription = null)
                 }
             },
-            label = { Text("Alerts") }
+            label = { Text(stringResource(R.string.nav_alerts)) }
         )
         NavigationBarItem(
             selected = currentRoute == Destinations.PROFILE,
             onClick = onProfileClick,
             icon = { Icon(Icons.Filled.Person, contentDescription = null) },
-            label = { Text("Profile") }
+            label = { Text(stringResource(R.string.nav_profile)) }
         )
     }
 }

@@ -34,10 +34,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.tripro.app.R
 import com.tripro.app.TriProApplication
 import com.tripro.app.data.model.Attachment
 import com.tripro.app.ui.components.AttachmentViewerDialog
@@ -56,8 +58,8 @@ fun TripDocsRoute(tripId: String, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Docs — ${uiState.tripName}") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") } }
+                title = { Text(stringResource(R.string.trip_docs_title, uiState.tripName)) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd)) } }
             )
         }
     ) { padding ->
@@ -67,7 +69,7 @@ fun TripDocsRoute(tripId: String, onBack: () -> Unit) {
         }
         if (uiState.docsByDate.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("No documents uploaded yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.trip_docs_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             return@Scaffold
         }

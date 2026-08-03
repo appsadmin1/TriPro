@@ -26,6 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tripro.app.ui.theme.TriProSpacing
+import androidx.compose.ui.res.stringResource
+import com.tripro.app.R
 
 @Composable
 fun LoginScreen(
@@ -57,7 +59,7 @@ fun LoginScreen(
         Spacer(Modifier.height(32.dp))
 
         Text(
-            "Your collaborative journey starts here.",
+            stringResource(R.string.login_tagline),
             style = MaterialTheme.typography.displayLarge.copy(fontSize = 34.sp),
             color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center
@@ -66,7 +68,7 @@ fun LoginScreen(
         Spacer(Modifier.height(16.dp))
 
         Text(
-            "Plan, share, and experience travel like never before. High-density organization meets the wonder of discovery.",
+            stringResource(R.string.login_subtitle),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -95,7 +97,7 @@ fun LoginScreen(
                 )
             } else {
                 Text(
-                    "Sign in with Google",
+                    stringResource(R.string.login_sign_in_google),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )

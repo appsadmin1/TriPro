@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -38,6 +39,7 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.tripro.app.R
 import com.tripro.app.data.model.DayPeriod
 import com.tripro.app.data.model.ItemType
 import com.tripro.app.data.model.ItineraryItem
@@ -45,6 +47,7 @@ import com.tripro.app.data.model.TimeType
 import com.tripro.app.ui.components.SimpleTimePickerDialog
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.PlaceSearchMapDialog
+import com.tripro.app.util.localizedLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,8 +77,6 @@ fun AddEditItemSheet(
     var note by remember { mutableStateOf(existing?.note.orEmpty()) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
-    // Replaces the old rememberPlacePicker() API (removed from PlacesAutocomplete.kt) —
-    // same inline search-box+map dialog DayDetailScreen's Hotel/Flight edit dialogs use.
     var showLocationSearch by remember { mutableStateOf(false) }
 
     val cameraPositionState = rememberCameraPositionState {
@@ -95,16 +96,13 @@ fun AddEditItemSheet(
             verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)
         ) {
             Text(
-                if (existing == null) "Add to itinerary" else "Edit item",
+                if (existing == null) stringResource(R.string.item_sheet_add_title) else stringResource(R.string.item_sheet_edit_title),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary
             )
 
-            // Only shown when the caller (Trip Overview's "Add Activity") passes a list of
-            // the trip's dates — DayDetailScreen's own add/edit flow already knows which
-            // date it's on, so it never passes dateOptions and this block simply doesn't render.
             if (dateOptions.isNotEmpty() && onDateSelected != null) {
-                Text("Which day?", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.item_sheet_which_day), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                 Row(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -118,11 +116,11 @@ fun AddEditItemSheet(
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Title") },
+                label = { Text(stringResource(R.string.item_sheet_title_label)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Text("Type", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.item_sheet_type_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -131,7 +129,7 @@ fun AddEditItemSheet(
                     FilterChip(
                         selected = type == option,
                         onClick = { type = option },
-                        label = { Text(option.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                        label = { Text(option.localizedLabel()) }
                     )
                 }
             }
@@ -140,16 +138,16 @@ fun AddEditItemSheet(
                 OutlinedTextField(
                     value = customLabel,
                     onValueChange = { customLabel = it },
-                    label = { Text("What is this? (e.g. Grocery run, Laundry)") },
+                    label = { Text(stringResource(R.string.item_sheet_custom_what_label)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            Text("When", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.item_sheet_when_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = timeType == TimeType.PERIOD, onClick = { timeType = TimeType.PERIOD }, label = { Text("Time of day") })
-                FilterChip(selected = timeType == TimeType.EXACT, onClick = { timeType = TimeType.EXACT }, label = { Text("Exact time") })
-                FilterChip(selected = timeType == TimeType.RANGE, onClick = { timeType = TimeType.RANGE }, label = { Text("Time range") })
+                FilterChip(selected = timeType == TimeType.PERIOD, onClick = { timeType = TimeType.PERIOD }, label = { Text(stringResource(R.string.item_sheet_time_of_day)) })
+                FilterChip(selected = timeType == TimeType.EXACT, onClick = { timeType = TimeType.EXACT }, label = { Text(stringResource(R.string.item_sheet_exact_time)) })
+                FilterChip(selected = timeType == TimeType.RANGE, onClick = { timeType = TimeType.RANGE }, label = { Text(stringResource(R.string.item_sheet_time_range)) })
             }
 
             when (timeType) {
@@ -158,36 +156,36 @@ fun AddEditItemSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     DayPeriod.entries.forEach { p ->
-                        FilterChip(selected = period == p, onClick = { period = p }, label = { Text(p.label) })
+                        FilterChip(selected = period == p, onClick = { period = p }, label = { Text(p.localizedLabel()) })
                     }
                 }
-                TimeType.EXACT -> OutlinedButton(onClick = { showStartTimePicker = true }) { Text("Start: $startTime") }
+                TimeType.EXACT -> OutlinedButton(onClick = { showStartTimePicker = true }) { Text(stringResource(R.string.item_sheet_start_prefix, startTime)) }
                 TimeType.RANGE -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { showStartTimePicker = true }, modifier = Modifier.weight(1f)) { Text("From: $startTime") }
-                    OutlinedButton(onClick = { showEndTimePicker = true }, modifier = Modifier.weight(1f)) { Text("To: $endTime") }
+                    OutlinedButton(onClick = { showStartTimePicker = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.item_sheet_from_prefix, startTime)) }
+                    OutlinedButton(onClick = { showEndTimePicker = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.item_sheet_to_prefix, endTime)) }
                 }
             }
 
-            Text("Location", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.item_sheet_location_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
             OutlinedButton(onClick = { showLocationSearch = true }, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                Text(if (locationName.isBlank()) "Search on Google Maps" else "Change location")
+                Text(if (locationName.isBlank()) stringResource(R.string.item_sheet_search_maps) else stringResource(R.string.item_sheet_change_location))
             }
             OutlinedTextField(
                 value = locationName,
                 onValueChange = { locationName = it },
-                label = { Text("Place name") },
+                label = { Text(stringResource(R.string.item_sheet_place_name_label)) },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = address,
                 onValueChange = { address = it },
-                label = { Text("Address (optional)") },
+                label = { Text(stringResource(R.string.item_sheet_address_optional_label)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Text(
-                "Fine-tune by tapping the map",
+                stringResource(R.string.item_sheet_finetune_map),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -205,7 +203,7 @@ fun AddEditItemSheet(
             OutlinedTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("Note or alert (e.g. \"18+ only\", \"closes early at 18:00\")") },
+                label = { Text(stringResource(R.string.item_sheet_note_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2
             )
@@ -232,15 +230,15 @@ fun AddEditItemSheet(
                 enabled = title.isNotBlank() && (dateOptions.isEmpty() || selectedDate != null),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save")
+                Text(stringResource(R.string.action_save))
             }
-            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Cancel") }
+            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.action_cancel)) }
         }
     }
 
     if (showStartTimePicker) {
         SimpleTimePickerDialog(
-            title = "Start time",
+            title = stringResource(R.string.item_sheet_start_time_title),
             initial = startTime,
             onDismiss = { showStartTimePicker = false },
             onConfirm = { startTime = it; showStartTimePicker = false }
@@ -248,7 +246,7 @@ fun AddEditItemSheet(
     }
     if (showEndTimePicker) {
         SimpleTimePickerDialog(
-            title = "End time",
+            title = stringResource(R.string.item_sheet_end_time_title),
             initial = endTime,
             onDismiss = { showEndTimePicker = false },
             onConfirm = { endTime = it; showEndTimePicker = false }

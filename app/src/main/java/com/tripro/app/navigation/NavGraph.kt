@@ -158,7 +158,6 @@ fun TriProNavGraph(
                                 currentUid = uid,
                                 onOpenTrip = { tripId -> navController.navigate(Destinations.tripOverview(tripId)) },
                                 onCreateTrip = { navController.navigate(Destinations.CREATE_TRIP) },
-                                onOpenSettings = { navController.navigate(Destinations.SETTINGS) },
                                 onOpenDrawer = { drawerScope.launch { drawerState.open() } }
                             )
                         }

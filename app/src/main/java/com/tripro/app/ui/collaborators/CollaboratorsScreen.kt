@@ -49,15 +49,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
 import coil.compose.AsyncImage
+import com.tripro.app.R
 import com.tripro.app.TriProApplication
 import com.tripro.app.data.model.Role
 import com.tripro.app.ui.theme.HorizonEthosColors
 import com.tripro.app.ui.theme.TriProSpacing
+import com.tripro.app.util.localizedLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,8 +85,8 @@ fun CollaboratorsRoute(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Collaborators") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") } }
+                title = { Text(stringResource(R.string.collaborators_title)) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd)) } }
             )
         }
     ) { padding ->
@@ -101,29 +104,29 @@ fun CollaboratorsRoute(
                             border = BorderStroke(1.dp, HorizonEthosColors.CardBorder)
                         ) {
                             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)) {
-                                Text("Invite Collaborators", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.collaborators_invite_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
                                 Text(
-                                    "Add people to help plan this trip together.",
+                                    stringResource(R.string.collaborators_invite_subtitle),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 OutlinedTextField(
                                     value = email,
                                     onValueChange = { email = it },
-                                    label = { Text("Email address") },
+                                    label = { Text(stringResource(R.string.collaborators_email_label)) },
                                     modifier = Modifier.fillMaxWidth()
                                 )
-                                Text("Permission", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(R.string.collaborators_permission_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     FilterChip(
                                         selected = inviteRole == Role.EDITOR,
                                         onClick = { inviteRole = Role.EDITOR },
-                                        label = { Text("Can edit") }
+                                        label = { Text(stringResource(R.string.collaborators_can_edit_chip)) }
                                     )
                                     FilterChip(
                                         selected = inviteRole == Role.VIEWER,
                                         onClick = { inviteRole = Role.VIEWER },
-                                        label = { Text("Read only") }
+                                        label = { Text(stringResource(R.string.collaborators_read_only_chip)) }
                                     )
                                 }
                                 if (uiState.inviteError != null) {
@@ -137,7 +140,7 @@ fun CollaboratorsRoute(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Icon(Icons.Filled.Send, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                                    Text("Send Invite")
+                                    Text(stringResource(R.string.collaborators_send_invite))
                                 }
                             }
                         }
@@ -152,16 +155,16 @@ fun CollaboratorsRoute(
                                 .padding(16.dp)
                         ) {
                             Column {
-                                Text("Can edit", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.collaborators_can_edit_chip), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                                 Text(
-                                    "Add, edit, or remove itinerary items, bookings, and other collaborators.",
+                                    stringResource(R.string.collaborators_can_edit_explainer_body),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(Modifier.height(8.dp))
-                                Text("Read only", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.collaborators_read_only_chip), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                                 Text(
-                                    "Can view the full itinerary and documents, but can't make changes.",
+                                    stringResource(R.string.collaborators_read_only_explainer_body),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -172,7 +175,7 @@ fun CollaboratorsRoute(
 
                 item {
                     Text(
-                        "Current Members (${uiState.members.size})",
+                        stringResource(R.string.collaborators_current_members, uiState.members.size),
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -193,12 +196,12 @@ fun CollaboratorsRoute(
                 if (uiState.pendingInvites.isNotEmpty()) {
                     item {
                         Text(
-                            "Pending Invites",
+                            stringResource(R.string.collaborators_pending_invites),
                             style = MaterialTheme.typography.headlineMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                    items(uiState.pendingInvites) { (pendingEmail, role) ->
+                    items(uiState.pendingInvites) { (pendingEmail, roleValue) ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -213,7 +216,10 @@ fun CollaboratorsRoute(
                                 Spacer(Modifier.width(12.dp))
                                 Column {
                                     Text(pendingEmail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    Text("Invite pending — will join as $role once they sign in", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        stringResource(R.string.collaborators_invite_pending, Role.fromValue(roleValue).localizedLabel()),
+                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
                         }
@@ -270,17 +276,17 @@ private fun MemberRowItem(
             Box {
                 AssistChip(
                     onClick = { menuExpanded = true },
-                    label = { Text(if (role == Role.EDITOR) "Editor" else "Read Only") }
+                    label = { Text(role.localizedLabel()) }
                 )
                 DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                    DropdownMenuItem(text = { Text("Editor") }, onClick = { onRoleChange(Role.EDITOR); menuExpanded = false })
-                    DropdownMenuItem(text = { Text("Read Only") }, onClick = { onRoleChange(Role.VIEWER); menuExpanded = false })
-                    DropdownMenuItem(text = { Text("Remove") }, onClick = { onRemove(); menuExpanded = false })
+                    DropdownMenuItem(text = { Text(Role.EDITOR.localizedLabel()) }, onClick = { onRoleChange(Role.EDITOR); menuExpanded = false })
+                    DropdownMenuItem(text = { Text(Role.VIEWER.localizedLabel()) }, onClick = { onRoleChange(Role.VIEWER); menuExpanded = false })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.collaborators_remove_menu_item)) }, onClick = { onRemove(); menuExpanded = false })
                 }
             }
         } else {
             Text(
-                if (role == Role.OWNER) "Owner" else if (role == Role.EDITOR) "Editor" else "Read Only",
+                role.localizedLabel(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

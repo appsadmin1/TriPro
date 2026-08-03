@@ -26,11 +26,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.tripro.app.R
 import com.tripro.app.data.model.DailyWeather
 import com.tripro.app.data.model.WeatherStatus
 import com.tripro.app.ui.theme.HorizonEthosColors
-import com.tripro.app.util.WeatherCodeMapper
+import com.tripro.app.util.weatherConditionLabel
 import kotlin.math.roundToInt
 
 @Composable
@@ -54,13 +56,13 @@ fun WeatherCard(
             when {
                 isLoading -> {
                     CircularProgressIndicator(modifier = Modifier.padding(end = 16.dp).size(28.dp), strokeWidth = 2.dp)
-                    Text("Checking the forecast…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.weather_checking), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 weather == null || weather.status == WeatherStatus.NO_LOCATION -> {
                     Icon(Icons.Filled.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(end = 16.dp))
                     Text(
-                        "Add a hotel location to this day to see the forecast here.",
+                        stringResource(R.string.weather_add_hotel_location),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -69,10 +71,10 @@ fun WeatherCard(
                 weather.status == WeatherStatus.NOT_YET_AVAILABLE -> {
                     Icon(Icons.Filled.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(end = 16.dp))
                     Column {
-                        Text("Forecast not out yet", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.weather_not_out_yet), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                         Text(
-                            if (forecastAvailableFromLabel != null) "Check back from $forecastAvailableFromLabel — forecasts open up 16 days ahead."
-                            else "Forecasts open up 16 days ahead of the date.",
+                            if (forecastAvailableFromLabel != null) stringResource(R.string.weather_check_back_from, forecastAvailableFromLabel)
+                            else stringResource(R.string.weather_opens_16_days),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -81,7 +83,7 @@ fun WeatherCard(
 
                 weather.status == WeatherStatus.ERROR -> {
                     Icon(Icons.Filled.Cloud, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(end = 16.dp))
-                    Text("Couldn't load the forecast right now.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.weather_load_error), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 else -> {
@@ -93,7 +95,7 @@ fun WeatherCard(
                     )
                     Column {
                         Text(
-                            WeatherCodeMapper.label(weather.weatherCode),
+                            weatherConditionLabel(weather.weatherCode),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -103,7 +105,10 @@ fun WeatherCard(
                         Text(
                             buildString {
                                 if (high != null && low != null) append("$low° / $high°C")
-                                if (rain != null) append("  ·  $rain% chance of rain")
+                                if (rain != null) {
+                                    if (isNotEmpty()) append("  ·  ")
+                                    append(stringResource(R.string.weather_rain_chance, rain))
+                                }
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant

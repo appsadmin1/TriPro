@@ -7,6 +7,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import com.tripro.app.util.AppLanguage
 
 /**
  * DESIGN.md's token names (surface-container-high, on-primary-fixed-variant, ...) are
@@ -72,19 +73,15 @@ private val HorizonEthosColorScheme = lightColorScheme(
 // MaterialTheme.colorScheme.
 
 @Composable
-fun TriProTheme(content: @Composable () -> Unit) {
-    // Horizon Ethos has no RTL-mirrored variant — DESIGN.md's layouts, icon directions,
-    // and things like "Start date | End date" button ordering are all designed
-    // left-to-right only, and strings.xml has no non-English content. Without this
-    // override, Compose (unlike the old View system, which only mirrors when the
-    // manifest sets supportsRtl) *always* mirrors layout direction to match an RTL
-    // device locale (Hebrew, Arabic, ...), independent of any manifest flag. That's what
-    // was producing the "everything is flipped" bug: in an RTL layout direction, a Row's
-    // first child renders on the right instead of the left (so the Start-date button
-    // rendered right of End-date), and Arrangement.Start / TextAlign.Start both resolve
-    // to the right edge instead of the left. Forcing Ltr here makes the whole app
-    // consistently left-to-right no matter what language the device is set to.
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+fun TriProTheme(appLanguage: AppLanguage = AppLanguage.ENGLISH, content: @Composable () -> Unit) {
+    // Layout direction now follows the person's *chosen app language*, not the device's
+    // system locale — Compose otherwise mirrors layout to match an RTL device locale
+    // regardless of the manifest's supportsRtl flag (what used to cause "everything is
+    // flipped" for anyone with an RTL system locale, even though the app only ever spoke
+    // English). Language is now an explicit in-app setting, so Hebrew forces Rtl and
+    // everything else forces Ltr, decoupled from the device's own locale.
+    val layoutDirection = if (appLanguage == AppLanguage.HEBREW) LayoutDirection.Rtl else LayoutDirection.Ltr
+    CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
         MaterialTheme(
             colorScheme = HorizonEthosColorScheme,
             typography = TriProTypography,

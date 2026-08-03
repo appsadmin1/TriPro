@@ -6,20 +6,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,11 +26,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.IconButton
+import com.tripro.app.R
 import com.tripro.app.TriProApplication
 import com.tripro.app.ui.components.TripCard
 import com.tripro.app.ui.theme.TriProSpacing
@@ -45,7 +46,6 @@ fun TripsListRoute(
     currentUid: String,
     onOpenTrip: (String) -> Unit,
     onCreateTrip: () -> Unit,
-    onOpenSettings: () -> Unit,
     onOpenDrawer: () -> Unit
 ) {
     val app = LocalContext.current.applicationContext as TriProApplication
@@ -65,7 +65,7 @@ fun TripsListRoute(
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Create new vacation")
+                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.trips_create_cd))
             }
         }
     ) { padding ->
@@ -87,37 +87,28 @@ fun TripsListRoute(
             verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackLg)
         ) {
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = onOpenDrawer) {
-                            Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.primary)
-                        }
-                        Column {
-                            Text(
-                                "My Trips",
-                                style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                "Your upcoming and past adventures.",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu_cd), tint = MaterialTheme.colorScheme.primary)
                     }
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.primary)
+                    Column {
+                        Text(
+                            stringResource(R.string.trips_title),
+                            style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            stringResource(R.string.trips_subtitle),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
 
             if (uiState.upcoming.isNotEmpty()) {
                 item {
-                    SectionHeader(icon = Icons.Filled.Add, title = "Upcoming")
+                    SectionHeader(icon = Icons.Filled.Add, title = stringResource(R.string.trips_section_upcoming))
                 }
                 items(uiState.upcoming, key = { it.id }) { trip ->
                     TripCard(
@@ -134,7 +125,7 @@ fun TripsListRoute(
 
             if (uiState.past.isNotEmpty()) {
                 item {
-                    SectionHeader(icon = Icons.Filled.History, title = "Past Adventures")
+                    SectionHeader(icon = Icons.Filled.History, title = stringResource(R.string.trips_section_past))
                 }
                 items(uiState.past, key = { it.id }) { trip ->
                     TripCard(
@@ -165,7 +156,7 @@ private fun SectionHeader(icon: ImageVector, title: String) {
 @Composable
 private fun EmptyState() {
     Text(
-        "No trips yet — tap the + button to plan your first one.",
+        stringResource(R.string.trips_empty_state),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )

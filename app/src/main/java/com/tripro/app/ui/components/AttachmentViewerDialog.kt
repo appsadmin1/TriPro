@@ -46,12 +46,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.tripro.app.BuildConfig
+import com.tripro.app.R
 import com.tripro.app.data.model.Attachment
 import com.tripro.app.util.FileDownloader
 import com.tripro.app.util.PdfPageRenderer
@@ -73,17 +75,17 @@ fun AttachmentViewerDialog(
         Column(modifier = Modifier.fillMaxSize()) {
             TopAppBar(
                 title = { Text(currentName, maxLines = 1) },
-                navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = "Close") } },
+                navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.attachment_close_cd)) } },
                 actions = {
                     if (onRename != null) {
-                        IconButton(onClick = { renaming = true }) { Icon(Icons.Filled.Edit, contentDescription = "Rename file") }
+                        IconButton(onClick = { renaming = true }) { Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.attachment_rename_cd)) }
                     }
                     IconButton(onClick = { FileDownloader.downloadToDeviceDownloads(context, attachment.downloadUrl, currentName) }) {
-                        Icon(Icons.Filled.Download, contentDescription = "Download")
+                        Icon(Icons.Filled.Download, contentDescription = stringResource(R.string.attachment_download_cd))
                     }
                     if (onRemove != null) {
                         IconButton(onClick = { onRemove(); onDismiss() }) {
-                            Icon(Icons.Filled.Delete, contentDescription = "Remove from itinerary item", tint = MaterialTheme.colorScheme.error)
+                            Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.attachment_remove_cd), tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 },
@@ -102,15 +104,15 @@ fun AttachmentViewerDialog(
     if (renaming) {
         AlertDialog(
             onDismissRequest = { renaming = false },
-            title = { Text("Rename file") },
+            title = { Text(stringResource(R.string.attachment_rename_title)) },
             text = {
                 var text by remember { mutableStateOf(currentName) }
                 OutlinedTextField(value = text, onValueChange = { text = it; currentName = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
             },
             confirmButton = {
-                TextButton(onClick = { onRename?.invoke(currentName); renaming = false }) { Text("Save") }
+                TextButton(onClick = { onRename?.invoke(currentName); renaming = false }) { Text(stringResource(R.string.action_save)) }
             },
-            dismissButton = { TextButton(onClick = { renaming = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { renaming = false }) { Text(stringResource(R.string.action_cancel)) } }
         )
     }
 }
@@ -131,6 +133,7 @@ private fun ZoomableImage(url: String) {
 @Composable
 private fun PdfViewer(attachment: Attachment) {
     val context = LocalContext.current
+    val defaultError = stringResource(R.string.attachment_pdf_error_default)
     var pages by remember { mutableStateOf<List<Bitmap>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -139,7 +142,7 @@ private fun PdfViewer(attachment: Attachment) {
             val file = FileDownloader.downloadToCache(context, attachment.downloadUrl, attachment.fileName)
             pages = PdfPageRenderer.renderPages(file)
         } catch (e: Exception) {
-            error = e.message ?: "Couldn't open this PDF"
+            error = e.message ?: defaultError
         }
     }
 
@@ -147,7 +150,7 @@ private fun PdfViewer(attachment: Attachment) {
         error != null -> Text(error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(24.dp))
         pages == null -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularProgressIndicator()
-            Text("Opening PDF…", modifier = Modifier.padding(top = 12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.attachment_opening_pdf), modifier = Modifier.padding(top = 12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         else -> LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             items(pages!!) { bitmap -> Image(bitmap = bitmap.asImageBitmap(), contentDescription = null, modifier = Modifier.fillMaxWidth()) }
@@ -159,22 +162,23 @@ private fun PdfViewer(attachment: Attachment) {
 private fun GenericFileFallback(attachment: Attachment) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val openWithChooserTitle = stringResource(R.string.attachment_open_with_chooser_title)
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
         Icon(Icons.Filled.InsertDriveFile, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(bottom = 16.dp))
-        Text("Preview isn't available for this file type in-app.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.attachment_preview_unavailable), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Button(
             onClick = {
                 scope.launch {
                     val file = FileDownloader.downloadToCache(context, attachment.downloadUrl, attachment.fileName)
                     val uri = FileProvider.getUriForFile(context, "${BuildConfig.APPLICATION_ID}.fileprovider", file)
                     val intent = Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, attachment.mimeType.ifBlank { "*/*" }); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-                    context.startActivity(Intent.createChooser(intent, "Open with"))
+                    context.startActivity(Intent.createChooser(intent, openWithChooserTitle))
                 }
             },
             modifier = Modifier.padding(top = 16.dp)
         ) {
             Icon(Icons.Filled.OpenInNew, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-            Text("Open with…")
+            Text(stringResource(R.string.attachment_open_with))
         }
     }
 }

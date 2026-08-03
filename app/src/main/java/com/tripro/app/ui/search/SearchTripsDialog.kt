@@ -22,8 +22,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.tripro.app.R
 import com.tripro.app.data.model.Trip
 import com.tripro.app.util.DateUtils
 
@@ -45,7 +47,7 @@ fun SearchTripsDialog(
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
-                    label = { Text("Search your trips") },
+                    label = { Text(stringResource(R.string.search_trips_label)) },
                     leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -53,7 +55,7 @@ fun SearchTripsDialog(
                 androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 12.dp))
                 if (filtered.isEmpty()) {
                     Text(
-                        "No trips match \"$query\".",
+                        stringResource(R.string.search_trips_no_match, query),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(16.dp)
                     )

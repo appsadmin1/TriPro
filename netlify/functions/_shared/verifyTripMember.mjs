@@ -38,6 +38,25 @@ export async function verifyCallerIsTripMember(request, tripId) {
   return { uid, trip };
 }
 
+/**
+ * Lighter-weight check for endpoints that aren't scoped to a specific trip (e.g.
+ * flight-lookup.mjs) — just confirms the caller has a valid Firebase ID token, without
+ * looking up trip membership. Returns the caller's uid.
+ */
+export async function verifyCallerIsSignedIn(request) {
+  const authHeader = request.headers.get("authorization") || "";
+  const idToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!idToken) {
+    throw httpError(401, "Missing Authorization: Bearer <idToken> header");
+  }
+  try {
+    const decoded = await getAdminAuth().verifyIdToken(idToken);
+    return decoded.uid;
+  } catch {
+    throw httpError(401, "Invalid or expired ID token");
+  }
+}
+
 function httpError(status, message) {
   const error = new Error(message);
   error.status = status;

@@ -50,6 +50,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,6 +60,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import coil.compose.AsyncImage
 import com.google.android.gms.maps.model.LatLng
+import com.tripro.app.R
 import com.tripro.app.TriProApplication
 import com.tripro.app.data.model.HotelInfo
 import com.tripro.app.data.model.Role
@@ -67,6 +70,7 @@ import com.tripro.app.ui.daydetail.AddEditItemSheet
 import com.tripro.app.ui.theme.HorizonEthosColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.DateUtils
+import com.tripro.app.util.localizedLabel
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -108,16 +112,16 @@ fun TripOverviewRoute(
             TopAppBar(
                 title = { Text(uiState.trip?.name ?: "", color = MaterialTheme.colorScheme.onPrimary) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary) }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd), tint = MaterialTheme.colorScheme.onPrimary) }
                 },
                 actions = {
                     if (uiState.myRole == Role.OWNER) {
                         IconButton(onClick = { showEditSheet = true }) {
-                            Icon(Icons.Filled.Edit, contentDescription = "Edit trip", tint = MaterialTheme.colorScheme.onPrimary)
+                            Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.trip_overview_edit_trip_cd), tint = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                     IconButton(onClick = onOpenCollaborators) {
-                        Icon(Icons.Filled.Group, contentDescription = "Collaborators", tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(Icons.Filled.Group, contentDescription = stringResource(R.string.trip_overview_collaborators_cd), tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -149,9 +153,9 @@ fun TripOverviewRoute(
                     horizontalArrangement = Arrangement.spacedBy(TriProSpacing.base)
                 ) {
                     val days = runCatching { ChronoUnit.DAYS.between(DateUtils.parse(trip.startDate), DateUtils.parse(trip.endDate)) + 1 }.getOrDefault(0)
-                    StatChip(icon = Icons.Filled.CalendarMonth, value = "$days Days", label = "DURATION", modifier = Modifier.weight(1f))
-                    StatChip(icon = Icons.Filled.Group, value = "${trip.memberIds.size}", label = "TRAVELERS", modifier = Modifier.weight(1f))
-                    StatChip(icon = Icons.Filled.HourglassTop, value = DateUtils.countdownLabel(trip.startDate, trip.endDate), label = "STATUS", modifier = Modifier.weight(1f))
+                    StatChip(icon = Icons.Filled.CalendarMonth, value = pluralStringResource(R.plurals.trip_duration_days, days.toInt(), days.toInt()), label = stringResource(R.string.trip_overview_duration_label), modifier = Modifier.weight(1f))
+                    StatChip(icon = Icons.Filled.Group, value = "${trip.memberIds.size}", label = stringResource(R.string.trip_overview_travelers_label), modifier = Modifier.weight(1f))
+                    StatChip(icon = Icons.Filled.HourglassTop, value = DateUtils.countdown(trip.startDate, trip.endDate).localizedLabel(), label = stringResource(R.string.trip_overview_status_label), modifier = Modifier.weight(1f))
                 }
             }
 
@@ -162,13 +166,13 @@ fun TripOverviewRoute(
                     horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Travelers", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.trip_overview_travelers), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.height(6.dp))
                         AvatarStack(photoUrls = uiState.collaboratorAvatars, avatarSize = 36)
                     }
                     if (uiState.myRole == Role.OWNER) {
                         IconButton(onClick = onOpenCollaborators) {
-                            Icon(Icons.Filled.Group, contentDescription = "Manage collaborators", tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Filled.Group, contentDescription = stringResource(R.string.trip_overview_manage_collaborators_cd), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -186,17 +190,17 @@ fun TripOverviewRoute(
                             showAddItemSheet = true
                         },
                         modifier = Modifier.weight(1f)
-                    ) { Text("Add Activity") }
+                    ) { Text(stringResource(R.string.trip_overview_add_activity)) }
                     OutlinedButton(onClick = { onOpenDocs(tripId) }, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Filled.Folder, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                        Text("View Docs")
+                        Text(stringResource(R.string.trip_overview_view_docs))
                     }
                 }
                 Spacer(Modifier.height(TriProSpacing.stackLg))
             }
 
             item {
-                Text("Itinerary", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary,
+                Text(stringResource(R.string.trip_overview_itinerary), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(horizontal = TriProSpacing.marginMobile, vertical = 8.dp))
             }
 
@@ -239,10 +243,6 @@ private fun StatChip(icon: ImageVector, value: String, label: String, modifier: 
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primaryContainer)
-        // textAlign = Center fixes the misalignment: when this wraps to two lines (e.g.
-        // "14 DAYS" / "AWAY"), Text auto-sizes its box to the widest line, and without an
-        // explicit center alignment the shorter second line defaults to Start (left) —
-        // that's what looked "off center" even though the block itself was centered.
         Text(value, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
     }
@@ -263,7 +263,7 @@ private fun DayRow(day: TripDay, onClick: () -> Unit) {
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text("Day ${day.dayIndex}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.trip_overview_day_label, day.dayIndex), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
             if (day.hotel != null) Text(day.hotel.name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Icon(Icons.Filled.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
