@@ -2,6 +2,14 @@
     <string name="app_name">TriPro</string>
     <string name="notification_channel_name">עדכוני טיול</string>
 
+    <string name="action_save">שמירה</string>
+    <string name="action_cancel">ביטול</string>
+    <string name="action_close">סגירה</string>
+    <string name="action_ok">אישור</string>
+    <string name="action_delete">מחיקה</string>
+    <string name="action_upload">העלאה</string>
+    <string name="common_back_cd">חזרה</string>
+
     <string name="drawer_main_page">עמוד ראשי</string>
     <string name="drawer_profile">פרופיל</string>
     <string name="drawer_settings">הגדרות</string>
@@ -26,6 +34,19 @@
     <string name="trips_empty_state">עדיין אין טיולים — הקישו על כפתור ה-+ כדי לתכנן את הראשון.</string>
     <string name="trips_create_cd">יצירת חופשה חדשה</string>
 
+    <plurals name="trip_days_away">
+        <item quantity="one">יום אחד עד הטיול</item>
+        <item quantity="two">יומיים עד הטיול</item>
+        <item quantity="other">%d ימים עד הטיול</item>
+    </plurals>
+    <string name="trip_happening_now">מתרחש עכשיו</string>
+    <string name="trip_completed">הסתיים</string>
+    <plurals name="trip_duration_days">
+        <item quantity="one">יום אחד</item>
+        <item quantity="two">יומיים</item>
+        <item quantity="other">%d ימים</item>
+    </plurals>
+
     <string name="settings_title">הגדרות</string>
     <string name="settings_notifications">התראות</string>
     <string name="settings_trip_invites_title">הזמנות לטיול</string>
@@ -38,7 +59,191 @@
     <string name="settings_choose_color">בחירת צבע</string>
     <string name="settings_sign_out">התנתקות</string>
 
-    <string name="action_save">שמירה</string>
-    <string name="action_cancel">ביטול</string>
-    <string name="action_close">סגירה</string>
+    <string name="item_type_flight">טיסה</string>
+    <string name="item_type_hotel">מלון</string>
+    <string name="item_type_restaurant">מסעדה</string>
+    <string name="item_type_attraction">אטרקציה</string>
+    <string name="item_type_activity">פעילות</string>
+    <string name="item_type_transport">תחבורה</string>
+    <string name="item_type_show">מופע</string>
+    <string name="item_type_custom">מותאם אישית</string>
+
+    <string name="period_morning">בוקר</string>
+    <string name="period_noon">צהריים</string>
+    <string name="period_afternoon">אחר הצהריים</string>
+    <string name="period_evening">ערב</string>
+    <string name="period_night">לילה</string>
+
+    <string name="role_owner">בעלים</string>
+    <string name="role_editor">עורך</string>
+    <string name="role_read_only">צפייה בלבד</string>
+
+    <string name="day_detail_day_label">יום %1$s</string>
+    <string name="day_detail_done_editing_cd">סיום עריכה</string>
+    <string name="day_detail_edit_day_cd">עריכת היום</string>
+    <string name="day_detail_add_to_itinerary_cd">הוספה למסלול</string>
+    <string name="day_detail_base_camp">בסיס הלינה</string>
+    <string name="day_detail_no_hotel">לא הוגדר מלון ליום זה</string>
+    <string name="day_detail_checkin_checkout">צ\'ק-אין %1$s  ·  צ\'ק-אאוט %2$s</string>
+    <string name="day_detail_edit_hotel_cd">עריכת מלון</string>
+    <string name="day_detail_add_flight_button">הוספת טיסה ליום זה</string>
+    <string name="day_detail_hotel_dialog_title">מלון ליום זה</string>
+    <string name="day_detail_search_hotel">חיפוש מלון ב-Google Maps</string>
+    <string name="day_detail_change_hotel">החלפת מלון</string>
+    <string name="day_detail_hotel_name_label">שם המלון</string>
+    <string name="day_detail_address_label">כתובת</string>
+    <string name="day_detail_checkin_time_label">שעת צ\'ק-אין</string>
+    <string name="day_detail_checkin_prefix">צ\'ק-אין: %1$s</string>
+    <string name="day_detail_checkout_time_label">שעת צ\'ק-אאוט</string>
+    <string name="day_detail_checkout_prefix">צ\'ק-אאוט: %1$s</string>
+    <string name="day_detail_flight_label">טיסה</string>
+    <string name="day_detail_edit_flight_cd">עריכת טיסה</string>
+    <string name="day_detail_flight_dialog_title">טיסה ליום זה</string>
+    <string name="day_detail_flight_number_label">מספר טיסה (למשל LY324)</string>
+    <string name="day_detail_look_up">איתור</string>
+    <string name="day_detail_lookup_failed_default">לא ניתן היה למצוא את הטיסה</string>
+    <string name="day_detail_airline_label">חברת תעופה</string>
+    <string name="day_detail_flight_number_short_label">מספר טיסה</string>
+    <string name="day_detail_from_code_label">מוצא (קוד)</string>
+    <string name="day_detail_to_code_label">יעד (קוד)</string>
+    <string name="day_detail_find_departure_airport">איתור שדה תעופה ליציאה</string>
+    <string name="day_detail_departure_confirmed">יציאה ✓</string>
+    <string name="day_detail_find_arrival_airport">איתור שדה תעופה להגעה</string>
+    <string name="day_detail_arrival_confirmed">הגעה ✓</string>
+    <string name="day_detail_departs_label">יציאה</string>
+    <string name="day_detail_departs_prefix">יציאה: %1$s</string>
+    <string name="day_detail_arrives_label">הגעה</string>
+    <string name="day_detail_arrives_prefix">הגעה: %1$s</string>
+    <string name="day_detail_departure_time_title">שעת יציאה</string>
+    <string name="day_detail_arrival_time_title">שעת הגעה</string>
+    <string name="day_detail_remove_flight">הסרת טיסה</string>
+    <string name="day_detail_edit_day_note_cd">עריכת הערת יום</string>
+    <string name="day_detail_day_note_placeholder">הוסיפו הערה ליום כולו (למשל \"קחו שכבות קלות, יש אבני ריצוף היום\")</string>
+    <string name="day_detail_note_dialog_title">הערה ליום זה</string>
+    <string name="day_detail_note_label">הערה</string>
+    <string name="day_detail_schedule">לוח זמנים</string>
+    <string name="day_detail_nothing_planned">עדיין לא תוכנן דבר ליום זה.</string>
+    <string name="day_detail_name_file_title">שם לקובץ</string>
+    <string name="time_picker_default_title">בחירת שעה</string>
+
+    <string name="item_sheet_add_title">הוספה למסלול</string>
+    <string name="item_sheet_edit_title">עריכת פריט</string>
+    <string name="item_sheet_which_day">איזה יום?</string>
+    <string name="item_sheet_title_label">כותרת</string>
+    <string name="item_sheet_type_label">סוג</string>
+    <string name="item_sheet_custom_what_label">מה זה? (למשל קניות, כביסה)</string>
+    <string name="item_sheet_when_label">מתי</string>
+    <string name="item_sheet_time_of_day">שעה ביום</string>
+    <string name="item_sheet_exact_time">שעה מדויקת</string>
+    <string name="item_sheet_time_range">טווח שעות</string>
+    <string name="item_sheet_start_prefix">התחלה: %1$s</string>
+    <string name="item_sheet_from_prefix">מ: %1$s</string>
+    <string name="item_sheet_to_prefix">עד: %1$s</string>
+    <string name="item_sheet_location_label">מיקום</string>
+    <string name="item_sheet_search_maps">חיפוש ב-Google Maps</string>
+    <string name="item_sheet_change_location">החלפת מיקום</string>
+    <string name="item_sheet_place_name_label">שם המקום</string>
+    <string name="item_sheet_address_optional_label">כתובת (רשות)</string>
+    <string name="item_sheet_finetune_map">כיוונון מדויק בהקשה על המפה</string>
+    <string name="item_sheet_note_label">הערה או התראה (למשל \"18+ בלבד\", \"נסגר מוקדם ב-18:00\")</string>
+    <string name="item_sheet_start_time_title">שעת התחלה</string>
+    <string name="item_sheet_end_time_title">שעת סיום</string>
+
+    <string name="itinerary_row_edit_cd">עריכה</string>
+    <string name="itinerary_row_add_note">הוספת הערה</string>
+    <string name="itinerary_row_upload_file">העלאת קובץ</string>
+    <string name="itinerary_row_delete_cd">מחיקה</string>
+
+    <string name="weather_checking">בודקים את התחזית…</string>
+    <string name="weather_add_hotel_location">הוסיפו מיקום מלון ליום זה כדי לראות כאן את התחזית.</string>
+    <string name="weather_not_out_yet">התחזית עדיין לא פורסמה</string>
+    <string name="weather_check_back_from">חזרו לבדוק אחרי %1$s — התחזית נפתחת 16 יום מראש.</string>
+    <string name="weather_opens_16_days">התחזית נפתחת 16 יום לפני התאריך.</string>
+    <string name="weather_load_error">לא ניתן היה לטעון את התחזית כרגע.</string>
+    <string name="weather_rain_chance">%1$d%% סיכוי לגשם</string>
+    <string name="weather_clear_sky">שמיים בהירים</string>
+    <string name="weather_partly_cloudy">מעונן חלקית</string>
+    <string name="weather_fog">ערפל</string>
+    <string name="weather_drizzle">טפטוף</string>
+    <string name="weather_freezing_drizzle">טפטוף קפוא</string>
+    <string name="weather_rain">גשם</string>
+    <string name="weather_freezing_rain">גשם קפוא</string>
+    <string name="weather_snow">שלג</string>
+    <string name="weather_snow_grains">גרגירי שלג</string>
+    <string name="weather_rain_showers">ממטרי גשם</string>
+    <string name="weather_snow_showers">ממטרי שלג</string>
+    <string name="weather_thunderstorm">סופת רעמים</string>
+    <string name="weather_thunderstorm_hail">סופת רעמים עם ברד</string>
+    <string name="weather_generic">מזג אוויר</string>
+
+    <string name="attachment_close_cd">סגירה</string>
+    <string name="attachment_rename_cd">שינוי שם קובץ</string>
+    <string name="attachment_download_cd">הורדה</string>
+    <string name="attachment_remove_cd">הסרה מפריט המסלול</string>
+    <string name="attachment_rename_title">שינוי שם קובץ</string>
+    <string name="attachment_opening_pdf">פותחים PDF…</string>
+    <string name="attachment_pdf_error_default">לא ניתן היה לפתוח את קובץ ה-PDF</string>
+    <string name="attachment_preview_unavailable">אין תצוגה מקדימה לסוג קובץ זה באפליקציה.</string>
+    <string name="attachment_open_with">פתיחה באמצעות…</string>
+    <string name="attachment_open_with_chooser_title">פתיחה באמצעות</string>
+
+    <string name="trip_overview_edit_trip_cd">עריכת טיול</string>
+    <string name="trip_overview_collaborators_cd">משתתפים</string>
+    <string name="trip_overview_travelers">מטיילים</string>
+    <string name="trip_overview_manage_collaborators_cd">ניהול משתתפים</string>
+    <string name="trip_overview_add_activity">הוספת פעילות</string>
+    <string name="trip_overview_view_docs">צפייה במסמכים</string>
+    <string name="trip_overview_itinerary">מסלול</string>
+    <string name="trip_overview_duration_label">משך</string>
+    <string name="trip_overview_travelers_label">מטיילים</string>
+    <string name="trip_overview_status_label">סטטוס</string>
+    <string name="trip_overview_day_label">יום %1$d</string>
+
+    <string name="trip_edit_title">עריכת טיול</string>
+    <string name="trip_edit_name_label">שם הטיול</string>
+    <string name="trip_edit_destination_label">יעד</string>
+    <string name="trip_edit_cover_photo_label">תמונת שער</string>
+    <string name="trip_edit_tap_to_change">הקישו כדי להחליף</string>
+    <string name="trip_edit_add_photo">הוספת תמונה מהמכשיר</string>
+    <string name="trip_edit_start_date">תאריך התחלה</string>
+    <string name="trip_edit_end_date">תאריך סיום</string>
+    <string name="trip_edit_save_changes">שמירת שינויים</string>
+    <string name="trip_edit_delete_trip">מחיקת טיול</string>
+    <string name="trip_edit_delete_confirm_title">למחוק את הטיול?</string>
+    <string name="trip_edit_delete_confirm_text">פעולה זו תמחק את \"%1$s\" עבור כל המשתתפים. לא ניתן לבטל פעולה זו.</string>
+
+    <string name="create_trip_title">חופשה חדשה</string>
+    <string name="create_trip_name_label">שם הטיול (למשל נופש בקיוטו)</string>
+    <string name="create_trip_destination_label">יעד</string>
+    <string name="create_trip_selected_photo_cd">תמונת השער שנבחרה</string>
+    <string name="create_trip_creating">יוצרים…</string>
+    <string name="create_trip_create_button">יצירת חופשה</string>
+    <string name="create_trip_validation_error">בדקו את שם הטיול והתאריכים.</string>
+
+    <string name="trip_docs_title">מסמכים — %1$s</string>
+    <string name="trip_docs_empty">עדיין לא הועלו מסמכים.</string>
+
+    <string name="collaborators_title">משתתפים</string>
+    <string name="collaborators_invite_title">הזמנת משתתפים</string>
+    <string name="collaborators_invite_subtitle">הוסיפו אנשים שיעזרו לתכנן את הטיול יחד.</string>
+    <string name="collaborators_email_label">כתובת אימייל</string>
+    <string name="collaborators_permission_label">הרשאה</string>
+    <string name="collaborators_can_edit_chip">יכול לערוך</string>
+    <string name="collaborators_read_only_chip">צפייה בלבד</string>
+    <string name="collaborators_send_invite">שליחת הזמנה</string>
+    <string name="collaborators_can_edit_explainer_body">הוספה, עריכה או הסרה של פריטי מסלול, הזמנות ומשתתפים נוספים.</string>
+    <string name="collaborators_read_only_explainer_body">יכולים לצפות במסלול המלא ובמסמכים, אך לא לבצע שינויים.</string>
+    <string name="collaborators_current_members">חברים נוכחיים (%1$d)</string>
+    <string name="collaborators_pending_invites">הזמנות ממתינות</string>
+    <string name="collaborators_invite_pending">ההזמנה ממתינה — יצטרפו כ%1$s לאחר ההתחברות</string>
+    <string name="collaborators_remove_menu_item">הסרה</string>
+
+    <string name="alerts_title">התראות</string>
+    <string name="alerts_empty">עדיין אין עדכונים — שינויים בטיולים שלך יופיעו כאן.</string>
+
+    <string name="profile_title">פרופיל</string>
+    <string name="profile_fallback_name">מטייל TriPro</string>
+
+    <string name="search_trips_label">חיפוש בטיולים שלך</string>
+    <string name="search_trips_no_match">לא נמצאו טיולים התואמים ל-\"%1$s\".</string>
 </resources>

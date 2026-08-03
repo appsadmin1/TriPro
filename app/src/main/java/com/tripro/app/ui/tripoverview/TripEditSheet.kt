@@ -43,8 +43,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.tripro.app.R
 import com.tripro.app.data.model.Trip
 import com.tripro.app.ui.theme.HorizonEthosColors
 import com.tripro.app.ui.theme.TriProSpacing
@@ -89,12 +91,12 @@ fun TripEditSheet(
                 .padding(TriProSpacing.marginMobile),
             verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)
         ) {
-            Text("Edit trip", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.trip_edit_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
 
-            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Trip name") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = destination, onValueChange = { destination = it }, label = { Text("Destination") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text(stringResource(R.string.trip_edit_name_label)) }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = destination, onValueChange = { destination = it }, label = { Text(stringResource(R.string.trip_edit_destination_label)) }, modifier = Modifier.fillMaxWidth())
 
-            Text("Cover photo", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.trip_edit_cover_photo_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -108,7 +110,7 @@ fun TripEditSheet(
                 val previewModel = coverImageUri ?: trip.coverImageUrl.takeIf { it.isNotBlank() }
                 if (previewModel != null) {
                     AsyncImage(
-                        model = previewModel, contentDescription = "Cover photo", contentScale = ContentScale.Crop,
+                        model = previewModel, contentDescription = stringResource(R.string.trip_edit_cover_photo_label), contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(16.dp))
                     )
                     Box(
@@ -117,22 +119,22 @@ fun TripEditSheet(
                             .background(MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.9f))
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
-                        Text("Tap to change", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(R.string.trip_edit_tap_to_change), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                     }
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Filled.AddAPhoto, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Text("Add a photo from your device", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+                        Text(stringResource(R.string.trip_edit_add_photo), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
                     }
                 }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)) {
                 OutlinedButton(onClick = { pickingStart = true }, modifier = Modifier.weight(1f)) {
-                    Text(startDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: "Start date")
+                    Text(startDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: stringResource(R.string.trip_edit_start_date))
                 }
                 OutlinedButton(onClick = { pickingEnd = true }, modifier = Modifier.weight(1f)) {
-                    Text(endDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: "End date")
+                    Text(endDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: stringResource(R.string.trip_edit_end_date))
                 }
             }
 
@@ -143,9 +145,9 @@ fun TripEditSheet(
                 },
                 enabled = name.isNotBlank() && startDate != null && endDate != null,
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("Save changes") }
+            ) { Text(stringResource(R.string.trip_edit_save_changes)) }
 
-            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Cancel") }
+            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.action_cancel)) }
 
             Button(
                 onClick = { confirmingDelete = true },
@@ -153,7 +155,7 @@ fun TripEditSheet(
                 modifier = Modifier.fillMaxWidth().padding(top = TriProSpacing.stackLg)
             ) {
                 Icon(Icons.Filled.DeleteForever, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                Text("Delete trip")
+                Text(stringResource(R.string.trip_edit_delete_trip))
             }
         }
     }
@@ -162,25 +164,25 @@ fun TripEditSheet(
         val state = rememberDatePickerState()
         DatePickerDialog(
             onDismissRequest = { pickingStart = false },
-            confirmButton = { TextButton(onClick = { state.selectedDateMillis?.let { startDate = it.toLocalDate() }; pickingStart = false }) { Text("OK") } },
-            dismissButton = { TextButton(onClick = { pickingStart = false }) { Text("Cancel") } }
+            confirmButton = { TextButton(onClick = { state.selectedDateMillis?.let { startDate = it.toLocalDate() }; pickingStart = false }) { Text(stringResource(R.string.action_ok)) } },
+            dismissButton = { TextButton(onClick = { pickingStart = false }) { Text(stringResource(R.string.action_cancel)) } }
         ) { DatePicker(state = state) }
     }
     if (pickingEnd) {
         val state = rememberDatePickerState()
         DatePickerDialog(
             onDismissRequest = { pickingEnd = false },
-            confirmButton = { TextButton(onClick = { state.selectedDateMillis?.let { endDate = it.toLocalDate() }; pickingEnd = false }) { Text("OK") } },
-            dismissButton = { TextButton(onClick = { pickingEnd = false }) { Text("Cancel") } }
+            confirmButton = { TextButton(onClick = { state.selectedDateMillis?.let { endDate = it.toLocalDate() }; pickingEnd = false }) { Text(stringResource(R.string.action_ok)) } },
+            dismissButton = { TextButton(onClick = { pickingEnd = false }) { Text(stringResource(R.string.action_cancel)) } }
         ) { DatePicker(state = state) }
     }
     if (confirmingDelete) {
         AlertDialog(
             onDismissRequest = { confirmingDelete = false },
-            title = { Text("Delete this trip?") },
-            text = { Text("This removes \"${trip.name}\" for every collaborator. This can't be undone.") },
-            confirmButton = { TextButton(onClick = { confirmingDelete = false; onDeleteTrip() }) { Text("Delete", color = MaterialTheme.colorScheme.error) } },
-            dismissButton = { TextButton(onClick = { confirmingDelete = false }) { Text("Cancel") } }
+            title = { Text(stringResource(R.string.trip_edit_delete_confirm_title)) },
+            text = { Text(stringResource(R.string.trip_edit_delete_confirm_text, trip.name)) },
+            confirmButton = { TextButton(onClick = { confirmingDelete = false; onDeleteTrip() }) { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { TextButton(onClick = { confirmingDelete = false }) { Text(stringResource(R.string.action_cancel)) } }
         )
     }
 }

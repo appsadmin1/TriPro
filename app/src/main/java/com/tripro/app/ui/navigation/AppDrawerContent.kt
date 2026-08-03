@@ -33,15 +33,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.tripro.app.R
 import com.tripro.app.navigation.Destinations
 import com.tripro.app.util.AppLanguage
-import com.tripro.app.util.LanguagePreference
-import com.tripro.app.util.recreateActivity
+import com.tripro.app.util.currentAppLanguage
+import com.tripro.app.util.setAppLanguage
 
 @Composable
 fun AppDrawerContent(
@@ -52,8 +51,7 @@ fun AppDrawerContent(
     onInviteFriends: () -> Unit,
     onSignOut: () -> Unit
 ) {
-    val context = LocalContext.current
-    var currentLanguage by remember { mutableStateOf(LanguagePreference.get(context)) }
+    var currentLanguage by remember { mutableStateOf(currentAppLanguage()) }
 
     ModalDrawerSheet {
         Column(modifier = Modifier.fillMaxHeight().padding(vertical = 24.dp)) {
@@ -99,8 +97,9 @@ fun AppDrawerContent(
                     onClick = {
                         if (language != currentLanguage) {
                             currentLanguage = language
-                            LanguagePreference.set(context, language)
-                            context.recreateActivity()
+                            // AppCompatDelegate recreates whichever activities need it to
+                            // pick up the new locale — no manual Activity.recreate() call.
+                            setAppLanguage(language)
                         }
                     },
                     modifier = Modifier.padding(horizontal = 12.dp)

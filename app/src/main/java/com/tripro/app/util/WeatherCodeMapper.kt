@@ -3,26 +3,13 @@ package com.tripro.app.util
 /**
  * WMO weather interpretation codes, per Open-Meteo's docs
  * (https://open-meteo.com/en/docs#weather_variable_documentation).
+ *
+ * Display text moved to weatherConditionLabel() in DisplayLabels.kt, since that needs a
+ * Composable context to resolve stringResource(). This object now only maps codes to
+ * Material Symbols glyph names, which aren't user-visible text.
  */
 object WeatherCodeMapper {
-    fun label(code: Int?): String = when (code) {
-        0 -> "Clear sky"
-        1, 2, 3 -> "Partly cloudy"
-        45, 48 -> "Fog"
-        51, 53, 55 -> "Drizzle"
-        56, 57 -> "Freezing drizzle"
-        61, 63, 65 -> "Rain"
-        66, 67 -> "Freezing rain"
-        71, 73, 75 -> "Snow"
-        77 -> "Snow grains"
-        80, 81, 82 -> "Rain showers"
-        85, 86 -> "Snow showers"
-        95 -> "Thunderstorm"
-        96, 99 -> "Thunderstorm with hail"
-        else -> "Weather"
-    }
-
-    /** Material Symbols glyph name to render alongside [label]. */
+    /** Material Symbols glyph name to render alongside the weather condition. */
     fun icon(code: Int?): String = when (code) {
         0 -> "clear_day"
         1, 2 -> "partly_cloudy_day"

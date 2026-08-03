@@ -7,6 +7,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.tripro.app.R
 
 /**
  * A plain numeric hour/minute entry dialog — Material3's `TimeInput`, not `TimePicker`'s
@@ -21,7 +23,7 @@ import androidx.compose.runtime.Composable
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SimpleTimePickerDialog(
-    title: String = "Select time",
+    title: String = stringResource(R.string.time_picker_default_title),
     initial: String, // "HH:mm", 24-hour
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
@@ -37,8 +39,8 @@ fun SimpleTimePickerDialog(
         title = { Text(title) },
         text = { TimeInput(state = state) },
         confirmButton = {
-            TextButton(onClick = { onConfirm("%02d:%02d".format(state.hour, state.minute)) }) { Text("OK") }
+            TextButton(onClick = { onConfirm("%02d:%02d".format(state.hour, state.minute)) }) { Text(stringResource(R.string.action_ok)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
     )
 }

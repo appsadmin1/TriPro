@@ -1,6 +1,6 @@
 package com.tripro.app
 
-import android.content.Context
+
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -29,17 +29,12 @@ import com.tripro.app.ui.auth.AuthUiState
 import com.tripro.app.ui.auth.AuthViewModel
 import com.tripro.app.ui.theme.TriProTheme
 import androidx.compose.runtime.remember
-import com.tripro.app.util.LanguagePreference
-import com.tripro.app.util.applyAppLocale
+import com.tripro.app.util.currentAppLanguage
 
 class MainActivity : ComponentActivity() {
 
     private val deepLinkState = mutableStateOf<PendingDeepLink?>(null)
     private lateinit var authViewModel: AuthViewModel
-
-    override fun attachBaseContext(newBase: Context) {
-        super.attachBaseContext(newBase.applyAppLocale())
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -60,7 +55,7 @@ class MainActivity : ComponentActivity() {
         splashScreen.setKeepOnScreenCondition { authViewModel.uiState.value is AuthUiState.CheckingSession }
 
         setContent {
-            val appLanguage = remember { LanguagePreference.get(this@MainActivity) }
+            val appLanguage = remember { currentAppLanguage() }
             TriProTheme(appLanguage = appLanguage) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     val authState by authViewModel.uiState.collectAsState()

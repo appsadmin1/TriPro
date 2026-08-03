@@ -1,10 +1,7 @@
 package com.tripro.app.util
 
-import android.app.Activity
-import android.content.Context
-import android.content.res.Configuration
-import androidx.core.content.edit
-import java.util.Locale
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 
 /** Languages TriPro supports choosing from the navigation drawer (see AppDrawerContent). */
 enum class AppLanguage(val code: String, val displayName: String) {
@@ -16,47 +13,28 @@ enum class AppLanguage(val code: String, val displayName: String) {
     }
 }
 
-private const val PREFS_NAME = "tripro_prefs"
-private const val KEY_LANGUAGE = "selected_language"
-
-/** Persists the user's chosen in-app language across process restarts — a plain
- *  SharedPreferences read/write (not tied to AppContainer) so it's readable from
- *  attachBaseContext(), which runs before AppContainer exists. */
-object LanguagePreference {
-    fun get(context: Context): AppLanguage {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return AppLanguage.fromCode(prefs.getString(KEY_LANGUAGE, null))
-    }
-
-    fun set(context: Context, language: AppLanguage) {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit {
-            putString(KEY_LANGUAGE, language.code)
-        }
-    }
-}
-
 /**
- * Wraps [this] with a Configuration locked to [language] (defaulting to whatever's
- * persisted). TriPro's language is an explicit in-app choice rather than a follower of
- * the device's system locale — this used to unconditionally force English regardless of
- * device locale; it's now generalized so Hebrew can be chosen the same way from
- * AppDrawerContent's language picker.
+ * Reads/writes the person's chosen in-app language via AppCompatDelegate's per-app
+ * language support (androidx.appcompat 1.6+) — Google's supported mechanism for "switch
+ * this app's language independent of the device's system language."
  *
- * Both the Locale *and* LayoutDirection are set here; ui/theme/Theme.kt separately
- * forces Compose's LocalLayoutDirection to match — the two need to agree, or content
- * Android renders outside Compose would mismatch Compose's own layout direction.
+ * This replaced an earlier manual attachBaseContext()/createConfigurationContext()
+ * approach, which correctly flipped Compose's layout direction (Compose derives
+ * LocalLayoutDirection from the real Android Configuration, so once *any* mechanism
+ * applies an RTL locale, mirroring follows) but did not reliably make stringResource()
+ * resolve values-he/ strings — a known-fragile pattern with manually wrapped Contexts on
+ * some OEM builds. AppCompatDelegate routes through Android 13+'s own LocaleManager where
+ * available, with a well-tested polyfill below that, and reliably makes both follow.
+ *
+ * AppCompatDelegate persists the choice itself — no separate storage needed here.
  */
-fun Context.applyAppLocale(language: AppLanguage = LanguagePreference.get(this)): Context {
-    val locale = Locale(language.code)
-    Locale.setDefault(locale)
-    val config = Configuration(resources.configuration)
-    config.setLocale(locale)
-    config.setLayoutDirection(locale)
-    return createConfigurationContext(config)
+fun currentAppLanguage(): AppLanguage {
+    val tag = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+    return AppLanguage.entries.firstOrNull { tag.startsWith(it.code) } ?: AppLanguage.ENGLISH
 }
 
-/** Restarts the current Activity so a locale change (Locale + LayoutDirection, both set
- *  at attachBaseContext time) actually takes effect. */
-fun Context.recreateActivity() {
-    (this as? Activity)?.recreate()
+/** Switches the app's language. AppCompatDelegate recreates whichever activities need it
+ *  to pick up the new locale — no manual Activity.recreate() call needed. */
+fun setAppLanguage(language: AppLanguage) {
+    AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language.code))
 }

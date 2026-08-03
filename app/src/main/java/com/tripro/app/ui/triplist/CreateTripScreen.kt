@@ -45,11 +45,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
 import coil.compose.AsyncImage
+import com.tripro.app.R
 import com.tripro.app.TriProApplication
 import com.tripro.app.ui.theme.HorizonEthosColors
 import com.tripro.app.ui.theme.TriProSpacing
@@ -88,8 +90,6 @@ fun CreateTripRoute(
     var pickingStart by remember { mutableStateOf(false) }
     var pickingEnd by remember { mutableStateOf(false) }
 
-    // Android's built-in Photo Picker — no storage permission needed on any API level,
-    // which is why this replaces what used to be a plain "paste a URL" text field.
     val photoPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri -> if (uri != null) coverImageUri = uri }
@@ -97,9 +97,9 @@ fun CreateTripRoute(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("New Vacation") },
+                title = { Text(stringResource(R.string.create_trip_title)) },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text("Cancel") }
+                    TextButton(onClick = onBack) { Text(stringResource(R.string.action_cancel)) }
                 }
             )
         }
@@ -115,17 +115,17 @@ fun CreateTripRoute(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Trip name (e.g. Kyoto Retreat)") },
+                label = { Text(stringResource(R.string.create_trip_name_label)) },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = destination,
                 onValueChange = { destination = it },
-                label = { Text("Destination") },
+                label = { Text(stringResource(R.string.create_trip_destination_label)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Text("Cover photo", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.trip_edit_cover_photo_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -141,7 +141,7 @@ fun CreateTripRoute(
                 if (coverImageUri != null) {
                     AsyncImage(
                         model = coverImageUri,
-                        contentDescription = "Selected cover photo",
+                        contentDescription = stringResource(R.string.create_trip_selected_photo_cd),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp))
                     )
@@ -153,13 +153,13 @@ fun CreateTripRoute(
                             .background(MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.9f))
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
-                        Text("Tap to change", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(R.string.trip_edit_tap_to_change), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                     }
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Filled.AddAPhoto, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Text(
-                            "Add a photo from your device",
+                            stringResource(R.string.trip_edit_add_photo),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)
@@ -170,14 +170,16 @@ fun CreateTripRoute(
 
             Row(horizontalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)) {
                 OutlinedButton(onClick = { pickingStart = true }, modifier = Modifier.weight(1f)) {
-                    Text(startDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: "Start date")
+                    Text(startDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: stringResource(R.string.trip_edit_start_date))
                 }
                 OutlinedButton(onClick = { pickingEnd = true }, modifier = Modifier.weight(1f)) {
-                    Text(endDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: "End date")
+                    Text(endDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: stringResource(R.string.trip_edit_end_date))
                 }
             }
 
-            if (uiState.error != null) {
+            if (uiState.validationError) {
+                Text(stringResource(R.string.create_trip_validation_error), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            } else if (uiState.error != null) {
                 Text(uiState.error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
 
@@ -192,7 +194,7 @@ fun CreateTripRoute(
                 enabled = !uiState.isSaving && name.isNotBlank() && startDate != null && endDate != null,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             ) {
-                Text(if (uiState.isSaving) "Creating…" else "Create Vacation")
+                Text(if (uiState.isSaving) stringResource(R.string.create_trip_creating) else stringResource(R.string.create_trip_create_button))
             }
         }
     }
@@ -205,9 +207,9 @@ fun CreateTripRoute(
                 TextButton(onClick = {
                     state.selectedDateMillis?.let { startDate = it.toLocalDate() }
                     pickingStart = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.action_ok)) }
             },
-            dismissButton = { TextButton(onClick = { pickingStart = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { pickingStart = false }) { Text(stringResource(R.string.action_cancel)) } }
         ) { DatePicker(state = state) }
     }
 
@@ -219,9 +221,9 @@ fun CreateTripRoute(
                 TextButton(onClick = {
                     state.selectedDateMillis?.let { endDate = it.toLocalDate() }
                     pickingEnd = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.action_ok)) }
             },
-            dismissButton = { TextButton(onClick = { pickingEnd = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { pickingEnd = false }) { Text(stringResource(R.string.action_cancel)) } }
         ) { DatePicker(state = state) }
     }
 }

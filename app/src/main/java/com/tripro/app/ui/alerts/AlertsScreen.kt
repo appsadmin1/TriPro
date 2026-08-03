@@ -38,7 +38,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.tripro.app.R
 import com.tripro.app.data.model.ActivityType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,21 +52,20 @@ fun AlertsRoute(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Opening the tab is what clears the unread badge.
     LaunchedEffect(Unit) { viewModel.markAllSeen() }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Alerts") },
-                navigationIcon = { IconButton(onClick = onOpenDrawer) { Icon(Icons.Filled.Menu, contentDescription = "Menu") } }
+                title = { Text(stringResource(R.string.alerts_title)) },
+                navigationIcon = { IconButton(onClick = onOpenDrawer) { Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu_cd)) } }
             )
         }
     ) { padding ->
         when {
             uiState.isLoading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             uiState.entries.isEmpty() -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("No updates yet — changes to your trips will show up here.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.alerts_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
