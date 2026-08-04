@@ -86,7 +86,7 @@ fun ItineraryItemRow(
     val effectiveCanEdit = canEdit && !isSynthetic
 
     Row(modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-        Column(modifier = Modifier.width(90.dp).padding(top = 8.dp)) {
+        Column(modifier = Modifier.width(100.dp).padding(top = 8.dp)) {
             when (item.timeType) {
                 TimeType.EXACT -> Text(item.startTime ?: "--:--", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1)
                 TimeType.RANGE -> {
@@ -95,7 +95,7 @@ fun ItineraryItemRow(
                 }
                 TimeType.PERIOD -> Text(
                     (item.period ?: DayPeriod.MORNING).localizedLabel(),
-                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 16.sp),
+                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 14.sp),
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1,
                     softWrap = false

@@ -1,21 +1,51 @@
 package com.tripro.app.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.runtime.CompositionLocalProvider
 import com.tripro.app.R
 
 /**
- * A clean digital time entry dialog using Material3's `TimeInput`.
+ * A time entry dialog supporting both scrolling wheels and digital input (TimeInput).
+ * Tapping the time header toggles between the two modes.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,22 +56,174 @@ fun SimpleTimePickerDialog(
     onConfirm: (String) -> Unit
 ) {
     val parts = initial.split(":")
-    val state = rememberTimePickerState(
-        initialHour = parts.getOrNull(0)?.toIntOrNull()?.coerceIn(0, 23) ?: 9,
-        initialMinute = parts.getOrNull(1)?.toIntOrNull()?.coerceIn(0, 59) ?: 0,
-        is24Hour = true
-    )
+    val initialHour = parts.getOrNull(0)?.toIntOrNull()?.coerceIn(0, 23) ?: 9
+    val initialMinute = parts.getOrNull(1)?.toIntOrNull()?.coerceIn(0, 59) ?: 0
+
+    var selectedHour by remember { mutableStateOf(initialHour) }
+    var selectedMinute by remember { mutableStateOf(initialMinute) }
+    var showManualInput by remember { mutableStateOf(false) }
+
+    // Recreate state for TimeInput whenever it becomes visible to sync from wheels
+    val timeInputState = if (showManualInput) {
+        rememberTimePickerState(initialHour = selectedHour, initialMinute = selectedMinute, is24Hour = true)
+    } else null
+
+    // If in manual mode, sync back to local state
+    LaunchedEffect(timeInputState?.hour, timeInputState?.minute) {
+        timeInputState?.let {
+            selectedHour = it.hour
+            selectedMinute = it.minute
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { 
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                TimeInput(state = state) 
+        confirmButton = {
+            TextButton(onClick = { onConfirm("%02d:%02d".format(selectedHour, selectedMinute)) }) {
+                Text(stringResource(R.string.action_ok))
             }
         },
-        confirmButton = {
-            TextButton(onClick = { onConfirm("%02d:%02d".format(state.hour, state.minute)) }) { Text(stringResource(R.string.action_ok)) }
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(title)
+                IconButton(onClick = { showManualInput = !showManualInput }) {
+                    Icon(
+                        imageVector = if (showManualInput) Icons.Default.AccessTime else Icons.Default.Keyboard,
+                        contentDescription = if (showManualInput) "Switch to wheels" else "Switch to keyboard"
+                    )
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Clickable Time Header
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showManualInput = !showManualInput }
+                        .padding(bottom = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "%02d:%02d".format(selectedHour, selectedMinute),
+                        style = MaterialTheme.typography.displayMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+
+                if (showManualInput && timeInputState != null) {
+                    TimeInput(state = timeInputState)
+                } else {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().height(160.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            WheelPicker(
+                                count = 24,
+                                initialValue = selectedHour,
+                                onValueChange = { selectedHour = it },
+                                modifier = Modifier.width(70.dp)
+                            )
+                            Text(
+                                ":",
+                                style = MaterialTheme.typography.displaySmall,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                            WheelPicker(
+                                count = 60,
+                                initialValue = selectedMinute,
+                                onValueChange = { selectedMinute = it },
+                                modifier = Modifier.width(70.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
     )
+}
+
+@Composable
+private fun WheelPicker(
+    count: Int,
+    initialValue: Int,
+    onValueChange: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val itemHeight = 48.dp
+    // Infinity scrolling effect
+    val totalItems = 10000 // Sufficiently large for "infinite" feel
+    val initialIndex = totalItems / 2 - (totalItems / 2 % count) + initialValue
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex - 1)
+    val snapFlingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
+
+    val centerIndex by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex + 1
+        }
+    }
+
+    LaunchedEffect(centerIndex) {
+        onValueChange(centerIndex % count)
+    }
+
+    Box(modifier = modifier.height(itemHeight * 3), contentAlignment = Alignment.Center) {
+        // Selection overlay
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(itemHeight)
+                .padding(horizontal = 4.dp)
+                .alpha(0.12f)
+                .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small)
+        )
+
+        LazyColumn(
+            state = listState,
+            flingBehavior = snapFlingBehavior,
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            items(totalItems) { index ->
+                val value = index % count
+                val isSelected = index == centerIndex
+                Box(
+                    modifier = Modifier
+                        .height(itemHeight)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "%02d".format(value),
+                        style = if (isSelected) {
+                            MaterialTheme.typography.headlineMedium.copy(
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        } else {
+                            MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                        }
+                    )
+                }
+            }
+        }
+    }
 }

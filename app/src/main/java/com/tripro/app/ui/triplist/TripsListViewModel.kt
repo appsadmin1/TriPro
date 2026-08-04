@@ -40,6 +40,16 @@ class TripsListViewModel(
     fun refresh() {
         Log.d("TripsListViewModel", "Manual refresh requested")
         _uiState.value = _uiState.value.copy(isRefreshing = true)
+        
+        // Safety timeout: ensure refresh indicator disappears even if Firestore is slow
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(2000)
+            if (_uiState.value.isRefreshing) {
+                Log.d("TripsListViewModel", "Refresh safety timeout reached")
+                _uiState.value = _uiState.value.copy(isRefreshing = false)
+            }
+        }
+        
         startObservingTrips()
     }
 

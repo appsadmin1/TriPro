@@ -374,18 +374,43 @@ private fun DayRow(day: TripDay, items: List<ItineraryItem>, activityColors: Act
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
-                // Design-inspired activity indicator bars (dynamic based on items)
+                // Design-inspired activity indicator bars sorted chronologically
+                val indicators = remember(day, items) {
+                    val list = mutableListOf<Pair<Int, MarkerColorKey>>()
+                    
+                    fun parseMinutes(t: String?): Int = t?.let {
+                        val parts = it.split(":")
+                        val h = parts.getOrNull(0)?.toIntOrNull() ?: 0
+                        val m = parts.getOrNull(1)?.toIntOrNull() ?: 0
+                        h * 60 + m
+                    } ?: 0
+
+                    day.hotel?.let { h ->
+                        if (!h.checkIn.isNullOrBlank()) list.add(parseMinutes(h.checkIn) to MarkerColorKey.HOTEL)
+                        if (!h.checkOut.isNullOrBlank()) list.add(parseMinutes(h.checkOut) to MarkerColorKey.HOTEL)
+                        if (h.checkIn.isNullOrBlank() && h.checkOut.isNullOrBlank()) list.add(0 to MarkerColorKey.HOTEL)
+                    }
+                    day.flight?.let { f ->
+                        if (!f.departureTime.isNullOrBlank()) list.add(parseMinutes(f.departureTime) to MarkerColorKey.FLIGHT)
+                        if (!f.arrivalTime.isNullOrBlank()) list.add(parseMinutes(f.arrivalTime) to MarkerColorKey.FLIGHT)
+                        if (f.departureTime.isNullOrBlank() && f.arrivalTime.isNullOrBlank()) list.add(0 to MarkerColorKey.FLIGHT)
+                    }
+                    items.forEach { item ->
+                        list.add(item.sortMinutes() to item.type.toMarkerColorKey())
+                    }
+                    
+                    list.sortBy { it.first }
+                    // Distinct by type to avoid too many redundant bars if many items of same type exist, 
+                    // but keep the chronological order of the FIRST occurrence of each type.
+                    // Actually, let's just show them all in order as the user asked for "order by items".
+                    list.map { it.second }
+                }
+
                 Row(modifier = Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (day.hotel != null) {
-                        Box(modifier = Modifier.size(16.dp, 4.dp).clip(CircleShape).background(Color(activityColors.colorInt(MarkerColorKey.HOTEL))))
+                    indicators.forEach { colorKey ->
+                        Box(modifier = Modifier.size(16.dp, 4.dp).clip(CircleShape).background(Color(activityColors.colorInt(colorKey))))
                     }
-                    if (day.flight != null) {
-                        Box(modifier = Modifier.size(16.dp, 4.dp).clip(CircleShape).background(Color(activityColors.colorInt(MarkerColorKey.FLIGHT))))
-                    }
-                    items.distinctBy { it.type }.forEach { item ->
-                        Box(modifier = Modifier.size(16.dp, 4.dp).clip(CircleShape).background(Color(activityColors.colorInt(item.type.toMarkerColorKey()))))
-                    }
-                    if (day.hotel == null && day.flight == null && items.isEmpty()) {
+                    if (indicators.isEmpty()) {
                         Box(modifier = Modifier.size(24.dp, 4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)))
                     }
                 }
