@@ -7,15 +7,15 @@ import androidx.compose.ui.graphics.Color
  * Do not hand-tune these — if the palette changes, change DESIGN.md and regenerate this file.
  */
 object HorizonEthosColors {
-    val Surface = Color(0xFFF8F9FF)
-    val SurfaceDim = Color(0xFFCBDBF5)
-    val SurfaceBright = Color(0xFFF8F9FF)
+    val Surface = Color(0xFFF9FAFB)
+    val SurfaceDim = Color(0xFFD1D5DB)
+    val SurfaceBright = Color(0xFFF9FAFB)
     val SurfaceContainerLowest = Color(0xFFFFFFFF)
-    val SurfaceContainerLow = Color(0xFFEFF4FF)
-    val SurfaceContainer = Color(0xFFE5EEFF)
-    val SurfaceContainerHigh = Color(0xFFDCE9FF)
-    val SurfaceContainerHighest = Color(0xFFD3E4FE)
-    val SurfaceVariant = Color(0xFFD3E4FE)
+    val SurfaceContainerLow = Color(0xFFF3F4F6)
+    val SurfaceContainer = Color(0xFFE5E7EB)
+    val SurfaceContainerHigh = Color(0xFFD1D5DB)
+    val SurfaceContainerHighest = Color(0xFF9CA3AF)
+    val SurfaceVariant = Color(0xFFF3F4F6)
 
     val OnSurface = Color(0xFF0B1C30)
     val OnSurfaceVariant = Color(0xFF43474F)

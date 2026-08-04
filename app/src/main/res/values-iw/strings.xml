@@ -26,6 +26,9 @@
     <string name="login_tagline">המסע המשותף שלך מתחיל כאן.</string>
     <string name="login_subtitle">תכננו, שתפו וחוו טיולים כמו מעולם לא. ארגון ברמה גבוהה, לצד הקסם שבגילוי מקומות חדשים.</string>
     <string name="login_sign_in_google">התחברות עם Google</string>
+    <string name="login_hero_title">המסע המשותף\nשלך מתחיל כאן.</string>
+    <string name="login_hero_subtitle">תכננו, שתפו וחוו טיולים כמו מעולם לא. ארגון ברמה גבוהה, לצד הקסם שבגילוי מקומות חדשים.</string>
+    <string name="login_quote">\"העולם הוא ספר, ומי שאינו מטייל קורא רק דף אחד.\"</string>
 
     <string name="trips_title">הטיולים שלי</string>
     <string name="trips_subtitle">ההרפתקאות הקרובות והעבר שלך.</string>
@@ -45,6 +48,11 @@
         <item quantity="one">יום אחד</item>
         <item quantity="two">יומיים</item>
         <item quantity="other">%d ימים</item>
+    </plurals>
+    <plurals name="trip_overview_docs_count">
+        <item quantity="one">מסמך אחד</item>
+        <item quantity="two">שני מסמכים</item>
+        <item quantity="other">%d מסמכים</item>
     </plurals>
 
     <string name="settings_title">הגדרות</string>
@@ -87,6 +95,7 @@
     <string name="day_detail_checkin_checkout">צ\'ק-אין %1$s  ·  צ\'ק-אאוט %2$s</string>
     <string name="day_detail_edit_hotel_cd">עריכת מלון</string>
     <string name="day_detail_add_flight_button">הוספת טיסה ליום זה</string>
+    <string name="day_detail_base_camp">בסיס</string>
     <string name="day_detail_hotel_dialog_title">מלון ליום זה</string>
     <string name="day_detail_search_hotel">חיפוש מלון ב-Google Maps</string>
     <string name="day_detail_change_hotel">החלפת מלון</string>
@@ -206,6 +215,10 @@
     <string name="trip_overview_travelers_label">מטיילים</string>
     <string name="trip_overview_status_label">סטטוס</string>
     <string name="trip_overview_day_label">יום %1$d</string>
+    <string name="trip_overview_duration">משך</string>
+    <string name="trip_overview_saved_docs">שמורים</string>
+    <string name="trip_overview_planned_stops">מתוכננים</string>
+    <string name="day_row_free_day">יום חופשי</string>
 
     <string name="trip_edit_title">עריכת טיול</string>
     <string name="trip_edit_name_label">שם הטיול</string>
@@ -245,6 +258,10 @@
     <string name="collaborators_pending_invites">הזמנות ממתינות</string>
     <string name="collaborators_invite_pending">ההזמנה ממתינה — יצטרפו כ%1$s לאחר ההתחברות</string>
     <string name="collaborators_remove_menu_item">הסרה</string>
+    <string name="collaborators_editor_title">גישת עורך</string>
+    <string name="collaborators_editor_desc">יכול להוסיף, לערוך או למחוק פריטי מסלול.</string>
+    <string name="collaborators_read_only_title">צפייה בלבד</string>
+    <string name="collaborators_read_only_desc">יכול לצפות במסלול המלא, אך לא לשנות.</string>
 
     <string name="alerts_title">התראות</string>
     <string name="alerts_empty">עדיין אין עדכונים — שינויים בטיולים שלך יופיעו כאן.</string>

@@ -23,8 +23,9 @@ import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +34,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -75,8 +76,7 @@ fun TripEditSheet(
     var coverImageUri by remember { mutableStateOf<Uri?>(null) }
     var startDate by remember { mutableStateOf(runCatching { LocalDate.parse(trip.startDate) }.getOrNull()) }
     var endDate by remember { mutableStateOf(runCatching { LocalDate.parse(trip.endDate) }.getOrNull()) }
-    var pickingStart by remember { mutableStateOf(false) }
-    var pickingEnd by remember { mutableStateOf(false) }
+    var pickingDates by remember { mutableStateOf(false) }
     var confirmingDelete by remember { mutableStateOf(false) }
 
     val photoPicker = rememberLauncherForActivityResult(
@@ -130,11 +130,10 @@ fun TripEditSheet(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)) {
-                OutlinedButton(onClick = { pickingStart = true }, modifier = Modifier.weight(1f)) {
-                    Text(startDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: stringResource(R.string.trip_edit_start_date))
-                }
-                OutlinedButton(onClick = { pickingEnd = true }, modifier = Modifier.weight(1f)) {
-                    Text(endDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: stringResource(R.string.trip_edit_end_date))
+                OutlinedButton(onClick = { pickingDates = true }, modifier = Modifier.fillMaxWidth()) {
+                    val startLabel = startDate?.format(DateTimeFormatter.ofPattern("MMM d")) ?: stringResource(R.string.trip_edit_start_date)
+                    val endLabel = endDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: stringResource(R.string.trip_edit_end_date)
+                    Text(if (startDate != null && endDate != null) "$startLabel – $endLabel" else stringResource(R.string.trip_edit_start_date))
                 }
             }
 
@@ -160,21 +159,28 @@ fun TripEditSheet(
         }
     }
 
-    if (pickingStart) {
-        val state = rememberDatePickerState()
+    if (pickingDates) {
+        val dateRangePickerState = rememberDateRangePickerState(
+            initialSelectedStartDateMillis = startDate?.toEpochMilli(),
+            initialSelectedEndDateMillis = endDate?.toEpochMilli(),
+            initialDisplayMode = DisplayMode.Picker
+        )
         DatePickerDialog(
-            onDismissRequest = { pickingStart = false },
-            confirmButton = { TextButton(onClick = { state.selectedDateMillis?.let { startDate = it.toLocalDate() }; pickingStart = false }) { Text(stringResource(R.string.action_ok)) } },
-            dismissButton = { TextButton(onClick = { pickingStart = false }) { Text(stringResource(R.string.action_cancel)) } }
-        ) { DatePicker(state = state) }
-    }
-    if (pickingEnd) {
-        val state = rememberDatePickerState()
-        DatePickerDialog(
-            onDismissRequest = { pickingEnd = false },
-            confirmButton = { TextButton(onClick = { state.selectedDateMillis?.let { endDate = it.toLocalDate() }; pickingEnd = false }) { Text(stringResource(R.string.action_ok)) } },
-            dismissButton = { TextButton(onClick = { pickingEnd = false }) { Text(stringResource(R.string.action_cancel)) } }
-        ) { DatePicker(state = state) }
+            onDismissRequest = { pickingDates = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    startDate = dateRangePickerState.selectedStartDateMillis?.toLocalDate()
+                    endDate = dateRangePickerState.selectedEndDateMillis?.toLocalDate()
+                    pickingDates = false
+                }) { Text(stringResource(R.string.action_ok)) }
+            },
+            dismissButton = { TextButton(onClick = { pickingDates = false }) { Text(stringResource(R.string.action_cancel)) } }
+        ) {
+            DateRangePicker(
+                state = dateRangePickerState,
+                modifier = Modifier.height(400.dp)
+            )
+        }
     }
     if (confirmingDelete) {
         AlertDialog(
@@ -188,3 +194,5 @@ fun TripEditSheet(
 }
 
 private fun Long.toLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
+
+private fun LocalDate.toEpochMilli(): Long = this.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()

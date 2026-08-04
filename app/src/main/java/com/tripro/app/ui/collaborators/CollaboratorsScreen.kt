@@ -30,7 +30,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -62,6 +61,13 @@ import com.tripro.app.ui.theme.HorizonEthosColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.localizedLabel
 
+import androidx.compose.material.icons.filled.Mail
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.border
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollaboratorsRoute(
@@ -85,12 +91,17 @@ fun CollaboratorsRoute(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.collaborators_title)) },
+                title = {
+                    Column {
+                        Text(stringResource(R.string.collaborators_title), style = MaterialTheme.typography.headlineMedium)
+                        Text("Paris 2023", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd)) } }
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(TriProSpacing.marginMobile),
@@ -98,12 +109,14 @@ fun CollaboratorsRoute(
             ) {
                 if (uiState.isOwner) {
                     item {
+                        // Glass Panel Invite Section
                         Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-                            border = BorderStroke(1.dp, HorizonEthosColors.CardBorder)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.7f)),
+                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
+                            modifier = Modifier.fillMaxWidth().shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
                         ) {
-                            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)) {
+                            Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Text(stringResource(R.string.collaborators_invite_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
                                 Text(
                                     stringResource(R.string.collaborators_invite_subtitle),
@@ -113,61 +126,58 @@ fun CollaboratorsRoute(
                                 OutlinedTextField(
                                     value = email,
                                     onValueChange = { email = it },
-                                    label = { Text(stringResource(R.string.collaborators_email_label)) },
-                                    modifier = Modifier.fillMaxWidth()
+                                    placeholder = { Text(stringResource(R.string.collaborators_email_label)) },
+                                    leadingIcon = { Icon(Icons.Filled.Mail, contentDescription = null, tint = MaterialTheme.colorScheme.outline) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(8.dp)
                                 )
-                                Text(stringResource(R.string.collaborators_permission_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    FilterChip(
-                                        selected = inviteRole == Role.EDITOR,
-                                        onClick = { inviteRole = Role.EDITOR },
-                                        label = { Text(stringResource(R.string.collaborators_can_edit_chip)) }
-                                    )
-                                    FilterChip(
-                                        selected = inviteRole == Role.VIEWER,
-                                        onClick = { inviteRole = Role.VIEWER },
-                                        label = { Text(stringResource(R.string.collaborators_read_only_chip)) }
-                                    )
+                                
+                                Button(
+                                    onClick = { viewModel.invite(email, inviteRole); email = "" },
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                    ),
+                                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                                ) {
+                                    Icon(Icons.Filled.Send, contentDescription = null, modifier = Modifier.size(18.dp).padding(end = 8.dp))
+                                    Text(stringResource(R.string.collaborators_send_invite), style = MaterialTheme.typography.labelLarge)
                                 }
+
                                 if (uiState.inviteError != null) {
                                     Text(uiState.inviteError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                                 }
                                 if (uiState.inviteSuccessMessage != null) {
                                     Text(uiState.inviteSuccessMessage!!, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
                                 }
-                                Button(
-                                    onClick = { viewModel.invite(email, inviteRole); email = "" },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(Icons.Filled.Send, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                                    Text(stringResource(R.string.collaborators_send_invite))
-                                }
                             }
                         }
                     }
 
                     item {
+                        // Permissions Explainer
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                                .padding(16.dp)
+                                .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
+                            Icon(Icons.Filled.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                             Column {
-                                Text(stringResource(R.string.collaborators_can_edit_chip), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                                Text(
-                                    stringResource(R.string.collaborators_can_edit_explainer_body),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.collaborators_read_only_chip), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                                Text(
-                                    stringResource(R.string.collaborators_read_only_explainer_body),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(stringResource(R.string.collaborators_editor_title), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                                        Text(stringResource(R.string.collaborators_editor_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(stringResource(R.string.collaborators_read_only_title), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                                        Text(stringResource(R.string.collaborators_read_only_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
                             }
                         }
                     }
@@ -177,7 +187,8 @@ fun CollaboratorsRoute(
                     Text(
                         stringResource(R.string.collaborators_current_members, uiState.members.size),
                         style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
                 }
 
@@ -254,6 +265,8 @@ private fun MemberRowItem(
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+            .border(1.dp, HorizonEthosColors.CardBorder, RoundedCornerShape(12.dp))
+            .shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically

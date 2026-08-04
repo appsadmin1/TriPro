@@ -41,6 +41,15 @@ import com.tripro.app.TriProApplication
 import com.tripro.app.ui.components.TripCard
 import com.tripro.app.ui.theme.TriProSpacing
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.FlightTakeoff
+
+import androidx.compose.foundation.layout.statusBarsPadding
+
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TripsListRoute(
@@ -49,6 +58,7 @@ fun TripsListRoute(
     onCreateTrip: () -> Unit,
     onOpenDrawer: () -> Unit
 ) {
+    // ...
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
 
@@ -64,7 +74,8 @@ fun TripsListRoute(
             FloatingActionButton(
                 onClick = onCreateTrip,
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                shape = RoundedCornerShape(percent = 50) // DESIGN.md: Pill shape for indicators
             ) {
                 Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.trips_create_cd))
             }
@@ -83,33 +94,39 @@ fun TripsListRoute(
             modifier = Modifier.fillMaxSize().padding(padding)
         ) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().statusBarsPadding(),
                 contentPadding = PaddingValues(
                     start = TriProSpacing.marginMobile,
                     end = TriProSpacing.marginMobile,
                     top = 24.dp,
-                    bottom = 24.dp
+                    bottom = 120.dp // Extra padding for bottom nav
                 ),
                 verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackLg)
             ) {
                 item {
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = onOpenDrawer) {
-                            Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu_cd), tint = MaterialTheme.colorScheme.primary)
-                        }
-                        Column {
+                    Column {
+                        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = onOpenDrawer) {
+                                Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu_cd), tint = MaterialTheme.colorScheme.primary)
+                            }
                             Text(
                                 stringResource(R.string.trips_title),
-                                style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp),
+                                style = MaterialTheme.typography.displayLarge.copy(fontSize = 32.sp), // Slightly smaller to fit next to icon
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
+                        Text(
+                            stringResource(R.string.trips_subtitle),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 48.dp) // Align with title text
+                        )
                     }
                 }
 
                 if (uiState.upcoming.isNotEmpty()) {
                     item {
-                        SectionHeader(icon = Icons.Filled.Add, title = stringResource(R.string.trips_section_upcoming))
+                        SectionHeader(icon = Icons.Filled.FlightTakeoff, title = stringResource(R.string.trips_section_upcoming))
                     }
                     items(uiState.upcoming, key = { it.id }) { trip ->
                         TripCard(
@@ -126,7 +143,7 @@ fun TripsListRoute(
 
                 if (uiState.past.isNotEmpty()) {
                     item {
-                        SectionHeader(icon = Icons.Filled.History, title = stringResource(R.string.trips_section_past))
+                        SectionHeader(icon = Icons.Filled.History, title = stringResource(R.string.trips_section_past), isSecondary = true)
                     }
                     items(uiState.past, key = { it.id }) { trip ->
                         TripCard(
@@ -143,13 +160,20 @@ fun TripsListRoute(
 }
 
 @Composable
-private fun SectionHeader(icon: ImageVector, title: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+private fun SectionHeader(icon: ImageVector, title: String, isSecondary: Boolean = false) {
+    val color = if (isSecondary) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
+        Icon(
+            icon, 
+            contentDescription = null, 
+            tint = color,
+            modifier = if (isRtl && icon == Icons.Filled.FlightTakeoff) Modifier.scale(scaleX = -1f, scaleY = 1f) else Modifier
+        )
         Text(
             title,
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary,
+            color = color,
             modifier = Modifier.padding(start = 8.dp)
         )
     }

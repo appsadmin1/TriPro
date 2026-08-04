@@ -39,7 +39,7 @@ fun AvatarStack(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(avatarSize.dp)
-                    .offset(x = (-10 * index).dp)
+                    .offset(x = (-12 * index).dp)
                     .clip(CircleShape)
                     .border(2.dp, MaterialTheme.colorScheme.surfaceContainerLowest, CircleShape)
             )
@@ -48,7 +48,7 @@ fun AvatarStack(
             Box(
                 modifier = Modifier
                     .size(avatarSize.dp)
-                    .offset(x = (-10 * visible.size).dp)
+                    .offset(x = (-12 * visible.size).dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .border(2.dp, MaterialTheme.colorScheme.surfaceContainerLowest, CircleShape),
