@@ -150,7 +150,7 @@ fun DayDetailRoute(
                 title = {
                     Column {
                         Text(stringResource(R.string.day_detail_day_label, uiState.day?.dayIndex?.toString().orEmpty()), style = MaterialTheme.typography.bodySmall)
-                        Text(DateUtils.formatFullDayLabel(date, LocalContext.current), style = MaterialTheme.typography.headlineMedium)
+                        Text(DateUtils.formatFullDayLabel(date), style = MaterialTheme.typography.headlineMedium)
                     }
                 },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd)) } },

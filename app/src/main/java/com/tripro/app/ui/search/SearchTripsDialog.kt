@@ -22,7 +22,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -65,7 +64,7 @@ fun SearchTripsDialog(
                         items(filtered, key = { it.id }) { trip ->
                             ListItem(
                                 headlineContent = { Text(trip.name) },
-                                supportingContent = { Text(DateUtils.formatRange(trip.startDate, trip.endDate, LocalContext.current)) },
+                                supportingContent = { Text(DateUtils.formatRange(trip.startDate, trip.endDate)) },
                                 leadingContent = { Icon(Icons.Filled.FlightTakeoff, contentDescription = null) },
                                 modifier = Modifier.clickable { onTripSelected(trip.id) }
                             )

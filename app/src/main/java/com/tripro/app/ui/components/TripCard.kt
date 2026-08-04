@@ -90,7 +90,7 @@ fun TripCard(
                         modifier = Modifier.padding(end = 4.dp)
                     )
                     Text(
-                        DateUtils.formatRange(trip.startDate, trip.endDate, LocalContext.current),
+                        DateUtils.formatRange(trip.startDate, trip.endDate),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

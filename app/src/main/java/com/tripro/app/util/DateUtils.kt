@@ -1,6 +1,5 @@
 package com.tripro.app.util
 
-import android.content.Context
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -19,17 +18,18 @@ sealed class TripCountdown {
 object DateUtils {
     private val isoFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
-    /** The current in-app language's Locale, used for weekday/month names so switching
-     *  to Hebrew from the drawer affects dates too, not just static UI strings. */
-    private fun displayLocale(context: Context): Locale = Locale(currentAppLanguage(context).code)
+    /** Android keeps Locale.getDefault() in sync with the app's current effective
+     *  locale automatically whenever a new Configuration is delivered to the process
+     *  (including per-app language changes via LocaleManager) — no Context needed. */
+    private fun displayLocale(): Locale = Locale.getDefault()
 
     fun parse(date: String): LocalDate = LocalDate.parse(date, isoFormatter)
 
     /** "Oct 12 - Oct 18, 2023" */
-    fun formatRange(start: String, end: String, context: Context): String {
+    fun formatRange(start: String, end: String): String {
         val s = parse(start)
         val e = parse(end)
-        val locale = displayLocale(context)
+        val locale = displayLocale()
         val monthDay = DateTimeFormatter.ofPattern("MMM d", locale)
         return if (s.year == e.year) {
             "${s.format(monthDay)} - ${e.format(monthDay)}, ${e.year}"
@@ -39,15 +39,15 @@ object DateUtils {
     }
 
     /** "Tuesday, Oct 14" */
-    fun formatFullDayLabel(date: String, context: Context): String {
+    fun formatFullDayLabel(date: String): String {
         val d = parse(date)
-        val locale = displayLocale(context)
+        val locale = displayLocale()
         return "${d.dayOfWeek.getDisplayName(TextStyle.FULL, locale)}, ${d.format(DateTimeFormatter.ofPattern("MMM d", locale))}"
     }
 
     /** "Thu" */
-    fun formatWeekdayShort(date: String, context: Context): String {
-        val locale = displayLocale(context)
+    fun formatWeekdayShort(date: String): String {
+        val locale = displayLocale()
         return parse(date).dayOfWeek.getDisplayName(TextStyle.SHORT, locale).uppercase(locale)
     }
 
