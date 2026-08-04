@@ -97,11 +97,11 @@ fun TripsListRoute(
                             style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp),
                             color = MaterialTheme.colorScheme.primary
                         )
-                        Text(
+/*                        Text(
                             stringResource(R.string.trips_subtitle),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        )*/
                     }
                 }
             }

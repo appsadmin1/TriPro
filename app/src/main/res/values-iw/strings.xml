@@ -151,6 +151,9 @@
     <string name="item_sheet_address_optional_label">כתובת (רשות)</string>
     <string name="item_sheet_finetune_map">כיוונון מדויק בהקשה על המפה</string>
     <string name="item_sheet_note_label">הערה או התראה (למשל \"18+ בלבד\", \"נסגר מוקדם ב-18:00\")</string>
+    <string name="item_sheet_note_type_label">סוג הערה</string>
+    <string name="item_sheet_note_type_alert">התראה</string>
+    <string name="item_sheet_note_type_info">מידע</string>
     <string name="item_sheet_start_time_title">שעת התחלה</string>
     <string name="item_sheet_end_time_title">שעת סיום</string>
 

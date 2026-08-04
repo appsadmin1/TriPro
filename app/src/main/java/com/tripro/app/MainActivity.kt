@@ -25,12 +25,13 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.tripro.app.navigation.PendingDeepLink
 import com.tripro.app.navigation.TriProNavGraph
 import com.tripro.app.notifications.NotificationHelper
+import com.google.android.libraries.places.api.Places
 import com.tripro.app.ui.auth.AuthUiState
 import com.tripro.app.ui.auth.AuthViewModel
 import com.tripro.app.ui.theme.TriProTheme
-import androidx.compose.runtime.remember
 import com.tripro.app.util.applyAppLocale
 import com.tripro.app.util.currentAppLanguage
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
 
@@ -51,6 +52,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         deepLinkState.value = deepLinkFrom(intent)
+
+        if (BuildConfig.MAPS_API_KEY.isNotBlank()) {
+            val language = currentAppLanguage(this)
+            Places.initialize(applicationContext, BuildConfig.MAPS_API_KEY, Locale(language.code))
+        }
+
         val container = (application as TriProApplication).container
 
         authViewModel = ViewModelProvider(
@@ -64,8 +71,7 @@ class MainActivity : ComponentActivity() {
         splashScreen.setKeepOnScreenCondition { authViewModel.uiState.value is AuthUiState.CheckingSession }
 
         setContent {
-            val appLanguage = remember { currentAppLanguage(this@MainActivity) }
-            TriProTheme(appLanguage = appLanguage) {
+            TriProTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     val authState by authViewModel.uiState.collectAsState()
                     val pendingDeepLink by deepLinkState

@@ -43,6 +43,7 @@ import com.tripro.app.R
 import com.tripro.app.data.model.DayPeriod
 import com.tripro.app.data.model.ItemType
 import com.tripro.app.data.model.ItineraryItem
+import com.tripro.app.data.model.NoteType
 import com.tripro.app.data.model.TimeType
 import com.tripro.app.ui.components.SimpleTimePickerDialog
 import com.tripro.app.ui.theme.TriProSpacing
@@ -75,6 +76,7 @@ fun AddEditItemSheet(
         )
     }
     var note by remember { mutableStateOf(existing?.note.orEmpty()) }
+    var noteType by remember { mutableStateOf(existing?.noteType ?: NoteType.ALERT) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showLocationSearch by remember { mutableStateOf(false) }
@@ -208,6 +210,20 @@ fun AddEditItemSheet(
                 minLines = 2
             )
 
+            Text(stringResource(R.string.item_sheet_note_type_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = noteType == NoteType.ALERT,
+                    onClick = { noteType = NoteType.ALERT },
+                    label = { Text(stringResource(R.string.item_sheet_note_type_alert)) }
+                )
+                FilterChip(
+                    selected = noteType == NoteType.NOTE,
+                    onClick = { noteType = NoteType.NOTE },
+                    label = { Text(stringResource(R.string.item_sheet_note_type_info)) }
+                )
+            }
+
             Button(
                 onClick = {
                     onSave(
@@ -223,7 +239,8 @@ fun AddEditItemSheet(
                             address = address,
                             lat = pin?.latitude,
                             lng = pin?.longitude,
-                            note = note
+                            note = note,
+                            noteType = noteType
                         )
                     )
                 },

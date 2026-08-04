@@ -318,7 +318,7 @@ private fun HotelCard(hotel: HotelInfo?, canEdit: Boolean, onEdit: () -> Unit) {
                 Icon(Icons.Filled.Hotel, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text(stringResource(R.string.day_detail_base_camp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.day_detail_hotel), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         hotel?.name?.takeIf { it.isNotBlank() } ?: stringResource(R.string.day_detail_no_hotel),
                         style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary

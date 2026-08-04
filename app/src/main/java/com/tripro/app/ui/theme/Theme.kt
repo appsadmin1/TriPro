@@ -3,10 +3,7 @@ package com.tripro.app.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 import com.tripro.app.util.AppLanguage
 
 /**
@@ -73,20 +70,14 @@ private val HorizonEthosColorScheme = lightColorScheme(
 // MaterialTheme.colorScheme.
 
 @Composable
-fun TriProTheme(appLanguage: AppLanguage = AppLanguage.ENGLISH, content: @Composable () -> Unit) {
-    // Layout direction now follows the person's *chosen app language*, not the device's
-    // system locale — Compose otherwise mirrors layout to match an RTL device locale
-    // regardless of the manifest's supportsRtl flag (what used to cause "everything is
-    // flipped" for anyone with an RTL system locale, even though the app only ever spoke
-    // English). Language is now an explicit in-app setting, so Hebrew forces Rtl and
-    // everything else forces Ltr, decoupled from the device's own locale.
-    val layoutDirection = if (appLanguage == AppLanguage.HEBREW) LayoutDirection.Rtl else LayoutDirection.Ltr
-    CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-        MaterialTheme(
-            colorScheme = HorizonEthosColorScheme,
-            typography = TriProTypography,
-            shapes = TriProShapes,
-            content = content
-        )
-    }
+fun TriProTheme(content: @Composable () -> Unit) {
+    // Layout direction and resources are now correctly driven by the Activity context 
+    // wrapping in MainActivity.attachBaseContext(). Removing manual layout direction 
+    // overrides to ensure we are testing the true system-applied configuration.
+    MaterialTheme(
+        colorScheme = HorizonEthosColorScheme,
+        typography = TriProTypography,
+        shapes = TriProShapes,
+        content = content
+    )
 }

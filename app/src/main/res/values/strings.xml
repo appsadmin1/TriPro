@@ -92,7 +92,7 @@
     <string name="day_detail_done_editing_cd">Done editing</string>
     <string name="day_detail_edit_day_cd">Edit this day</string>
     <string name="day_detail_add_to_itinerary_cd">Add to itinerary</string>
-    <string name="day_detail_base_camp">BASE CAMP</string>
+    <string name="day_detail_hotel">Hotel</string>
     <string name="day_detail_no_hotel">No hotel set for this day</string>
     <string name="day_detail_checkin_checkout">Check-in %1$s  ·  Check-out %2$s</string>
     <string name="day_detail_edit_hotel_cd">Edit hotel</string>
@@ -128,13 +128,19 @@
     <string name="day_detail_arrival_time_title">Arrival time</string>
     <string name="day_detail_remove_flight">Remove flight</string>
     <string name="day_detail_edit_day_note_cd">Edit day note</string>
-    <string name="day_detail_day_note_placeholder">Add a note for this whole day (e.g. \"Pack light layers, cobblestones today\")</string>
+    <string name="day_detail_day_note_placeholder">Add a note for this whole day (e.g. \"Pack umbrella, it\'s a rainy area\")</string>
     <string name="day_detail_note_dialog_title">Note for this day</string>
     <string name="day_detail_note_label">Note</string>
     <string name="day_detail_schedule">Schedule</string>
     <string name="day_detail_nothing_planned">Nothing planned yet for this day.</string>
     <string name="day_detail_name_file_title">Name this file</string>
     <string name="time_picker_default_title">Select time</string>
+
+    <!-- Places search dialog -->
+    <string name="places_search_title">Search for a place</string>
+    <string name="places_search_label">Search</string>
+    <string name="places_search_again">Search again</string>
+    <string name="places_search_use_this">Use this place</string>
 
     <!-- Add/edit itinerary item sheet -->
     <string name="item_sheet_add_title">Add to itinerary</string>
@@ -157,6 +163,9 @@
     <string name="item_sheet_address_optional_label">Address (optional)</string>
     <string name="item_sheet_finetune_map">Fine-tune by tapping the map</string>
     <string name="item_sheet_note_label">Note or alert (e.g. \"18+ only\", \"closes early at 18:00\")</string>
+    <string name="item_sheet_note_type_label">Note type</string>
+    <string name="item_sheet_note_type_alert">Alert</string>
+    <string name="item_sheet_note_type_info">Info</string>
     <string name="item_sheet_start_time_title">Start time</string>
     <string name="item_sheet_end_time_title">End time</string>
 
@@ -247,7 +256,7 @@
     <string name="collaborators_invite_subtitle">Add people to help plan this trip together.</string>
     <string name="collaborators_email_label">Email address</string>
     <string name="collaborators_permission_label">Permission</string>
-    <string name="collaborators_can_edit_chip">Can edit</string>
+    <string name="collaborators_can_edit_chip">Edit</string>
     <string name="collaborators_read_only_chip">Read only</string>
     <string name="collaborators_send_invite">Send Invite</string>
     <string name="collaborators_can_edit_explainer_body">Add, edit, or remove itinerary items, bookings, and other collaborators.</string>

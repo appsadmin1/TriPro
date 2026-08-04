@@ -15,7 +15,12 @@ enum class AppLanguage(val code: String, val displayName: String) {
     HEBREW("he", "עברית");
 
     companion object {
-        fun fromCode(code: String?): AppLanguage = entries.firstOrNull { it.code == code } ?: ENGLISH
+        fun fromCode(code: String?): AppLanguage {
+            if (code == null) return ENGLISH
+            // Android uses "iw" internally for Hebrew; match both "he" and "iw"
+            if (code == "he" || code == "iw") return HEBREW
+            return entries.firstOrNull { it.code == code } ?: ENGLISH
+        }
     }
 }
 
@@ -69,11 +74,12 @@ fun currentAppLanguage(context: Context): AppLanguage {
  * caller (recreateActivity()) must still trigger a manual Activity restart.
  */
 fun setAppLanguage(context: Context, language: AppLanguage) {
+    // Always persist to SharedPreferences as a fallback and for consistency
+    LanguagePreference.set(context, language)
+
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         context.getSystemService(LocaleManager::class.java)?.applicationLocales =
             LocaleList.forLanguageTags(language.code)
-    } else {
-        LanguagePreference.set(context, language)
     }
 }
 
@@ -85,11 +91,22 @@ fun setAppLanguage(context: Context, language: AppLanguage) {
  *  configuration, locales updated from [he,he_IL] to [he]" line in logcat, which was
  *  this function running, not the system. */
 fun Context.applyAppLocale(language: AppLanguage = LanguagePreference.get(this)): Context {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return this
     val locale = Locale(language.code)
     Locale.setDefault(locale)
     val config = Configuration(resources.configuration)
-    config.setLocale(locale)
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        // On API 33+, prefer the LocaleList from the system if available
+        val systemLocales = getSystemService(LocaleManager::class.java)?.applicationLocales
+        if (systemLocales != null && !systemLocales.isEmpty) {
+            config.setLocales(systemLocales)
+        } else {
+            config.setLocales(LocaleList(locale))
+        }
+    } else {
+        config.setLocale(locale)
+    }
+
     config.setLayoutDirection(locale)
     return createConfigurationContext(config)
 }
