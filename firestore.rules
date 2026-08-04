@@ -29,7 +29,9 @@ service cloud.firestore {
     }
 
     function isMember(tripData) {
-      return request.auth.uid in tripData.members;
+      return request.auth.uid in tripData.members || (
+        'memberIds' in tripData && request.auth.uid in tripData.memberIds
+      );
     }
 
     function roleOf(tripData) {

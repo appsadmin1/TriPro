@@ -35,6 +35,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import com.tripro.app.R
 import com.tripro.app.TriProApplication
 import com.tripro.app.ui.components.TripCard
@@ -76,64 +77,65 @@ fun TripsListRoute(
             return@Scaffold
         }
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = TriProSpacing.marginMobile,
-                end = TriProSpacing.marginMobile,
-                top = padding.calculateTopPadding() + 24.dp,
-                bottom = padding.calculateBottomPadding() + 24.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackLg)
+        PullToRefreshBox(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier.fillMaxSize().padding(padding)
         ) {
-            item {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onOpenDrawer) {
-                        Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu_cd), tint = MaterialTheme.colorScheme.primary)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = TriProSpacing.marginMobile,
+                    end = TriProSpacing.marginMobile,
+                    top = 24.dp,
+                    bottom = 24.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackLg)
+            ) {
+                item {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onOpenDrawer) {
+                            Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu_cd), tint = MaterialTheme.colorScheme.primary)
+                        }
+                        Column {
+                            Text(
+                                stringResource(R.string.trips_title),
+                                style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
-                    Column {
-                        Text(
-                            stringResource(R.string.trips_title),
-                            style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp),
-                            color = MaterialTheme.colorScheme.primary
+                }
+
+                if (uiState.upcoming.isNotEmpty()) {
+                    item {
+                        SectionHeader(icon = Icons.Filled.Add, title = stringResource(R.string.trips_section_upcoming))
+                    }
+                    items(uiState.upcoming, key = { it.id }) { trip ->
+                        TripCard(
+                            trip = trip,
+                            collaboratorPhotoUrls = uiState.memberAvatars[trip.id].orEmpty(),
+                            onClick = { onOpenTrip(trip.id) }
                         )
-/*                        Text(
-                            stringResource(R.string.trips_subtitle),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )*/
+                    }
+                } else {
+                    item {
+                        EmptyState()
                     }
                 }
-            }
 
-            if (uiState.upcoming.isNotEmpty()) {
-                item {
-                    SectionHeader(icon = Icons.Filled.Add, title = stringResource(R.string.trips_section_upcoming))
-                }
-                items(uiState.upcoming, key = { it.id }) { trip ->
-                    TripCard(
-                        trip = trip,
-                        collaboratorPhotoUrls = uiState.memberAvatars[trip.id].orEmpty(),
-                        onClick = { onOpenTrip(trip.id) }
-                    )
-                }
-            } else {
-                item {
-                    EmptyState()
-                }
-            }
-
-            if (uiState.past.isNotEmpty()) {
-                item {
-                    SectionHeader(icon = Icons.Filled.History, title = stringResource(R.string.trips_section_past))
-                }
-                items(uiState.past, key = { it.id }) { trip ->
-                    TripCard(
-                        trip = trip,
-                        collaboratorPhotoUrls = uiState.memberAvatars[trip.id].orEmpty(),
-                        onClick = { onOpenTrip(trip.id) },
-                        isPast = true
-                    )
+                if (uiState.past.isNotEmpty()) {
+                    item {
+                        SectionHeader(icon = Icons.Filled.History, title = stringResource(R.string.trips_section_past))
+                    }
+                    items(uiState.past, key = { it.id }) { trip ->
+                        TripCard(
+                            trip = trip,
+                            collaboratorPhotoUrls = uiState.memberAvatars[trip.id].orEmpty(),
+                            onClick = { onOpenTrip(trip.id) },
+                            isPast = true
+                        )
+                    }
                 }
             }
         }

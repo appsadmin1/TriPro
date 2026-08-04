@@ -24,10 +24,17 @@ class TripRepository(
     private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
     fun observeUserTrips(uid: String): Flow<List<Trip>> = callbackFlow {
+        Log.d("TripRepository", "Observing trips for uid: $uid")
         val registration = trips.whereArrayContains("memberIds", uid)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) { Log.e("TripRepository", "Error observing user trips: ${error.message}", error); close(error); return@addSnapshotListener }
-                trySend(snapshot?.toObjects(Trip::class.java).orEmpty())
+                if (error != null) {
+                    Log.e("TripRepository", "Error observing user trips: ${error.message}", error)
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val result = snapshot?.toObjects(Trip::class.java).orEmpty()
+                Log.d("TripRepository", "Found ${result.size} trips for uid: $uid")
+                trySend(result)
             }
         awaitClose { registration.remove() }
     }
