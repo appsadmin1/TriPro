@@ -20,9 +20,24 @@ function ensureInitialized() {
 
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  // Netlify's env var UI collapses real newlines, so the private key is stored with
-  // literal "\n" sequences and unescaped here.
-  const privateKey = (process.env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, "\n");
+
+  let privateKey = (process.env.FIREBASE_PRIVATE_KEY || "").trim();
+  // Remove surrounding quotes if they were pasted accidentally
+  if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+    privateKey = privateKey.slice(1, -1);
+  }
+  // Handle escaped newlines (\n)
+  privateKey = privateKey.replace(/\\n/g, "\n");
+
+  // Handle "flat" keys where Netlify collapsed newlines into spaces.
+  // PEM requires actual newlines after the header, within the base64, and before the footer.
+  if (privateKey && !privateKey.includes("\n") && privateKey.includes("-----BEGIN PRIVATE KEY-----")) {
+    const match = privateKey.match(/-----BEGIN PRIVATE KEY-----(.*)-----END PRIVATE KEY-----/);
+    if (match) {
+      const base64Data = match[1].trim().replace(/\s+/g, "");
+      privateKey = `-----BEGIN PRIVATE KEY-----\n${base64Data}\n-----END PRIVATE KEY-----`;
+    }
+  }
 
   if (!projectId || !clientEmail || !privateKey) {
     throw new Error(
