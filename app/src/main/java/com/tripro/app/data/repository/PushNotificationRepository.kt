@@ -77,7 +77,7 @@ class PushNotificationRepository(
     private suspend fun post(functionName: String, body: JSONObject) = withContext(Dispatchers.IO) {
         runCatching {
             if (baseUrl.isBlank()) return@runCatching // notifications backend not configured — skip silently
-            val idToken = FirebaseAuth.getInstance().currentUser?.getIdToken(false)?.await()?.token
+            val idToken = FirebaseAuth.getInstance().currentUser?.getIdToken(true)?.await()?.token
                 ?: return@runCatching
 
             val request = Request.Builder()

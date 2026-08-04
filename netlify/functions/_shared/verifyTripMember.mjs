@@ -21,7 +21,8 @@ export async function verifyCallerIsTripMember(request, tripId) {
   try {
     const decoded = await getAdminAuth().verifyIdToken(idToken);
     uid = decoded.uid;
-  } catch {
+  } catch (err) {
+    console.error("Firebase ID token verification failed:", err);
     throw httpError(401, "Invalid or expired ID token");
   }
 
@@ -52,7 +53,8 @@ export async function verifyCallerIsSignedIn(request) {
   try {
     const decoded = await getAdminAuth().verifyIdToken(idToken);
     return decoded.uid;
-  } catch {
+  } catch (err) {
+    console.error("Firebase ID token verification failed:", err);
     throw httpError(401, "Invalid or expired ID token");
   }
 }

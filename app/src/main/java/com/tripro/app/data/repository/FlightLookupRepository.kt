@@ -42,7 +42,7 @@ class FlightLookupRepository(
             if (baseUrl.isBlank()) {
                 return@withContext Result.failure(IllegalStateException("Flight lookup isn't configured (NETLIFY_FUNCTIONS_BASE_URL missing)."))
             }
-            val idToken = FirebaseAuth.getInstance().currentUser?.getIdToken(false)?.await()?.token
+            val idToken = FirebaseAuth.getInstance().currentUser?.getIdToken(true)?.await()?.token
                 ?: return@withContext Result.failure(IllegalStateException("You need to be signed in to look up a flight."))
 
             val requestBody = JSONObject().apply {
