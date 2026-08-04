@@ -1,7 +1,6 @@
 package com.tripro.app.ui.tripoverview
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -46,7 +46,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -74,6 +73,20 @@ import com.tripro.app.util.localizedLabel
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.border
+import androidx.compose.ui.unit.em
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.draw.shadow
+
+import androidx.compose.material.icons.filled.Menu
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TripOverviewRoute(
@@ -83,8 +96,10 @@ fun TripOverviewRoute(
     onOpenDay: (String) -> Unit,
     onOpenCollaborators: () -> Unit,
     onOpenDocs: (String) -> Unit,
-    onTripDeleted: () -> Unit
+    onTripDeleted: () -> Unit,
+    onOpenDrawer: () -> Unit
 ) {
+    // ... existing viewModel setup ...
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
     val viewModel: TripOverviewViewModel = viewModel(
@@ -112,7 +127,14 @@ fun TripOverviewRoute(
             TopAppBar(
                 title = { Text(uiState.trip?.name ?: "", color = MaterialTheme.colorScheme.onPrimary) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd), tint = MaterialTheme.colorScheme.onPrimary) }
+                    Row {
+                        IconButton(onClick = onOpenDrawer) {
+                            Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu_cd), tint = MaterialTheme.colorScheme.onPrimary)
+                        }
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd), tint = MaterialTheme.colorScheme.onPrimary)
+                        }
+                    }
                 },
                 actions = {
                     if (uiState.myRole == Role.OWNER) {
@@ -135,78 +157,86 @@ fun TripOverviewRoute(
 
         val trip = uiState.trip!!
 
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(bottom = 24.dp)) {
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.background), contentPadding = PaddingValues(bottom = 96.dp)) {
             item {
-                Box {
-                    AsyncImage(model = trip.coverImageUrl, contentDescription = trip.destination, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(240.dp))
-                    Box(modifier = Modifier.fillMaxWidth().height(240.dp).background(Brush.verticalGradient(listOf(HorizonEthosColors.Primary.copy(alpha = 0.75f), Color.Transparent))))
-                    Column(modifier = Modifier.align(Alignment.BottomStart).padding(20.dp)) {
-                        Text(trip.destination, style = MaterialTheme.typography.displayLarge.copy(fontSize = 32.sp), color = HorizonEthosColors.OnPrimary)
-                        Text(DateUtils.formatRange(trip.startDate, trip.endDate), style = MaterialTheme.typography.bodyLarge, color = HorizonEthosColors.InverseOnSurface)
+                // Hero Section
+                Box(modifier = Modifier.fillMaxWidth().height(280.dp).shadow(8.dp)) {
+                    AsyncImage(model = trip.coverImageUrl, contentDescription = trip.destination, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f)))))
+                    Column(modifier = Modifier.align(Alignment.BottomStart).padding(24.dp)) {
+                        Text(trip.destination, style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp), color = Color.White)
+                        Text(DateUtils.formatRange(trip.startDate, trip.endDate), style = MaterialTheme.typography.bodyLarge, color = Color.White.copy(alpha = 0.8f))
                     }
                 }
             }
 
             item {
+                // Quick Stats
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = TriProSpacing.marginMobile, vertical = TriProSpacing.stackMd),
-                    horizontalArrangement = Arrangement.spacedBy(TriProSpacing.base)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = TriProSpacing.marginMobile, vertical = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val days = runCatching { ChronoUnit.DAYS.between(DateUtils.parse(trip.startDate), DateUtils.parse(trip.endDate)) + 1 }.getOrDefault(0)
-                    StatChip(icon = Icons.Filled.CalendarMonth, value = pluralStringResource(R.plurals.trip_duration_days, days.toInt(), days.toInt()), label = stringResource(R.string.trip_overview_duration_label), modifier = Modifier.weight(1f))
-                    StatChip(icon = Icons.Filled.Group, value = "${trip.memberIds.size}", label = stringResource(R.string.trip_overview_travelers_label), modifier = Modifier.weight(1f))
-                    StatChip(icon = Icons.Filled.HourglassTop, value = DateUtils.countdown(trip.startDate, trip.endDate).localizedLabel(), label = stringResource(R.string.trip_overview_status_label), modifier = Modifier.weight(1f))
+                    StatChip(icon = Icons.Filled.CalendarMonth, value = pluralStringResource(R.plurals.trip_duration_days, days.toInt(), days.toInt()), label = stringResource(R.string.trip_overview_duration), modifier = Modifier.weight(1f))
+                    StatChip(icon = Icons.Filled.Folder, value = pluralStringResource(R.plurals.trip_overview_docs_count, uiState.totalDocsCount, uiState.totalDocsCount), label = stringResource(R.string.trip_overview_saved_docs), modifier = Modifier.weight(1f))
+                    StatChip(icon = Icons.Filled.Group, value = trip.memberIds.size.toString(), label = stringResource(R.string.trip_overview_travelers), modifier = Modifier.weight(1f))
                 }
             }
 
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = TriProSpacing.marginMobile).clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerLowest).padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
+                // Collaborators Card
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+                    border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = TriProSpacing.marginMobile).shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
                 ) {
-                    Column {
-                        Text(stringResource(R.string.trip_overview_travelers), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                        Spacer(Modifier.height(6.dp))
-                        AvatarStack(photoUrls = uiState.collaboratorAvatars, avatarSize = 36)
-                    }
-                    if (uiState.myRole == Role.OWNER) {
-                        IconButton(onClick = onOpenCollaborators) {
-                            Icon(Icons.Filled.Group, contentDescription = stringResource(R.string.trip_overview_manage_collaborators_cd), tint = MaterialTheme.colorScheme.primary)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(stringResource(R.string.trip_overview_travelers), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                            Spacer(Modifier.height(8.dp))
+                            AvatarStack(photoUrls = uiState.collaboratorAvatars, avatarSize = 36)
+                        }
+                        Row {
+                            Button(
+                                onClick = {
+                                    val today = LocalDate.now().toString()
+                                    newItemDate = uiState.days.firstOrNull { it.date >= today }?.date ?: uiState.days.firstOrNull()?.date
+                                    showAddItemSheet = true
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            ) { Text(stringResource(R.string.trip_overview_add_activity), style = MaterialTheme.typography.labelLarge) }
+                            Spacer(Modifier.width(8.dp))
+                            OutlinedButton(
+                                onClick = { onOpenDocs(tripId) },
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            ) { Text(stringResource(R.string.trip_overview_view_docs), style = MaterialTheme.typography.labelLarge) }
                         }
                     }
                 }
+                Spacer(Modifier.height(24.dp))
             }
 
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = TriProSpacing.marginMobile, vertical = TriProSpacing.stackMd),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            val today = runCatching { LocalDate.now().toString() }.getOrNull().orEmpty()
-                            newItemDate = uiState.days.firstOrNull { it.date >= today }?.date ?: uiState.days.firstOrNull()?.date
-                            showAddItemSheet = true
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) { Text(stringResource(R.string.trip_overview_add_activity)) }
-                    OutlinedButton(onClick = { onOpenDocs(tripId) }, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Filled.Folder, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                        Text(stringResource(R.string.trip_overview_view_docs))
-                    }
-                }
-                Spacer(Modifier.height(TriProSpacing.stackLg))
+                Text(
+                    stringResource(R.string.trip_overview_itinerary),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = TriProSpacing.marginMobile, vertical = 8.dp)
+                )
             }
 
-            item {
-                Text(stringResource(R.string.trip_overview_itinerary), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = TriProSpacing.marginMobile, vertical = 8.dp))
+            items(uiState.days, key = { it.date }) { day -> 
+                DayRow(day = day, onClick = { onOpenDay(day.date) }) 
             }
-
-            items(uiState.days, key = { it.date }) { day -> DayRow(day = day, onClick = { onOpenDay(day.date) }) }
         }
     }
+    // ... dialogs ...
 
     if (showAddItemSheet) {
         AddEditItemSheet(
@@ -238,34 +268,118 @@ private fun mapCenterOrDefault(hotel: HotelInfo?): LatLng =
 
 @Composable
 private fun StatChip(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainerLowest).padding(vertical = 16.dp, horizontal = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primaryContainer)
-        Text(value, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(24.dp))
+            Text(value, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, textAlign = TextAlign.Center)
+        }
     }
 }
 
 @Composable
 private fun DayRow(day: TripDay, onClick: () -> Unit) {
     val isToday = runCatching { DateUtils.parse(day.date) == LocalDate.now() }.getOrDefault(false)
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = TriProSpacing.marginMobile, vertical = 4.dp).clip(RoundedCornerShape(12.dp))
-            .let { if (isToday) it.background(MaterialTheme.colorScheme.surfaceVariant) else it }
-            .clickable(onClick = onClick).padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+    
+    // Outer container matching design shadow and background
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isToday) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent),
+        border = if (isToday) BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)) else null,
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isToday) 2.dp else 0.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = TriProSpacing.marginMobile, vertical = 4.dp)
     ) {
-        Column(modifier = Modifier.width(44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(DateUtils.formatWeekdayShort(day.date), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-            Text(DateUtils.formatDayNumber(day.date), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+                .height(IntrinsicSize.Min),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Day/Date Column
+            Column(modifier = Modifier.width(44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    DateUtils.formatWeekdayShort(day.date).uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal),
+                    color = if (isToday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.outline
+                )
+                Text(
+                    DateUtils.formatDayNumber(day.date),
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = if (isToday) FontWeight.Bold else FontWeight.SemiBold),
+                    color = if (isToday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.onSurface
+                )
+            }
+            
+            Spacer(Modifier.width(16.dp))
+            
+            // Vertical Timeline Line with Dot
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(2.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                )
+                Box(
+                    modifier = Modifier
+                        .size(if (isToday) 10.dp else 8.dp)
+                        .clip(CircleShape)
+                        .background(if (isToday) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer)
+                        .let { if (isToday) it.border(2.dp, Color.White, CircleShape) else it }
+                )
+            }
+            
+            Spacer(Modifier.width(16.dp))
+            
+            // Info Column
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    if (day.hotel != null) day.hotel.name else stringResource(R.string.day_row_free_day),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (isToday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    stringResource(R.string.trip_overview_day_label, day.dayIndex),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                // Design-inspired activity indicator bars (static for parity)
+                Row(modifier = Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (day.hotel != null) {
+                        Box(modifier = Modifier.size(16.dp, 4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer))
+                    }
+                    if (day.flight != null) {
+                        Box(modifier = Modifier.size(16.dp, 4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
+                    }
+                    if (day.hotel == null && day.flight == null) {
+                        Box(modifier = Modifier.size(24.dp, 4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)))
+                    }
+                }
+            }
+            
+            Icon(
+                Icons.Filled.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline
+            )
         }
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(stringResource(R.string.trip_overview_day_label, day.dayIndex), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-            if (day.hotel != null) Text(day.hotel.name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Icon(Icons.Filled.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
     }
 }

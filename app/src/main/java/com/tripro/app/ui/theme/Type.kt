@@ -26,8 +26,8 @@ val TriProTypography = Typography().let { base ->
         headlineLarge = TextStyle(
             fontFamily = PlusJakartaSansSemiBold,
             fontWeight = FontWeight.SemiBold,
-            fontSize = 24.sp,
-            lineHeight = 32.sp
+            fontSize = 32.sp,
+            lineHeight = 40.sp
         ),
         headlineMedium = TextStyle(
             fontFamily = PlusJakartaSansSemiBold,

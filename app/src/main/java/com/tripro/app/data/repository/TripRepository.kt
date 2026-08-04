@@ -13,6 +13,9 @@ import com.tripro.app.data.model.TripDay
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -150,18 +153,16 @@ class TripRepository(
 
     /** One listener per known day (not a collectionGroup query) — reuses the exact same
      *  per-day/tripId authorization as observeItems, for the "docs grouped by date" view. */
-    fun observeAllItemsForTrip(tripId: String, dates: List<String>): Flow<Map<String, List<ItineraryItem>>> = callbackFlow {
-        if (dates.isEmpty()) { trySend(emptyMap()); awaitClose { }; return@callbackFlow }
-        val latestByDate = mutableMapOf<String, List<ItineraryItem>>()
-        val registrations = dates.map { date ->
-            trips.document(tripId).collection("days").document(date).collection("items")
-                .addSnapshotListener { snapshot, error ->
-                    if (error != null) { Log.e("TripRepository", "Error observing items for docs view on $date: ${error.message}", error); return@addSnapshotListener }
-                    latestByDate[date] = snapshot?.toObjects(ItineraryItem::class.java).orEmpty()
-                    trySend(latestByDate.toMap())
-                }
+    fun observeAllItemsForTrip(tripId: String, dates: List<String>): Flow<Map<String, List<ItineraryItem>>> {
+        if (dates.isEmpty()) return flowOf(emptyMap())
+        
+        val flows = dates.map { date ->
+            observeItems(tripId, date).map { date to it }
         }
-        awaitClose { registrations.forEach { it.remove() } }
+        
+        return combine(flows) { array ->
+            array.toMap()
+        }
     }
 
     suspend fun addItem(tripId: String, date: String, item: ItineraryItem): String {

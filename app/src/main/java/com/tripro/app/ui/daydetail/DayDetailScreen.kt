@@ -86,6 +86,17 @@ import com.tripro.app.data.model.MarkerColorKey
 import com.tripro.app.data.model.toMarkerColorKey
 import com.tripro.app.ui.rememberAppContainer
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.draw.shadow
+import com.tripro.app.ui.components.AvatarStack
+
+import androidx.compose.material.icons.filled.Menu
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DayDetailRoute(
@@ -93,8 +104,10 @@ fun DayDetailRoute(
     date: String,
     currentUid: String,
     currentUserName: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onOpenDrawer: () -> Unit
 ) {
+    // ... existing viewModel setup ...
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
     val viewModel: DayDetailViewModel = viewModel(
@@ -149,12 +162,24 @@ fun DayDetailRoute(
             TopAppBar(
                 title = {
                     Column {
-                        Text(stringResource(R.string.day_detail_day_label, uiState.day?.dayIndex?.toString().orEmpty()), style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.day_detail_day_label, uiState.day?.dayIndex?.toString().orEmpty()), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(DateUtils.formatFullDayLabel(date), style = MaterialTheme.typography.headlineMedium)
                     }
                 },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd)) } },
+                navigationIcon = {
+                    Row {
+                        IconButton(onClick = onOpenDrawer) {
+                            Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu_cd), tint = MaterialTheme.colorScheme.primary)
+                        }
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd), tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                },
                 actions = {
+                    // Collaborators avatars on Day Detail too if available in UI state?
+                    // Design shows them in header. I'll add them if I have the data.
+                    // For now let's stick to the Edit button.
                     if (uiState.canEdit) {
                         IconButton(onClick = { isEditMode = !isEditMode }) {
                             Icon(
@@ -172,7 +197,8 @@ fun DayDetailRoute(
                 FloatingActionButton(
                     onClick = { editingItem = null; showAddItemSheet = true },
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    shape = RoundedCornerShape(percent = 50)
                 ) { Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.day_detail_add_to_itinerary_cd)) }
             }
         }
@@ -198,17 +224,27 @@ fun DayDetailRoute(
         }
 
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
             contentPadding = PaddingValues(
                 start = TriProSpacing.marginMobile, end = TriProSpacing.marginMobile,
                 top = padding.calculateTopPadding() + 12.dp, bottom = padding.calculateBottomPadding() + 96.dp
             ),
             verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)
         ) {
-            item { HotelCard(hotel = day?.hotel, canEdit = editingAllowed, onEdit = { showHotelDialog = true }) }
+            item {
+                Text(
+                    stringResource(R.string.day_detail_base_camp),
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.1.em),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 4.dp).padding(start = 4.dp)
+                )
+                HotelCard(hotel = day?.hotel, canEdit = editingAllowed, onEdit = { showHotelDialog = true })
+            }
 
             if (day?.flight != null) {
-                item { FlightCard(flight = day.flight, canEdit = editingAllowed, onEdit = { showFlightDialog = true }) }
+                item {
+                    FlightCard(flight = day.flight, canEdit = editingAllowed, onEdit = { showFlightDialog = true })
+                }
             } else if (editingAllowed) {
                 item { AddFlightButton(onClick = { showFlightDialog = true }) }
             }
@@ -226,7 +262,14 @@ fun DayDetailRoute(
 
             item { DayNoteCard(note = day?.dayNote.orEmpty(), canEdit = editingAllowed, onEdit = { showDayNoteDialog = true }) }
 
-            item { Text(stringResource(R.string.day_detail_schedule), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary) }
+            item {
+                Text(
+                    stringResource(R.string.day_detail_schedule),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
 
             if (uiState.items.isEmpty()) {
                 item { Text(stringResource(R.string.day_detail_nothing_planned), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -244,6 +287,7 @@ fun DayDetailRoute(
             }
         }
     }
+    // ... dialogs ...
 
     if (showAddItemSheet) {
         AddEditItemSheet(
@@ -307,32 +351,48 @@ private fun mapCenterOrDefault(hotel: HotelInfo?): LatLng =
 @Composable
 private fun HotelCard(hotel: HotelInfo?, canEdit: Boolean, onEdit: () -> Unit) {
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.fillMaxWidth()
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier.fillMaxWidth().shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
     ) {
-        Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Hotel, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.width(12.dp))
-                Column {
-                    Text(stringResource(R.string.day_detail_hotel), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(
-                        hotel?.name?.takeIf { it.isNotBlank() } ?: stringResource(R.string.day_detail_no_hotel),
-                        style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary
+        Row(modifier = Modifier.height(IntrinsicSize.Min).fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(4.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+            )
+            Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.Hotel,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(8.dp)
                     )
-                    if (!hotel?.checkIn.isNullOrBlank() || !hotel?.checkOut.isNullOrBlank()) {
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(stringResource(R.string.day_detail_hotel), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
-                            stringResource(R.string.day_detail_checkin_checkout, hotel?.checkIn.orEmpty().ifBlank { "--" }, hotel?.checkOut.orEmpty().ifBlank { "--" }),
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                            hotel?.name?.takeIf { it.isNotBlank() } ?: stringResource(R.string.day_detail_no_hotel),
+                            style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary
                         )
+                        if (!hotel?.checkIn.isNullOrBlank() || !hotel?.checkOut.isNullOrBlank()) {
+                            Text(
+                                stringResource(R.string.day_detail_checkin_checkout, hotel?.checkIn.orEmpty().ifBlank { "--" }, hotel?.checkOut.orEmpty().ifBlank { "--" }),
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
-            }
-            if (canEdit) {
-                IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.day_detail_edit_hotel_cd), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                if (canEdit) {
+                    IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.day_detail_edit_hotel_cd), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
             }
         }
     }
@@ -407,28 +467,44 @@ private fun queryFileName(resolver: android.content.ContentResolver, uri: Uri): 
 @Composable
 private fun FlightCard(flight: FlightInfo?, canEdit: Boolean, onEdit: () -> Unit) {
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.fillMaxWidth()
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier.fillMaxWidth().shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
     ) {
-        Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.FlightTakeoff, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.width(12.dp))
-                Column {
-                    Text(stringResource(R.string.day_detail_flight_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("${flight?.airline.orEmpty()} ${flight?.flightNumber.orEmpty()}".trim(), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
-                    val route = listOfNotNull(flight?.departureAirportCode?.takeIf { it.isNotBlank() }, flight?.arrivalAirportCode?.takeIf { it.isNotBlank() }).joinToString(" → ")
-                    val times = listOfNotNull(flight?.departureTime?.takeIf { it.isNotBlank() }, flight?.arrivalTime?.takeIf { it.isNotBlank() }).joinToString(" – ")
-                    if (route.isNotBlank() || times.isNotBlank()) {
-                        Text(listOf(route, times).filter { it.isNotBlank() }.joinToString("  ·  "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(modifier = Modifier.height(IntrinsicSize.Min).fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(4.dp)
+                    .background(MaterialTheme.colorScheme.primary)
+            )
+            Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.FlightTakeoff,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(8.dp)
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(stringResource(R.string.day_detail_flight_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("${flight?.airline.orEmpty()} ${flight?.flightNumber.orEmpty()}".trim(), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+                        val route = listOfNotNull(flight?.departureAirportCode?.takeIf { it.isNotBlank() }, flight?.arrivalAirportCode?.takeIf { it.isNotBlank() }).joinToString(" → ")
+                        val times = listOfNotNull(flight?.departureTime?.takeIf { it.isNotBlank() }, flight?.arrivalTime?.takeIf { it.isNotBlank() }).joinToString(" – ")
+                        if (route.isNotBlank() || times.isNotBlank()) {
+                            Text(listOf(route, times).filter { it.isNotBlank() }.joinToString("  ·  "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
-            }
-            if (canEdit) {
-                IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.day_detail_edit_flight_cd), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                if (canEdit) {
+                    IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.day_detail_edit_flight_cd), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
             }
         }
     }

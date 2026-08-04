@@ -31,6 +31,9 @@
     <string name="login_tagline">Your collaborative journey starts here.</string>
     <string name="login_subtitle">Plan, share, and experience travel like never before. High-density organization meets the wonder of discovery.</string>
     <string name="login_sign_in_google">Sign in with Google</string>
+    <string name="login_hero_title">Your collaborative \njourney starts here.</string>
+    <string name="login_hero_subtitle">Plan, share, and experience travel like never before. High-density organization meets the wonder of discovery.</string>
+    <string name="login_quote">\"The world is a book and those who do not travel read only one page.\"</string>
 
     <!-- Trips list -->
     <string name="trips_title">My Trips</string>
@@ -50,6 +53,10 @@
     <plurals name="trip_duration_days">
         <item quantity="one">1 Day</item>
         <item quantity="other">%d Days</item>
+    </plurals>
+    <plurals name="trip_overview_docs_count">
+        <item quantity="one">1 Doc</item>
+        <item quantity="other">%d Docs</item>
     </plurals>
 
     <!-- Settings -->
@@ -97,6 +104,7 @@
     <string name="day_detail_checkin_checkout">Check-in %1$s  ·  Check-out %2$s</string>
     <string name="day_detail_edit_hotel_cd">Edit hotel</string>
     <string name="day_detail_add_flight_button">Add a flight for this day</string>
+    <string name="day_detail_base_camp">Base Camp</string>
     <string name="day_detail_hotel_dialog_title">Hotel for this day</string>
     <string name="day_detail_search_hotel">Search for hotel on Google Maps</string>
     <string name="day_detail_change_hotel">Change hotel</string>
@@ -222,6 +230,10 @@
     <string name="trip_overview_travelers_label">TRAVELERS</string>
     <string name="trip_overview_status_label">STATUS</string>
     <string name="trip_overview_day_label">Day %1$d</string>
+    <string name="trip_overview_duration">Duration</string>
+    <string name="trip_overview_saved_docs">Saved</string>
+    <string name="trip_overview_planned_stops">Planned</string>
+    <string name="day_row_free_day">Free Day</string>
 
     <!-- Trip edit sheet -->
     <string name="trip_edit_title">Edit trip</string>
@@ -265,6 +277,10 @@
     <string name="collaborators_pending_invites">Pending Invites</string>
     <string name="collaborators_invite_pending">Invite pending — will join as %1$s once they sign in</string>
     <string name="collaborators_remove_menu_item">Remove</string>
+    <string name="collaborators_editor_title">Editor Access</string>
+    <string name="collaborators_editor_desc">Can add, edit, or remove itinerary items.</string>
+    <string name="collaborators_read_only_title">Read Only</string>
+    <string name="collaborators_read_only_desc">Can view the full itinerary, but cannot change.</string>
 
     <!-- Alerts -->
     <string name="alerts_title">Alerts</string>

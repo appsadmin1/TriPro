@@ -21,15 +21,21 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+
 data class TripOverviewUiState(
     val isLoading: Boolean = true,
     val trip: Trip? = null,
     val days: List<TripDay> = emptyList(),
     val myRole: Role = Role.VIEWER,
     val collaboratorAvatars: List<String> = emptyList(),
+    val totalDocsCount: Int = 0,
     val isDeleted: Boolean = false
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class TripOverviewViewModel(
     private val tripRepository: TripRepository,
     private val userRepository: UserRepository,
@@ -44,10 +50,26 @@ class TripOverviewViewModel(
 
     init {
         viewModelScope.launch {
+            // First observe trip and days
             combine(tripRepository.observeTrip(tripId), tripRepository.observeDays(tripId)) { trip, days -> trip to days }
                 .catch { e -> Log.e("TripOverviewViewModel", "Error observing trip data: ${e.message}", e); _uiState.value = _uiState.value.copy(isLoading = false) }
-                .collect { (trip, days) ->
-                    _uiState.value = _uiState.value.copy(isLoading = false, trip = trip, days = days, myRole = trip?.roleOf(currentUid) ?: Role.VIEWER)
+                .flatMapLatest { (trip, days) ->
+                    val dates = days.map { it.date }
+                    tripRepository.observeAllItemsForTrip(tripId, dates).map { itemsByDate ->
+                        Triple(trip, days, itemsByDate)
+                    }
+                }
+                .collect { (trip, days, itemsByDate) ->
+                    val totalDocs = itemsByDate.values.flatten().sumOf { it.attachments.size }
+                    
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false, 
+                        trip = trip, 
+                        days = days, 
+                        myRole = trip?.roleOf(currentUid) ?: Role.VIEWER,
+                        totalDocsCount = totalDocs
+                    )
+                    
                     if (trip != null) {
                         val profiles = userRepository.getProfiles(trip.memberIds)
                         _uiState.value = _uiState.value.copy(

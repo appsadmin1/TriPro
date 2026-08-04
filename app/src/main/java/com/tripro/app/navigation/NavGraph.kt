@@ -99,8 +99,13 @@ fun TriProNavGraph(
 
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
-            val topLevelRoutes = setOf(Destinations.TRIPS_LIST, Destinations.ALERTS, Destinations.PROFILE)
-            val showBottomBar = currentRoute in topLevelRoutes
+            val showBottomBar = currentRoute in setOf(
+                Destinations.TRIPS_LIST, 
+                Destinations.ALERTS, 
+                Destinations.PROFILE,
+                Destinations.TRIP_OVERVIEW,
+                Destinations.DAY_DETAIL
+            )
 
             ModalNavigationDrawer(
                 drawerState = drawerState,
@@ -204,7 +209,8 @@ fun TriProNavGraph(
                                 onOpenDay = { date -> navController.navigate(Destinations.dayDetail(tripId, date)) },
                                 onOpenCollaborators = { navController.navigate(Destinations.collaborators(tripId)) },
                                 onOpenDocs = { navController.navigate(Destinations.tripDocs(tripId)) },
-                                onTripDeleted = { navController.popBackStack(Destinations.TRIPS_LIST, inclusive = false) }
+                                onTripDeleted = { navController.popBackStack(Destinations.TRIPS_LIST, inclusive = false) },
+                                onOpenDrawer = { drawerScope.launch { drawerState.open() } }
                             )
                         }
                         composable(
@@ -221,7 +227,8 @@ fun TriProNavGraph(
                                 date = date,
                                 currentUid = uid,
                                 currentUserName = displayName,
-                                onBack = { navController.popBackStack() }
+                                onBack = { navController.popBackStack() },
+                                onOpenDrawer = { drawerScope.launch { drawerState.open() } }
                             )
                         }
                         composable(
