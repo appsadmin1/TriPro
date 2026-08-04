@@ -63,6 +63,9 @@ import androidx.lifecycle.viewmodel.initializer
 import com.google.android.gms.maps.model.LatLng
 import com.tripro.app.R
 import com.tripro.app.TriProApplication
+import com.tripro.app.data.model.ActivityColorPrefs
+import com.tripro.app.data.model.MarkerColorKey
+import androidx.compose.ui.graphics.Color
 import com.tripro.app.data.model.Attachment
 import com.tripro.app.data.model.FlightInfo
 import com.tripro.app.data.model.HotelInfo
@@ -83,7 +86,6 @@ import com.tripro.app.util.PlaceSearchMapDialog
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
-import com.tripro.app.data.model.MarkerColorKey
 import com.tripro.app.data.model.toMarkerColorKey
 import com.tripro.app.ui.rememberAppContainer
 
@@ -97,7 +99,6 @@ import androidx.compose.ui.draw.shadow
 import com.tripro.app.ui.components.AvatarStack
 
 import androidx.compose.material.icons.filled.Menu
-
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 
@@ -111,7 +112,6 @@ fun DayDetailRoute(
     onBack: () -> Unit,
     onOpenDrawer: () -> Unit
 ) {
-    // ... existing viewModel setup ...
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
     val viewModel: DayDetailViewModel = viewModel(
@@ -182,9 +182,6 @@ fun DayDetailRoute(
                     }
                 },
                 actions = {
-                    // Collaborators avatars on Day Detail too if available in UI state?
-                    // Design shows them in header. I'll add them if I have the data.
-                    // For now let's stick to the Edit button.
                     if (uiState.canEdit) {
                         IconButton(onClick = { isEditMode = !isEditMode }) {
                             Icon(
@@ -243,12 +240,12 @@ fun DayDetailRoute(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 4.dp).padding(start = 4.dp)
                 )
-                HotelCard(hotel = day?.hotel, canEdit = editingAllowed, onEdit = { showHotelDialog = true })
+                HotelCard(hotel = day?.hotel, activityColors = activityColors, canEdit = editingAllowed, onEdit = { showHotelDialog = true })
             }
 
             if (day?.flight != null) {
                 item {
-                    FlightCard(flight = day.flight, canEdit = editingAllowed, onEdit = { showFlightDialog = true })
+                    FlightCard(flight = day.flight, activityColors = activityColors, canEdit = editingAllowed, onEdit = { showFlightDialog = true })
                 }
             } else if (editingAllowed) {
                 item { AddFlightButton(onClick = { showFlightDialog = true }) }
@@ -293,7 +290,6 @@ fun DayDetailRoute(
             }
         }
     }
-    // ... dialogs ...
 
     if (showAddItemSheet) {
         AddEditItemSheet(
@@ -355,7 +351,7 @@ private fun mapCenterOrDefault(hotel: HotelInfo?): LatLng =
     if (hotel?.lat != null && hotel.lng != null) LatLng(hotel.lat, hotel.lng) else LatLng(48.8566, 2.3522)
 
 @Composable
-private fun HotelCard(hotel: HotelInfo?, canEdit: Boolean, onEdit: () -> Unit) {
+private fun HotelCard(hotel: HotelInfo?, activityColors: ActivityColorPrefs, canEdit: Boolean, onEdit: () -> Unit) {
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
@@ -368,17 +364,19 @@ private fun HotelCard(hotel: HotelInfo?, canEdit: Boolean, onEdit: () -> Unit) {
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(4.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .background(Color(activityColors.colorInt(MarkerColorKey.HOTEL)))
             )
             Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    val iconBg = Color(activityColors.colorInt(MarkerColorKey.HOTEL)).copy(alpha = 0.12f)
+                    val iconTint = Color(activityColors.colorInt(MarkerColorKey.HOTEL))
                     Icon(
                         Icons.Filled.Hotel,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = iconTint,
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .background(iconBg)
                             .padding(8.dp)
                     )
                     Spacer(Modifier.width(12.dp))
@@ -471,7 +469,7 @@ private fun queryFileName(resolver: android.content.ContentResolver, uri: Uri): 
 }
 
 @Composable
-private fun FlightCard(flight: FlightInfo?, canEdit: Boolean, onEdit: () -> Unit) {
+private fun FlightCard(flight: FlightInfo?, activityColors: ActivityColorPrefs, canEdit: Boolean, onEdit: () -> Unit) {
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
@@ -484,17 +482,19 @@ private fun FlightCard(flight: FlightInfo?, canEdit: Boolean, onEdit: () -> Unit
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(4.dp)
-                    .background(MaterialTheme.colorScheme.primary)
+                    .background(Color(activityColors.colorInt(MarkerColorKey.FLIGHT)))
             )
             Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    val iconBg = Color(activityColors.colorInt(MarkerColorKey.FLIGHT)).copy(alpha = 0.12f)
+                    val iconTint = Color(activityColors.colorInt(MarkerColorKey.FLIGHT))
                     Icon(
                         Icons.Filled.FlightTakeoff,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = iconTint,
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .background(iconBg)
                             .padding(8.dp)
                     )
                     Spacer(Modifier.width(12.dp))

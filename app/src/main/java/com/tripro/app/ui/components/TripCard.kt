@@ -141,15 +141,10 @@ fun TripCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             AvatarStack(photoUrls = collaboratorPhotoUrls)
-                            Icon(
-                                Icons.Filled.ArrowForward,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.outline
-                            )
                         }
                     }
                 }

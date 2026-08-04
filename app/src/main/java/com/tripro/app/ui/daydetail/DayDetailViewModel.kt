@@ -61,7 +61,39 @@ class DayDetailViewModel(
         }
 
         viewModelScope.launch {
-            combine(tripRepository.observeDay(tripId, date), tripRepository.observeItems(tripId, date)) { day, items -> day to items }
+            combine(tripRepository.observeDay(tripId, date), tripRepository.observeItems(tripId, date)) { day, items ->
+                val syntheticItems = mutableListOf<ItineraryItem>()
+                day?.hotel?.let { h ->
+                    if (h.name.isNotBlank() && h.checkIn.isNotBlank()) {
+                        syntheticItems.add(
+                            ItineraryItem(
+                                id = "synthetic_hotel",
+                                title = h.name,
+                                type = com.tripro.app.data.model.ItemType.HOTEL,
+                                timeType = com.tripro.app.data.model.TimeType.EXACT,
+                                startTime = h.checkIn,
+                                locationName = h.address
+                            )
+                        )
+                    }
+                }
+                day?.flight?.let { f ->
+                    if (f.flightNumber.isNotBlank() && f.arrivalTime.isNotBlank()) {
+                        syntheticItems.add(
+                            ItineraryItem(
+                                id = "synthetic_flight",
+                                title = "${f.airline} ${f.flightNumber}".trim(),
+                                type = com.tripro.app.data.model.ItemType.FLIGHT,
+                                timeType = com.tripro.app.data.model.TimeType.EXACT,
+                                startTime = f.arrivalTime,
+                                locationName = f.arrivalAirportCode
+                            )
+                        )
+                    }
+                }
+                val allItems = (items + syntheticItems).sortedBy { it.sortMinutes() }
+                day to allItems
+            }
                 .catch { e ->
                     Log.e("DayDetailViewModel", "Error observing day details: ${e.message}", e)
                     _uiState.value = _uiState.value.copy(isLoading = false)

@@ -82,6 +82,9 @@ fun ItineraryItemRow(
     onAttachmentClick: (Attachment) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isSynthetic = item.id.startsWith("synthetic_")
+    val effectiveCanEdit = canEdit && !isSynthetic
+
     Row(modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
         Column(modifier = Modifier.width(90.dp).padding(top = 8.dp)) {
             when (item.timeType) {
@@ -92,7 +95,7 @@ fun ItineraryItemRow(
                 }
                 TimeType.PERIOD -> Text(
                     (item.period ?: DayPeriod.MORNING).localizedLabel(),
-                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 18.sp),
+                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 16.sp),
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1,
                     softWrap = false
@@ -205,14 +208,14 @@ fun ItineraryItemRow(
                                 }
                             }
                         }
-                        if (canEdit) {
+                        if (effectiveCanEdit) {
                             IconButton(onClick = onEdit) {
                                 Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.itinerary_row_edit_cd), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
 
-                    if (canEdit) {
+                    if (effectiveCanEdit) {
                         Row(
                             modifier = Modifier.fillMaxWidth().border(BorderStroke(1.dp, HorizonEthosColors.CardBorder.copy(alpha = 0.5f))).padding(horizontal = 8.dp, vertical = 2.dp)
                         ) {
