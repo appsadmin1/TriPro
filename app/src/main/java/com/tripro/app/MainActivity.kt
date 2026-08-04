@@ -1,6 +1,6 @@
 package com.tripro.app
 
-
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -29,12 +29,21 @@ import com.tripro.app.ui.auth.AuthUiState
 import com.tripro.app.ui.auth.AuthViewModel
 import com.tripro.app.ui.theme.TriProTheme
 import androidx.compose.runtime.remember
+import com.tripro.app.util.applyAppLocale
 import com.tripro.app.util.currentAppLanguage
 
 class MainActivity : ComponentActivity() {
 
     private val deepLinkState = mutableStateOf<PendingDeepLink?>(null)
     private lateinit var authViewModel: AuthViewModel
+
+    override fun attachBaseContext(newBase: Context) {
+        val wrapped = newBase.applyAppLocale()
+        // Temporary diagnostic — confirms whether the Configuration wrapping actually
+        // took effect. Remove once Hebrew is confirmed working end-to-end.
+        android.util.Log.d("Locale", "MainActivity.attachBaseContext locale=${wrapped.resources.configuration.locales[0]}")
+        super.attachBaseContext(wrapped)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -55,7 +64,7 @@ class MainActivity : ComponentActivity() {
         splashScreen.setKeepOnScreenCondition { authViewModel.uiState.value is AuthUiState.CheckingSession }
 
         setContent {
-            val appLanguage = remember { currentAppLanguage() }
+            val appLanguage = remember { currentAppLanguage(this@MainActivity) }
             TriProTheme(appLanguage = appLanguage) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     val authState by authViewModel.uiState.collectAsState()
