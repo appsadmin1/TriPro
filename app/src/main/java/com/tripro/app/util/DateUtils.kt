@@ -1,5 +1,6 @@
 package com.tripro.app.util
 
+import android.content.Context
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -20,15 +21,15 @@ object DateUtils {
 
     /** The current in-app language's Locale, used for weekday/month names so switching
      *  to Hebrew from the drawer affects dates too, not just static UI strings. */
-    private fun displayLocale(): Locale = Locale(currentAppLanguage().code)
+    private fun displayLocale(context: Context): Locale = Locale(currentAppLanguage(context).code)
 
     fun parse(date: String): LocalDate = LocalDate.parse(date, isoFormatter)
 
     /** "Oct 12 - Oct 18, 2023" */
-    fun formatRange(start: String, end: String): String {
+    fun formatRange(start: String, end: String, context: Context): String {
         val s = parse(start)
         val e = parse(end)
-        val locale = displayLocale()
+        val locale = displayLocale(context)
         val monthDay = DateTimeFormatter.ofPattern("MMM d", locale)
         return if (s.year == e.year) {
             "${s.format(monthDay)} - ${e.format(monthDay)}, ${e.year}"
@@ -38,15 +39,15 @@ object DateUtils {
     }
 
     /** "Tuesday, Oct 14" */
-    fun formatFullDayLabel(date: String): String {
+    fun formatFullDayLabel(date: String, context: Context): String {
         val d = parse(date)
-        val locale = displayLocale()
+        val locale = displayLocale(context)
         return "${d.dayOfWeek.getDisplayName(TextStyle.FULL, locale)}, ${d.format(DateTimeFormatter.ofPattern("MMM d", locale))}"
     }
 
     /** "Thu" */
-    fun formatWeekdayShort(date: String): String {
-        val locale = displayLocale()
+    fun formatWeekdayShort(date: String, context: Context): String {
+        val locale = displayLocale(context)
         return parse(date).dayOfWeek.getDisplayName(TextStyle.SHORT, locale).uppercase(locale)
     }
 

@@ -1,8 +1,15 @@
 [build]
-  # This Netlify site exists only to run the functions below — there's no static site
-  # to build/publish, which is a supported, common setup for "serverless backend for a
-  # mobile app" use cases.
-  functions = "netlify/functions"
+# This Netlify site exists only to run the functions below — there's no static site
+# to build/publish, which is a supported, common setup for "serverless backend for a
+# mobile app" use cases.
+#
+# Explicit install for the functions folder: without this, Netlify's build never runs
+# npm install for netlify/functions/package.json (there's no repo-root package.json to
+# trigger it automatically), so firebase-admin is missing when esbuild bundles each
+# function — every function that imports it (all three, via _shared/firebaseAdmin.mjs)
+# crashes at runtime with "Cannot find package 'firebase-admin'".
+command = "npm install --prefix netlify/functions"
+functions = "netlify/functions"
 
 [functions]
-  node_bundler = "esbuild"
+node_bundler = "esbuild"

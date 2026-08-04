@@ -102,11 +102,4 @@ dependencies {
     implementation(libs.coil.compose)
 
     implementation(libs.core.splashscreen)
-
-    // Per-app language support (Settings > System > Languages > App languages on API 33+,
-    // with a compatible polyfill below that) — see util/LocaleUtils.kt. Replaces a manual
-    // attachBaseContext()/createConfigurationContext() locale override, which correctly
-    // flipped Compose's layout direction but did not reliably make stringResource()
-    // resolve values-he/ — a known-fragile pattern, especially on Samsung One UI.
-    implementation(libs.appcompat)
 }

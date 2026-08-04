@@ -142,7 +142,7 @@ fun TripOverviewRoute(
                     Box(modifier = Modifier.fillMaxWidth().height(240.dp).background(Brush.verticalGradient(listOf(HorizonEthosColors.Primary.copy(alpha = 0.75f), Color.Transparent))))
                     Column(modifier = Modifier.align(Alignment.BottomStart).padding(20.dp)) {
                         Text(trip.destination, style = MaterialTheme.typography.displayLarge.copy(fontSize = 32.sp), color = HorizonEthosColors.OnPrimary)
-                        Text(DateUtils.formatRange(trip.startDate, trip.endDate), style = MaterialTheme.typography.bodyLarge, color = HorizonEthosColors.InverseOnSurface)
+                        Text(DateUtils.formatRange(trip.startDate, trip.endDate, LocalContext.current), style = MaterialTheme.typography.bodyLarge, color = HorizonEthosColors.InverseOnSurface)
                     }
                 }
             }
@@ -209,12 +209,13 @@ fun TripOverviewRoute(
     }
 
     if (showAddItemSheet) {
+        val context = LocalContext.current
         AddEditItemSheet(
             existing = null,
             defaultMapCenter = mapCenterOrDefault(uiState.days.firstOrNull { it.date == newItemDate }?.hotel),
             onDismiss = { showAddItemSheet = false },
             onSave = { item -> newItemDate?.let { date -> viewModel.addItem(date, item) }; showAddItemSheet = false },
-            dateOptions = uiState.days.map { it.date to "${DateUtils.formatWeekdayShort(it.date)} ${DateUtils.formatDayNumber(it.date)}" },
+            dateOptions = uiState.days.map { it.date to "${DateUtils.formatWeekdayShort(it.date, context)} ${DateUtils.formatDayNumber(it.date)}" },
             selectedDate = newItemDate,
             onDateSelected = { newItemDate = it }
         )
@@ -257,8 +258,9 @@ private fun DayRow(day: TripDay, onClick: () -> Unit) {
             .clickable(onClick = onClick).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val context = LocalContext.current
         Column(modifier = Modifier.width(44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(DateUtils.formatWeekdayShort(day.date), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            Text(DateUtils.formatWeekdayShort(day.date, context), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
             Text(DateUtils.formatDayNumber(day.date), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
         }
         Spacer(Modifier.width(12.dp))

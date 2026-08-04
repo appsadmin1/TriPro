@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import com.tripro.app.data.model.Trip
 import com.tripro.app.util.DateUtils
@@ -89,7 +90,7 @@ fun TripCard(
                         modifier = Modifier.padding(end = 4.dp)
                     )
                     Text(
-                        DateUtils.formatRange(trip.startDate, trip.endDate),
+                        DateUtils.formatRange(trip.startDate, trip.endDate, LocalContext.current),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

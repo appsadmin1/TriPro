@@ -79,7 +79,7 @@ fun TripDocsRoute(tripId: String, onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)
         ) {
             uiState.docsByDate.forEach { (date, docs) ->
-                item { Text(DateUtils.formatFullDayLabel(date), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary) }
+                item { Text(DateUtils.formatFullDayLabel(date, LocalContext.current), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary) }
                 items(docs, key = { "${it.itemId}-${it.attachment.id}" }) { doc ->
                     Row(
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
