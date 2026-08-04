@@ -46,6 +46,10 @@ import androidx.compose.material.icons.filled.FlightTakeoff
 
 import androidx.compose.foundation.layout.statusBarsPadding
 
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TripsListRoute(
@@ -158,8 +162,14 @@ fun TripsListRoute(
 @Composable
 private fun SectionHeader(icon: ImageVector, title: String, isSecondary: Boolean = false) {
     val color = if (isSecondary) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
-        Icon(icon, contentDescription = null, tint = color)
+        Icon(
+            icon, 
+            contentDescription = null, 
+            tint = color,
+            modifier = if (isRtl && icon == Icons.Filled.FlightTakeoff) Modifier.scale(scaleX = -1f, scaleY = 1f) else Modifier
+        )
         Text(
             title,
             style = MaterialTheme.typography.headlineMedium,

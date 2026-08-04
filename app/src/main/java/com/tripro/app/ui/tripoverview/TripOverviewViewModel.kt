@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tripro.app.data.model.ItineraryItem
+import com.tripro.app.data.model.ActivityColorPrefs
 import com.tripro.app.data.model.Role
 import com.tripro.app.data.model.Trip
 import com.tripro.app.data.model.TripDay
@@ -29,6 +30,8 @@ data class TripOverviewUiState(
     val isLoading: Boolean = true,
     val trip: Trip? = null,
     val days: List<TripDay> = emptyList(),
+    val itemsByDate: Map<String, List<ItineraryItem>> = emptyMap(),
+    val activityColors: ActivityColorPrefs = ActivityColorPrefs(),
     val myRole: Role = Role.VIEWER,
     val collaboratorAvatars: List<String> = emptyList(),
     val totalDocsCount: Int = 0,
@@ -51,21 +54,28 @@ class TripOverviewViewModel(
     init {
         viewModelScope.launch {
             // First observe trip and days
-            combine(tripRepository.observeTrip(tripId), tripRepository.observeDays(tripId)) { trip, days -> trip to days }
+            val tripAndDaysFlow = combine(tripRepository.observeTrip(tripId), tripRepository.observeDays(tripId)) { trip, days -> trip to days }
+            val dataFlow = combine(tripAndDaysFlow, userRepository.observeActivityColors(currentUid)) { (trip, days), colors ->
+                Triple(trip, days, colors)
+            }
+
+            dataFlow
                 .catch { e -> Log.e("TripOverviewViewModel", "Error observing trip data: ${e.message}", e); _uiState.value = _uiState.value.copy(isLoading = false) }
-                .flatMapLatest { (trip, days) ->
+                .flatMapLatest { (trip, days, colors) ->
                     val dates = days.map { it.date }
                     tripRepository.observeAllItemsForTrip(tripId, dates).map { itemsByDate ->
-                        Triple(trip, days, itemsByDate)
+                        DataTuple(trip, days, colors, itemsByDate)
                     }
                 }
-                .collect { (trip, days, itemsByDate) ->
+                .collect { (trip, days, colors, itemsByDate) ->
                     val totalDocs = itemsByDate.values.flatten().sumOf { it.attachments.size }
                     
                     _uiState.value = _uiState.value.copy(
                         isLoading = false, 
                         trip = trip, 
                         days = days, 
+                        itemsByDate = itemsByDate,
+                        activityColors = colors,
                         myRole = trip?.roleOf(currentUid) ?: Role.VIEWER,
                         totalDocsCount = totalDocs
                     )
@@ -79,6 +89,8 @@ class TripOverviewViewModel(
                 }
         }
     }
+
+    private data class DataTuple(val trip: Trip?, val days: List<TripDay>, val colors: ActivityColorPrefs, val itemsByDate: Map<String, List<ItineraryItem>>)
 
     fun addItem(date: String, item: ItineraryItem) = viewModelScope.launch {
         runCatching {

@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FlightTakeoff
@@ -96,6 +97,9 @@ import androidx.compose.ui.draw.shadow
 import com.tripro.app.ui.components.AvatarStack
 
 import androidx.compose.material.icons.filled.Menu
+
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -172,7 +176,8 @@ fun DayDetailRoute(
                             Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu_cd), tint = MaterialTheme.colorScheme.primary)
                         }
                         IconButton(onClick = onBack) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd), tint = MaterialTheme.colorScheme.primary)
+                            val backIcon = if (LocalLayoutDirection.current == LayoutDirection.Rtl) Icons.Filled.ArrowForward else Icons.Filled.ArrowBack
+                            Icon(backIcon, contentDescription = stringResource(R.string.common_back_cd), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },
@@ -278,6 +283,7 @@ fun DayDetailRoute(
             items(uiState.items, key = { it.id }) { item ->
                 ItineraryItemRow(
                     item = item,
+                    activityColors = uiState.activityColors,
                     canEdit = editingAllowed,
                     onEdit = { editingItem = item; showAddItemSheet = true },
                     onDelete = { viewModel.deleteItem(item.id) },

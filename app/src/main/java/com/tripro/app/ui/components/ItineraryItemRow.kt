@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tripro.app.R
 import com.tripro.app.data.model.Attachment
 import com.tripro.app.data.model.DayPeriod
@@ -66,9 +67,14 @@ import androidx.compose.foundation.rememberScrollState
 
 import androidx.compose.material.icons.filled.PriorityHigh
 
+import androidx.compose.ui.graphics.Color
+import com.tripro.app.data.model.ActivityColorPrefs
+import com.tripro.app.data.model.toMarkerColorKey
+
 @Composable
 fun ItineraryItemRow(
     item: ItineraryItem,
+    activityColors: ActivityColorPrefs,
     canEdit: Boolean,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -77,7 +83,7 @@ fun ItineraryItemRow(
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-        Column(modifier = Modifier.width(80.dp).padding(top = 8.dp)) {
+        Column(modifier = Modifier.width(90.dp).padding(top = 8.dp)) {
             when (item.timeType) {
                 TimeType.EXACT -> Text(item.startTime ?: "--:--", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1)
                 TimeType.RANGE -> {
@@ -86,7 +92,7 @@ fun ItineraryItemRow(
                 }
                 TimeType.PERIOD -> Text(
                     (item.period ?: DayPeriod.MORNING).localizedLabel(),
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 18.sp),
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1,
                     softWrap = false
@@ -96,12 +102,7 @@ fun ItineraryItemRow(
 
         Spacer(Modifier.width(16.dp))
 
-        val accentColor = when (item.type) {
-            ItemType.FLIGHT, ItemType.TRANSPORT -> MaterialTheme.colorScheme.primary
-            ItemType.HOTEL -> MaterialTheme.colorScheme.primaryContainer
-            ItemType.ATTRACTION, ItemType.SHOW -> MaterialTheme.colorScheme.secondaryContainer
-            else -> null
-        }
+        val accentColor = Color(activityColors.colorInt(item.type.toMarkerColorKey()))
 
         Card(
             shape = RoundedCornerShape(12.dp),
@@ -111,20 +112,18 @@ fun ItineraryItemRow(
             modifier = Modifier.weight(1f).shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
         ) {
             Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                if (accentColor != null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .width(4.dp)
-                            .background(accentColor)
-                    )
-                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(4.dp)
+                        .background(accentColor)
+                )
 
                 Column {
                     Row(modifier = Modifier.padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                         Row(modifier = Modifier.weight(1f)) {
-                            val iconBg = if (item.type == ItemType.RESTAURANT) HorizonEthosColors.SecondaryFixed else MaterialTheme.colorScheme.surfaceVariant
-                            val iconTint = if (item.type == ItemType.RESTAURANT) HorizonEthosColors.OnSecondaryFixedVariant else MaterialTheme.colorScheme.primary
+                            val iconBg = accentColor.copy(alpha = 0.12f)
+                            val iconTint = accentColor
                             
                             Box(
                                 modifier = Modifier

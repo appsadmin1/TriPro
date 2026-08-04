@@ -87,6 +87,13 @@ import androidx.compose.ui.draw.shadow
 
 import androidx.compose.material.icons.filled.Menu
 
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import com.tripro.app.data.model.ActivityColorPrefs
+import com.tripro.app.data.model.ItineraryItem
+import com.tripro.app.data.model.MarkerColorKey
+import com.tripro.app.data.model.toMarkerColorKey
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TripOverviewRoute(
@@ -132,7 +139,8 @@ fun TripOverviewRoute(
                             Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu_cd), tint = MaterialTheme.colorScheme.onPrimary)
                         }
                         IconButton(onClick = onBack) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd), tint = MaterialTheme.colorScheme.onPrimary)
+                            val backIcon = if (LocalLayoutDirection.current == LayoutDirection.Rtl) Icons.Filled.ArrowForward else Icons.Filled.ArrowBack
+                            Icon(backIcon, contentDescription = stringResource(R.string.common_back_cd), tint = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 },
@@ -232,7 +240,12 @@ fun TripOverviewRoute(
             }
 
             items(uiState.days, key = { it.date }) { day -> 
-                DayRow(day = day, onClick = { onOpenDay(day.date) }) 
+                DayRow(
+                    day = day, 
+                    items = uiState.itemsByDate[day.date] ?: emptyList(),
+                    activityColors = uiState.activityColors,
+                    onClick = { onOpenDay(day.date) }
+                ) 
             }
         }
     }
@@ -287,7 +300,7 @@ private fun StatChip(icon: ImageVector, value: String, label: String, modifier: 
 }
 
 @Composable
-private fun DayRow(day: TripDay, onClick: () -> Unit) {
+private fun DayRow(day: TripDay, items: List<ItineraryItem>, activityColors: ActivityColorPrefs, onClick: () -> Unit) {
     val isToday = runCatching { DateUtils.parse(day.date) == LocalDate.now() }.getOrDefault(false)
     
     // Outer container matching design shadow and background
@@ -361,25 +374,22 @@ private fun DayRow(day: TripDay, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
-                // Design-inspired activity indicator bars (static for parity)
+                // Design-inspired activity indicator bars (dynamic based on items)
                 Row(modifier = Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (day.hotel != null) {
-                        Box(modifier = Modifier.size(16.dp, 4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer))
+                        Box(modifier = Modifier.size(16.dp, 4.dp).clip(CircleShape).background(Color(activityColors.colorInt(MarkerColorKey.HOTEL))))
                     }
                     if (day.flight != null) {
-                        Box(modifier = Modifier.size(16.dp, 4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
+                        Box(modifier = Modifier.size(16.dp, 4.dp).clip(CircleShape).background(Color(activityColors.colorInt(MarkerColorKey.FLIGHT))))
                     }
-                    if (day.hotel == null && day.flight == null) {
+                    items.distinctBy { it.type }.forEach { item ->
+                        Box(modifier = Modifier.size(16.dp, 4.dp).clip(CircleShape).background(Color(activityColors.colorInt(item.type.toMarkerColorKey()))))
+                    }
+                    if (day.hotel == null && day.flight == null && items.isEmpty()) {
                         Box(modifier = Modifier.size(24.dp, 4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)))
                     }
                 }
             }
-            
-            Icon(
-                Icons.Filled.ArrowForward,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline
-            )
         }
     }
 }
