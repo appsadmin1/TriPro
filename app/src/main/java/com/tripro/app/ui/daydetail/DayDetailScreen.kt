@@ -98,6 +98,9 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.scale
 import com.tripro.app.ui.components.AvatarStack
+import com.tripro.app.ui.components.TriProTextField
+import com.tripro.app.ui.components.TriProAlertDialog
+import com.tripro.app.ui.theme.TriProShapes
 
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Check
@@ -105,6 +108,10 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+
+import com.tripro.app.ui.components.TriProTextField
+import com.tripro.app.ui.components.TriProAlertDialog
+import com.tripro.app.ui.theme.TriProShapes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -315,6 +322,7 @@ fun DayDetailRoute(
             existing = editingItem,
             defaultMapCenter = mapCenterOrDefault(uiState.day?.hotel),
             onDismiss = { showAddItemSheet = false },
+            selectedDate = date,
             onSave = { item ->
                 if (editingItem == null) viewModel.addItem(item) else viewModel.updateItem(item)
                 showAddItemSheet = false
@@ -366,11 +374,10 @@ fun DayDetailRoute(
             onDismissRequest = { pendingUpload = null },
             title = { Text(stringResource(R.string.day_detail_name_file_title)) },
             text = {
-                OutlinedTextField(
+                TriProTextField(
                     value = pendingUploadName,
                     onValueChange = { pendingUploadName = it },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    label = stringResource(R.string.day_detail_name_file_title)
                 )
             },
             confirmButton = {
@@ -405,23 +412,40 @@ private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave:
     var showArrivalPicker by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
 
-    AlertDialog(
+    TriProAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.day_detail_hotel_dialog_title)) },
-        text = {
+        title = stringResource(R.string.day_detail_hotel_dialog_title),
+        content = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { showSearch = true }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                     Text(if (name.isBlank()) stringResource(R.string.day_detail_search_hotel) else stringResource(R.string.day_detail_change_hotel))
                 }
-                OutlinedTextField(value = name, onValueChange = { name = it; placeId = null }, label = { Text(stringResource(R.string.day_detail_hotel_name_label)) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text(stringResource(R.string.day_detail_address_label)) }, modifier = Modifier.fillMaxWidth())
+                TriProTextField(
+                    value = name,
+                    onValueChange = { name = it; placeId = null },
+                    label = stringResource(R.string.day_detail_hotel_name_label),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TriProTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = stringResource(R.string.day_detail_address_label),
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { showArrivalPicker = true }, modifier = Modifier.weight(1f)) { Text(if (arrivalTime.isBlank()) stringResource(R.string.day_detail_arrival_time_label) else stringResource(R.string.day_detail_arrival_prefix, arrivalTime)) }
                     OutlinedButton(onClick = { showCheckInPicker = true }, modifier = Modifier.weight(1f)) { Text(if (checkIn.isBlank()) stringResource(R.string.day_detail_checkin_time_label) else stringResource(R.string.day_detail_checkin_prefix, checkIn)) }
+                    OutlinedButton(onClick = { showCheckOutPicker = true }, modifier = Modifier.weight(1f)) { Text(if (checkOut.isBlank()) stringResource(R.string.day_detail_checkout_time_label) else stringResource(R.string.day_detail_checkout_prefix, checkOut)) }
                 }
-                OutlinedButton(onClick = { showCheckOutPicker = true }, modifier = Modifier.fillMaxWidth()) { Text(if (checkOut.isBlank()) stringResource(R.string.day_detail_checkout_time_label) else stringResource(R.string.day_detail_checkout_prefix, checkOut)) }
-                OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text(stringResource(R.string.day_detail_note_label)) }, modifier = Modifier.fillMaxWidth(), minLines = 2)
+                OutlinedButton(onClick = { showArrivalPicker = true }, modifier = Modifier.fillMaxWidth()) { Text(if (arrivalTime.isBlank()) stringResource(R.string.day_detail_arrival_time_label) else stringResource(R.string.day_detail_arrival_prefix, arrivalTime)) }
+                TriProTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = stringResource(R.string.day_detail_note_label),
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    singleLine = false
+                )
                 
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.item_sheet_note_type_label), style = MaterialTheme.typography.labelMedium)
@@ -440,15 +464,14 @@ private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave:
                 }
             }
         },
-        confirmButton = {
-            TextButton(onClick = {
-                onSave(
-                    if (name.isBlank()) null
-                    else (existing ?: HotelInfo()).copy(name = name, address = address, checkIn = checkIn, checkOut = checkOut, arrivalTime = arrivalTime, notes = notes, noteType = noteType, lat = lat, lng = lng, placeId = placeId)
-                )
-            }) { Text(stringResource(R.string.action_save)) }
+        confirmButtonText = stringResource(R.string.action_save),
+        onConfirm = {
+            onSave(
+                if (name.isBlank()) null
+                else (existing ?: HotelInfo()).copy(name = name, address = address, checkIn = checkIn, checkOut = checkOut, arrivalTime = arrivalTime, notes = notes, noteType = noteType, lat = lat, lng = lng, placeId = placeId)
+            )
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
+        dismissButtonText = stringResource(R.string.action_cancel)
     )
 
     if (showCheckInPicker) SimpleTimePickerDialog(stringResource(R.string.day_detail_checkin_time_label), checkIn.ifBlank { "15:00" }, { showCheckInPicker = false }, { checkIn = it; showCheckInPicker = false })
@@ -520,20 +543,24 @@ private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () 
         }
     }
 
-    AlertDialog(
+    TriProAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.day_detail_flight_dialog_title)) },
-        text = {
+        title = stringResource(R.string.day_detail_flight_dialog_title),
+        content = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+                    TriProTextField(
                         value = flightNumberQuery,
                         onValueChange = { flightNumberQuery = it.uppercase() },
-                        label = { Text(stringResource(R.string.day_detail_flight_number_label)) },
-                        singleLine = true,
+                        label = stringResource(R.string.day_detail_flight_number_label),
                         modifier = Modifier.weight(1f)
                     )
-                    OutlinedButton(onClick = { lookupFlight() }, enabled = !isLookingUp && flightNumberQuery.isNotBlank()) {
+                    OutlinedButton(
+                        onClick = { lookupFlight() },
+                        enabled = !isLookingUp && flightNumberQuery.isNotBlank(),
+                        shape = TriProShapes.medium,
+                        modifier = Modifier.height(48.dp)
+                    ) {
                         if (isLookingUp) {
                             CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                         } else {
@@ -546,12 +573,32 @@ private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () 
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = airline, onValueChange = { airline = it }, label = { Text(stringResource(R.string.day_detail_airline_label)) }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = flightNumber, onValueChange = { flightNumber = it }, label = { Text(stringResource(R.string.day_detail_flight_number_short_label)) }, modifier = Modifier.weight(1f))
+                    TriProTextField(
+                        value = airline,
+                        onValueChange = { airline = it },
+                        label = stringResource(R.string.day_detail_airline_label),
+                        modifier = Modifier.weight(1f)
+                    )
+                    TriProTextField(
+                        value = flightNumber,
+                        onValueChange = { flightNumber = it },
+                        label = stringResource(R.string.day_detail_flight_number_short_label),
+                        modifier = Modifier.weight(1f)
+                    )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = departureCode, onValueChange = { departureCode = it.uppercase() }, label = { Text(stringResource(R.string.day_detail_from_code_label)) }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = arrivalCode, onValueChange = { arrivalCode = it.uppercase() }, label = { Text(stringResource(R.string.day_detail_to_code_label)) }, modifier = Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(TriProSpacing.base)) {
+                    TriProTextField(
+                        value = departureCode,
+                        onValueChange = { departureCode = it.uppercase() },
+                        label = stringResource(R.string.day_detail_from_code_label),
+                        modifier = Modifier.weight(1f)
+                    )
+                    TriProTextField(
+                        value = arrivalCode,
+                        onValueChange = { arrivalCode = it.uppercase() },
+                        label = stringResource(R.string.day_detail_to_code_label),
+                        modifier = Modifier.weight(1f)
+                    )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { showDepartureSearch = true }, modifier = Modifier.weight(1f)) {
@@ -567,7 +614,14 @@ private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () 
                     OutlinedButton(onClick = { showDeparturePicker = true }, modifier = Modifier.weight(1f)) { Text(if (departureTime.isBlank()) stringResource(R.string.day_detail_departs_label) else stringResource(R.string.day_detail_departs_prefix, departureTime)) }
                     OutlinedButton(onClick = { showArrivalPicker = true }, modifier = Modifier.weight(1f)) { Text(if (arrivalTime.isBlank()) stringResource(R.string.day_detail_arrives_label) else stringResource(R.string.day_detail_arrives_prefix, arrivalTime)) }
                 }
-                OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text(stringResource(R.string.day_detail_note_label)) }, modifier = Modifier.fillMaxWidth(), minLines = 2)
+                TriProTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = stringResource(R.string.day_detail_note_label),
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    singleLine = false
+                )
 
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.item_sheet_note_type_label), style = MaterialTheme.typography.labelMedium)
@@ -586,24 +640,22 @@ private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () 
                 }
             }
         },
-        confirmButton = {
-            TextButton(onClick = {
-                onSave(
-                    if (airline.isBlank() && flightNumber.isBlank()) null
-                    else (existing ?: FlightInfo()).copy(
-                        airline = airline, flightNumber = flightNumber,
-                        departureAirportCode = departureCode, arrivalAirportCode = arrivalCode,
-                        departureAirportLat = departureLat, departureAirportLng = departureLng,
-                        arrivalAirportLat = arrivalLat, arrivalAirportLng = arrivalLng,
-                        departureTime = departureTime, arrivalTime = arrivalTime,
-                        notes = notes, noteType = noteType
-                    )
+        confirmButtonText = stringResource(R.string.action_save),
+        onConfirm = {
+            onSave(
+                if (airline.isBlank() && flightNumber.isBlank()) null
+                else (existing ?: FlightInfo()).copy(
+                    airline = airline, flightNumber = flightNumber,
+                    departureAirportCode = departureCode, arrivalAirportCode = arrivalCode,
+                    departureAirportLat = departureLat, departureAirportLng = departureLng,
+                    arrivalAirportLat = arrivalLat, arrivalAirportLng = arrivalLng,
+                    departureTime = departureTime, arrivalTime = arrivalTime,
+                    notes = notes, noteType = noteType
                 )
-            }) { Text(stringResource(R.string.action_save)) }
+            )
         },
-        dismissButton = {
-            TextButton(onClick = { onSave(null); onDismiss() }) { Text(stringResource(R.string.day_detail_remove_flight)) }
-        }
+        dismissButtonText = stringResource(R.string.day_detail_remove_flight),
+        onDismiss = { onSave(null); onDismiss() }
     )
 
     if (showDeparturePicker) SimpleTimePickerDialog(stringResource(R.string.day_detail_departure_time_title), departureTime.ifBlank { "09:00" }, { showDeparturePicker = false }, { departureTime = it; showDeparturePicker = false })
@@ -644,11 +696,21 @@ private fun DayNoteCard(note: String, canEdit: Boolean, onEdit: () -> Unit) {
 @Composable
 private fun DayNoteEditDialog(existing: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
     var note by remember { mutableStateOf(existing) }
-    AlertDialog(
+    TriProAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.day_detail_note_dialog_title)) },
-        text = { OutlinedTextField(value = note, onValueChange = { note = it }, modifier = Modifier.fillMaxWidth(), minLines = 3, label = { Text(stringResource(R.string.day_detail_note_label)) }) },
-        confirmButton = { TextButton(onClick = { onSave(note) }) { Text(stringResource(R.string.action_save)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
+        title = stringResource(R.string.day_detail_note_dialog_title),
+        content = {
+            TriProTextField(
+                value = note,
+                onValueChange = { note = it },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3,
+                singleLine = false,
+                label = stringResource(R.string.day_detail_note_label)
+            )
+        },
+        confirmButtonText = stringResource(R.string.action_save),
+        onConfirm = { onSave(note) },
+        dismissButtonText = stringResource(R.string.action_cancel)
     )
 }

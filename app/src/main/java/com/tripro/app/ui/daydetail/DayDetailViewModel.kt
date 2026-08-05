@@ -74,7 +74,8 @@ class DayDetailViewModel(
                                 startTime = h.arrivalTime.ifBlank { h.checkIn }.ifBlank { null },
                                 locationName = h.address,
                                 note = h.notes,
-                                noteType = h.noteType
+                                noteType = h.noteType,
+                                hotelInfo = h
                             )
                         )
                     }
@@ -90,7 +91,8 @@ class DayDetailViewModel(
                                 startTime = f.arrivalTime.ifBlank { null },
                                 locationName = f.arrivalAirportCode,
                                 note = f.notes,
-                                noteType = f.noteType
+                                noteType = f.noteType,
+                                flightInfo = f
                             )
                         )
                     }

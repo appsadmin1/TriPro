@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -52,8 +53,12 @@ import androidx.lifecycle.viewmodel.initializer
 import coil.compose.AsyncImage
 import com.tripro.app.R
 import com.tripro.app.TriProApplication
+import com.tripro.app.ui.components.TriProTextField
 import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.ui.theme.TriProSpacing
+import com.tripro.app.ui.theme.PillShape
+import com.tripro.app.ui.theme.TriProTypography
+import androidx.compose.material3.ButtonDefaults
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -114,16 +119,16 @@ fun CreateTripRoute(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)
         ) {
-            OutlinedTextField(
+            TriProTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text(stringResource(R.string.create_trip_name_label)) },
+                label = stringResource(R.string.create_trip_name_label),
                 modifier = Modifier.fillMaxWidth()
             )
-            OutlinedTextField(
+            TriProTextField(
                 value = destination,
                 onValueChange = { destination = it },
-                label = { Text(stringResource(R.string.create_trip_destination_label)) },
+                label = stringResource(R.string.create_trip_destination_label),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -171,10 +176,18 @@ fun CreateTripRoute(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)) {
-                OutlinedButton(onClick = { pickingDates = true }, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = { pickingDates = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, TriProColors.OutlineVariant.copy(alpha = 0.3f))
+                ) {
                     val startLabel = startDate?.format(DateTimeFormatter.ofPattern("MMM d")) ?: stringResource(R.string.trip_edit_start_date)
                     val endLabel = endDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: stringResource(R.string.trip_edit_end_date)
-                    Text(if (startDate != null && endDate != null) "$startLabel – $endLabel" else stringResource(R.string.trip_edit_start_date))
+                    Text(
+                        if (startDate != null && endDate != null) "$startLabel – $endLabel" else stringResource(R.string.trip_edit_start_date),
+                        color = TriProColors.OnSurface
+                    )
                 }
             }
 
@@ -193,9 +206,17 @@ fun CreateTripRoute(
                     }
                 },
                 enabled = !uiState.isSaving && name.isNotBlank() && startDate != null && endDate != null,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                modifier = Modifier.fillMaxWidth().height(48.dp).padding(top = 8.dp),
+                shape = PillShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = TriProColors.Primary,
+                    contentColor = TriProColors.OnPrimary
+                )
             ) {
-                Text(if (uiState.isSaving) stringResource(R.string.create_trip_creating) else stringResource(R.string.create_trip_create_button))
+                Text(
+                    if (uiState.isSaving) stringResource(R.string.create_trip_creating) else stringResource(R.string.create_trip_create_button),
+                    style = TriProTypography.labelMedium
+                )
             }
         }
     }

@@ -2,6 +2,7 @@ package com.tripro.app.ui.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,14 +17,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,7 +47,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tripro.app.R
+import com.tripro.app.ui.components.TriProDialog
+import com.tripro.app.ui.theme.TriProColors
+import com.tripro.app.ui.theme.TriProShapes
 import com.tripro.app.ui.theme.TriProSpacing
+import com.tripro.app.ui.theme.TriProTypography
 import com.tripro.app.util.AppLanguage
 import com.tripro.app.util.currentAppLanguage
 import com.tripro.app.util.setAppLanguage
@@ -77,39 +81,24 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = if (isWideScreen) Arrangement.End else Arrangement.Center
             ) {
-                androidx.compose.runtime.CompositionLocalProvider(
-                    androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr
-                ) {
-                    var expanded by remember { mutableStateOf(false) }
-                    Box {
-                        IconButton(onClick = { expanded = true }) {
-                            Icon(
-                                imageVector = Icons.Filled.Language,
-                                contentDescription = stringResource(R.string.drawer_language),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            AppLanguage.entries.forEach { lang ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            lang.displayName,
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = if (lang == currentLang) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                        )
-                                    },
-                                    onClick = {
-                                        setAppLanguage(context, lang)
-                                        expanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
+                var showLanguageDialog by remember { mutableStateOf(false) }
+                IconButton(onClick = { showLanguageDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Filled.Language,
+                        contentDescription = stringResource(R.string.drawer_language),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                if (showLanguageDialog) {
+                    LanguagePickerDialog(
+                        currentLanguage = currentLang,
+                        onLanguageSelected = { lang ->
+                            setAppLanguage(context, lang)
+                            showLanguageDialog = false
+                        },
+                        onDismiss = { showLanguageDialog = false }
+                    )
                 }
             }
             
@@ -232,6 +221,51 @@ fun LoginScreen(
                                 color = Color.White
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LanguagePickerDialog(
+    currentLanguage: AppLanguage,
+    onLanguageSelected: (AppLanguage) -> Unit,
+    onDismiss: () -> Unit
+) {
+    TriProDialog(onDismissRequest = onDismiss) {
+        Text(
+            stringResource(R.string.drawer_language),
+            style = TriProTypography.headlineMedium,
+            color = TriProColors.Primary,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            AppLanguage.entries.forEach { lang ->
+                val isSelected = lang == currentLanguage
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(TriProShapes.medium)
+                        .background(if (isSelected) TriProColors.PrimaryContainer.copy(alpha = 0.1f) else Color.Transparent)
+                        .clickable { onLanguageSelected(lang) }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        lang.displayName,
+                        style = TriProTypography.bodyLarge,
+                        color = if (isSelected) TriProColors.Primary else TriProColors.OnSurface
+                    )
+                    if (isSelected) {
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = TriProColors.Primary,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }

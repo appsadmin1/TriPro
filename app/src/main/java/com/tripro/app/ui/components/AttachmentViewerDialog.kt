@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import com.tripro.app.ui.components.TriProAlertDialog
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -102,17 +103,16 @@ fun AttachmentViewerDialog(
     }
 
     if (renaming) {
-        AlertDialog(
+        TriProAlertDialog(
             onDismissRequest = { renaming = false },
-            title = { Text(stringResource(R.string.attachment_rename_title)) },
-            text = {
+            title = stringResource(R.string.attachment_rename_title),
+            content = {
                 var text by remember { mutableStateOf(currentName) }
                 OutlinedTextField(value = text, onValueChange = { text = it; currentName = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
             },
-            confirmButton = {
-                TextButton(onClick = { onRename?.invoke(currentName); renaming = false }) { Text(stringResource(R.string.action_save)) }
-            },
-            dismissButton = { TextButton(onClick = { renaming = false }) { Text(stringResource(R.string.action_cancel)) } }
+            confirmButtonText = stringResource(R.string.action_save),
+            onConfirm = { onRename?.invoke(currentName); renaming = false },
+            dismissButtonText = stringResource(R.string.action_cancel)
         )
     }
 }

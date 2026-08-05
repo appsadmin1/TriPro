@@ -153,9 +153,6 @@ fun TripOverviewRoute(
                             Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.trip_overview_edit_trip_cd), tint = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
-                    IconButton(onClick = onOpenCollaborators) {
-                        Icon(Icons.Filled.Group, contentDescription = stringResource(R.string.trip_overview_collaborators_cd), tint = MaterialTheme.colorScheme.onPrimary)
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
             )

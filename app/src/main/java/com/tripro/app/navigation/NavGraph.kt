@@ -194,6 +194,7 @@ fun TriProNavGraph(
                             SettingsRoute(
                                 currentUid = uid,
                                 onBack = { navController.popBackStack() },
+                                onOpenDrawer = { drawerScope.launch { drawerState.open() } },
                                 onSignOut = { authViewModel.signOut() }
                             )
                         }

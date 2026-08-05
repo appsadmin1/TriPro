@@ -35,6 +35,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
+import com.tripro.app.ui.components.TriProAlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +56,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+
+import com.tripro.app.ui.components.TriProAlertDialog
 
 /**
  * Edit sheet for an existing trip's name/destination/cover photo/dates — opened from the
@@ -183,12 +186,14 @@ fun TripEditSheet(
         }
     }
     if (confirmingDelete) {
-        AlertDialog(
+        TriProAlertDialog(
             onDismissRequest = { confirmingDelete = false },
-            title = { Text(stringResource(R.string.trip_edit_delete_confirm_title)) },
-            text = { Text(stringResource(R.string.trip_edit_delete_confirm_text, trip.name)) },
-            confirmButton = { TextButton(onClick = { confirmingDelete = false; onDeleteTrip() }) { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) } },
-            dismissButton = { TextButton(onClick = { confirmingDelete = false }) { Text(stringResource(R.string.action_cancel)) } }
+            title = stringResource(R.string.trip_edit_delete_confirm_title),
+            text = stringResource(R.string.trip_edit_delete_confirm_text, trip.name),
+            confirmButtonText = stringResource(R.string.action_delete),
+            onConfirm = { confirmingDelete = false; onDeleteTrip() },
+            dismissButtonText = stringResource(R.string.action_cancel),
+            isDestructive = true
         )
     }
 }

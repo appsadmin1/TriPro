@@ -256,6 +256,7 @@
     <string name="alerts_empty">עדיין אין עדכונים — שינויים בטיולים שלך יופיעו כאן.</string>
 
     <string name="profile_title">פרופיל</string>
+    <string name="profile_name_label">שם</string>
     <string name="profile_fallback_name">מטייל TriPro</string>
 
     <string name="search_trips_label">חיפוש בטיולים שלך</string>

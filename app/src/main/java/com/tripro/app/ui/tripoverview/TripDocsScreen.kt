@@ -1,6 +1,7 @@
 package com.tripro.app.ui.tripoverview
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,6 +44,7 @@ import com.tripro.app.R
 import com.tripro.app.TriProApplication
 import com.tripro.app.data.model.Attachment
 import com.tripro.app.ui.components.AttachmentViewerDialog
+import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.DateUtils
 
@@ -84,6 +86,7 @@ fun TripDocsRoute(tripId: String, onBack: () -> Unit) {
                     Row(
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                            .border(1.dp, TriProColors.CardBorder, RoundedCornerShape(12.dp))
                             .clickable { viewing = Triple(doc.date, doc.itemId, doc.attachment) }
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically

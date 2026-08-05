@@ -60,6 +60,9 @@ import coil.compose.AsyncImage
 import com.tripro.app.R
 import com.tripro.app.TriProApplication
 import com.tripro.app.data.model.Role
+import com.tripro.app.ui.components.TriProTextField
+import com.tripro.app.ui.theme.PillShape
+import com.tripro.app.ui.theme.TriProTypography
 import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.localizedLabel
@@ -130,36 +133,42 @@ fun CollaboratorsRoute(
                 if (uiState.isOwner) {
                     item {
                         Card(
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.7f)),
-                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
-                            modifier = Modifier.fillMaxWidth().shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = TriProColors.SurfaceContainerLowest),
+                            border = BorderStroke(1.dp, TriProColors.CardBorder),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Text(stringResource(R.string.collaborators_invite_title), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
-                                OutlinedTextField(
+                            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                Text(
+                                    stringResource(R.string.collaborators_invite_title),
+                                    style = TriProTypography.headlineSmall,
+                                    color = TriProColors.Primary
+                                )
+                                TriProTextField(
                                     value = email,
                                     onValueChange = { email = it },
-                                    placeholder = { Text(stringResource(R.string.collaborators_email_label)) },
-                                    leadingIcon = { Icon(Icons.Filled.Mail, contentDescription = null, tint = MaterialTheme.colorScheme.outline) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(8.dp)
+                                    label = stringResource(R.string.collaborators_email_label),
+                                    placeholder = "name@example.com",
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                                 Button(
                                     onClick = { viewModel.invite(email, inviteRole); email = "" },
-                                    shape = RoundedCornerShape(8.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer),
+                                    shape = PillShape,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = TriProColors.Primary,
+                                        contentColor = TriProColors.OnPrimary
+                                    ),
                                     modifier = Modifier.fillMaxWidth().height(48.dp)
                                 ) {
                                     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
                                     Icon(
-                                        Icons.Filled.Send, 
-                                        contentDescription = null, 
+                                        Icons.Filled.Send,
+                                        contentDescription = null,
                                         modifier = Modifier.size(18.dp).padding(end = 8.dp).let {
                                             if (isRtl) it.scale(scaleX = -1f, scaleY = 1f) else it
                                         }
                                     )
-                                    Text(stringResource(R.string.collaborators_send_invite), style = MaterialTheme.typography.labelLarge)
+                                    Text(stringResource(R.string.collaborators_send_invite), style = TriProTypography.labelLarge)
                                 }
                                 if (uiState.inviteError != null) Text(uiState.inviteError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                                 if (uiState.inviteSuccessMessage != null) Text(uiState.inviteSuccessMessage!!, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
@@ -214,16 +223,15 @@ fun CollaboratorsRoute(
     }
 
     memberToRemove?.let { (uid, name) ->
-        AlertDialog(
+        com.tripro.app.ui.components.TriProAlertDialog(
             onDismissRequest = { memberToRemove = null },
-            title = { Text(stringResource(R.string.collaborators_delete_confirm_title)) },
-            text = { Text(stringResource(R.string.collaborators_delete_confirm_text, name)) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.removeMember(uid); memberToRemove = null }) {
-                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = { TextButton(onClick = { memberToRemove = null }) { Text(stringResource(R.string.action_cancel)) } }
+            title = stringResource(R.string.collaborators_delete_confirm_title),
+            text = stringResource(R.string.collaborators_delete_confirm_text, name),
+            confirmButtonText = stringResource(R.string.action_delete),
+            onConfirm = { viewModel.removeMember(uid); memberToRemove = null },
+            dismissButtonText = stringResource(R.string.action_cancel),
+            onDismiss = { memberToRemove = null },
+            isDestructive = true
         )
     }
 }
@@ -240,7 +248,7 @@ private fun MemberRowItem(
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     Row(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceContainerLowest).border(1.dp, TriProColors.CardBorder, RoundedCornerShape(12.dp)).padding(12.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceContainerLowest).border(0.5.dp, TriProColors.CardBorder, RoundedCornerShape(12.dp)).padding(12.dp),
         horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

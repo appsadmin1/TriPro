@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Attractions
@@ -114,10 +116,10 @@ fun ItineraryItemRow(
 
         Card(
             shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+            colors = CardDefaults.cardColors(containerColor = TriProColors.SurfaceContainerLowest),
             border = BorderStroke(1.dp, TriProColors.CardBorder),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            modifier = Modifier.weight(1f).shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
+            modifier = Modifier.weight(1f)
         ) {
             Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
                 Box(
@@ -157,6 +159,27 @@ fun ItineraryItemRow(
                                 Text(item.title, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
                                 if (item.type == ItemType.CUSTOM && item.customLabel.isNotBlank()) {
                                     Text(item.customLabel, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+
+                                if (item.type == ItemType.FLIGHT && item.flightInfo != null) {
+                                    val f = item.flightInfo
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+                                        Text("${f.departureAirportCode} ${f.departureTime}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(14.dp).padding(horizontal = 4.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text("${f.arrivalAirportCode} ${f.arrivalTime}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+
+                                if (item.type == ItemType.HOTEL && item.hotelInfo != null) {
+                                    val h = item.hotelInfo
+                                    if (h.checkIn.isNotBlank() || h.checkOut.isNotBlank()) {
+                                        Text(
+                                            stringResource(R.string.day_detail_checkin_checkout, h.checkIn, h.checkOut),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(top = 4.dp)
+                                        )
+                                    }
                                 }
                                 
                                 if (item.note.isNotBlank()) {

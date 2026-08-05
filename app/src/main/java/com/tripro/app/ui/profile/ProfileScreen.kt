@@ -145,7 +145,7 @@ fun ProfileRoute(onOpenDrawer: () -> Unit, onSignOut: () -> Unit) {
                 OutlinedTextField(
                     value = editedName,
                     onValueChange = { editedName = it },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.profile_name_label)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(24.dp))

@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -57,9 +58,11 @@ import androidx.compose.ui.res.stringResource
 import com.tripro.app.R
 import com.tripro.app.util.localizedLabel
 
+import com.tripro.app.ui.components.TriProAlertDialog
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsRoute(currentUid: String, onBack: () -> Unit, onSignOut: () -> Unit) {
+fun SettingsRoute(currentUid: String, onBack: () -> Unit, onOpenDrawer: () -> Unit, onSignOut: () -> Unit) {
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
     val viewModel: SettingsViewModel = viewModel(
@@ -74,7 +77,16 @@ fun SettingsRoute(currentUid: String, onBack: () -> Unit, onSignOut: () -> Unit)
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd)) } }
+                navigationIcon = {
+                    Row {
+                        IconButton(onClick = onOpenDrawer) {
+                            Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu_cd))
+                        }
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd))
+                        }
+                    }
+                }
             )
         }
     ) { padding ->
@@ -142,10 +154,10 @@ fun SettingsRoute(currentUid: String, onBack: () -> Unit, onSignOut: () -> Unit)
     }
 
     colorPickerFor?.let { key ->
-        AlertDialog(
+        TriProAlertDialog(
             onDismissRequest = { colorPickerFor = null },
-            title = { Text(stringResource(R.string.settings_choose_color)) },
-            text = {
+            title = stringResource(R.string.settings_choose_color),
+            content = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     MarkerColorPalette.chunked(4).forEach { rowColors ->
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -168,7 +180,8 @@ fun SettingsRoute(currentUid: String, onBack: () -> Unit, onSignOut: () -> Unit)
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { colorPickerFor = null }) { Text(stringResource(R.string.action_close)) } } // was "Close"
+            confirmButtonText = stringResource(R.string.action_close),
+            onConfirm = { colorPickerFor = null }
         )
     }
 }

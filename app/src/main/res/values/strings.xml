@@ -295,6 +295,7 @@
 
     <!-- Profile -->
     <string name="profile_title">Profile</string>
+    <string name="profile_name_label">Name</string>
     <string name="profile_fallback_name">TriPro traveler</string>
 
     <!-- Search -->

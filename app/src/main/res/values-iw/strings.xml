@@ -101,6 +101,8 @@
     <string name="day_detail_change_hotel">החלפת מלון</string>
     <string name="day_detail_hotel_name_label">שם המלון</string>
     <string name="day_detail_address_label">כתובת</string>
+    <string name="day_detail_arrival_time_label">שעת הגעה</string>
+    <string name="day_detail_arrival_prefix">הגעה: %1$s</string>
     <string name="day_detail_checkin_time_label">שעת צ\'ק-אין</string>
     <string name="day_detail_checkin_prefix">צ\'ק-אין: %1$s</string>
     <string name="day_detail_checkout_time_label">שעת צ\'ק-אאוט</string>
@@ -270,6 +272,7 @@
     <string name="alerts_empty">עדיין אין עדכונים — שינויים בטיולים שלך יופיעו כאן.</string>
 
     <string name="profile_title">פרופיל</string>
+    <string name="profile_name_label">שם</string>
     <string name="profile_fallback_name">מטייל TriPro</string>
 
     <string name="search_trips_label">חיפוש בטיולים שלך</string>
