@@ -29,10 +29,10 @@
 
     <!-- Login screen -->
     <string name="login_tagline">Your collaborative journey starts here.</string>
-    <string name="login_subtitle">Plan, share, and experience travel like never before. High-density organization meets the wonder of discovery.</string>
+    <string name="login_subtitle">Plan, share, and experience travel like never before. TriPro meets the wonder of discovery.</string>
     <string name="login_sign_in_google">Sign in with Google</string>
     <string name="login_hero_title">Your collaborative \njourney starts here.</string>
-    <string name="login_hero_subtitle">Plan, share, and experience travel like never before. High-density organization meets the wonder of discovery.</string>
+    <string name="login_hero_subtitle">Plan, share, and experience travel like never before. TriPro meets the wonder of discovery.</string>
     <string name="login_quote">\"The world is a book and those who do not travel read only one page.\"</string>
 
     <!-- Trips list -->
@@ -184,6 +184,9 @@
     <string name="itinerary_row_add_note">Add Note</string>
     <string name="itinerary_row_upload_file">Upload File</string>
     <string name="itinerary_row_delete_cd">Delete</string>
+    <string name="itinerary_delete_confirm_title">Delete activity?</string>
+    <string name="itinerary_delete_confirm_text">Are you sure you want to delete this activity? This can\'t be undone.</string>
+    <string name="itinerary_view_all_docs">View all documents</string>
 
     <!-- Weather -->
     <string name="weather_checking">Checking the forecast…</string>
@@ -279,6 +282,8 @@
     <string name="collaborators_pending_invites">Pending Invites</string>
     <string name="collaborators_invite_pending">Invite pending — will join as %1$s once they sign in</string>
     <string name="collaborators_remove_menu_item">Remove</string>
+    <string name="collaborators_delete_confirm_title">Remove member?</string>
+    <string name="collaborators_delete_confirm_text">Are you sure you want to remove %1$s from this trip?</string>
     <string name="collaborators_editor_title">Editor Access</string>
     <string name="collaborators_editor_desc">Can add, edit, or remove itinerary items.</string>
     <string name="collaborators_read_only_title">Read Only</string>

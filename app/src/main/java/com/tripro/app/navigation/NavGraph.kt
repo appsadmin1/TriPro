@@ -228,7 +228,8 @@ fun TriProNavGraph(
                                 currentUid = uid,
                                 currentUserName = displayName,
                                 onBack = { navController.popBackStack() },
-                                onOpenDrawer = { drawerScope.launch { drawerState.open() } }
+                                onOpenDrawer = { drawerScope.launch { drawerState.open() } },
+                                onOpenDocs = { navController.navigate(Destinations.tripDocs(tripId)) }
                             )
                         }
                         composable(
@@ -240,7 +241,8 @@ fun TriProNavGraph(
                                 tripId = tripId,
                                 currentUid = uid,
                                 currentUserName = displayName,
-                                onBack = { navController.popBackStack() }
+                                onBack = { navController.popBackStack() },
+                                onOpenDrawer = { drawerScope.launch { drawerState.open() } }
                             )
                         }
                         composable(

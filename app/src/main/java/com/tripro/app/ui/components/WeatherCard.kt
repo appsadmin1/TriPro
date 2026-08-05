@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.tripro.app.R
 import com.tripro.app.data.model.DailyWeather
 import com.tripro.app.data.model.WeatherStatus
-import com.tripro.app.ui.theme.HorizonEthosColors
+import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.util.weatherConditionLabel
 import kotlin.math.roundToInt
 
@@ -45,7 +45,7 @@ fun WeatherCard(
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-        border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
+        border = BorderStroke(1.dp, TriProColors.CardBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -90,7 +90,7 @@ fun WeatherCard(
                     Icon(
                         iconFor(weather.weatherCode),
                         contentDescription = null,
-                        tint = HorizonEthosColors.SecondaryFixedDim,
+                        tint = TriProColors.SecondaryFixedDim,
                         modifier = Modifier.size(36.dp).padding(end = 16.dp)
                     )
                     Column {

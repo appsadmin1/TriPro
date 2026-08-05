@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Attractions
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
@@ -46,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -59,7 +61,7 @@ import com.tripro.app.data.model.ItemType
 import com.tripro.app.data.model.ItineraryItem
 import com.tripro.app.data.model.NoteType
 import com.tripro.app.data.model.TimeType
-import com.tripro.app.ui.theme.HorizonEthosColors
+import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.util.localizedLabel
 
 import androidx.compose.foundation.horizontalScroll
@@ -71,6 +73,9 @@ import androidx.compose.ui.graphics.Color
 import com.tripro.app.data.model.ActivityColorPrefs
 import com.tripro.app.data.model.toMarkerColorKey
 
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+
 @Composable
 fun ItineraryItemRow(
     item: ItineraryItem,
@@ -80,6 +85,7 @@ fun ItineraryItemRow(
     onDelete: () -> Unit,
     onAddAttachment: () -> Unit,
     onAttachmentClick: (Attachment) -> Unit,
+    onViewAllDocs: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isSynthetic = item.id.startsWith("synthetic_")
@@ -109,7 +115,7 @@ fun ItineraryItemRow(
         Card(
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-            border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
+            border = BorderStroke(1.dp, TriProColors.CardBorder),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             modifier = Modifier.weight(1f).shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
         ) {
@@ -126,6 +132,7 @@ fun ItineraryItemRow(
                         Row(modifier = Modifier.weight(1f)) {
                             val iconBg = accentColor.copy(alpha = 0.12f)
                             val iconTint = accentColor
+                            val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
                             
                             Box(
                                 modifier = Modifier
@@ -138,7 +145,11 @@ fun ItineraryItemRow(
                                     imageVectorForType(item.type),
                                     contentDescription = null,
                                     tint = iconTint,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(20.dp).let {
+                                        if (isRtl && (item.type == ItemType.HOTEL || item.type == ItemType.FLIGHT || item.type == ItemType.ACTIVITY)) {
+                                            it.scale(scaleX = -1f, scaleY = 1f)
+                                        } else it
+                                    }
                                 )
                             }
                             Spacer(Modifier.width(12.dp))
@@ -150,8 +161,8 @@ fun ItineraryItemRow(
                                 
                                 if (item.note.isNotBlank()) {
                                     val isAlert = item.noteType == NoteType.ALERT
-                                    val bg = if (isAlert) MaterialTheme.colorScheme.errorContainer else HorizonEthosColors.Success.copy(alpha = 0.25f)
-                                    val fg = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else HorizonEthosColors.Success
+                                    val bg = if (isAlert) MaterialTheme.colorScheme.errorContainer else TriProColors.Success.copy(alpha = 0.25f)
+                                    val fg = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else TriProColors.Success
                                     
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
@@ -180,19 +191,17 @@ fun ItineraryItemRow(
                                 }
 
                                 if (item.attachments.isNotEmpty()) {
-                                    Row(
-                                        modifier = Modifier
-                                            .padding(top = 8.dp)
-                                            .horizontalScroll(rememberScrollState()),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    Column(
+                                        modifier = Modifier.padding(top = 8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
-                                        item.attachments.forEach { attachment ->
+                                        item.attachments.take(3).forEach { attachment ->
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 modifier = Modifier
                                                     .clip(RoundedCornerShape(percent = 50))
                                                     .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                                                    .border(1.dp, HorizonEthosColors.CardBorder, RoundedCornerShape(percent = 50))
+                                                    .border(1.dp, TriProColors.CardBorder, RoundedCornerShape(percent = 50))
                                                     .clickable { onAttachmentClick(attachment) }
                                                     .padding(horizontal = 12.dp, vertical = 4.dp)
                                             ) {
@@ -202,6 +211,14 @@ fun ItineraryItemRow(
                                                 Icon(attachmentIcon, contentDescription = null, tint = attachmentTint, modifier = Modifier.size(14.dp).padding(end = 4.dp))
                                                 Text(attachment.fileName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                                             }
+                                        }
+                                        if (item.attachments.size > 3) {
+                                            Text(
+                                                stringResource(R.string.itinerary_view_all_docs),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.padding(start = 8.dp).clickable { onViewAllDocs() }
+                                            )
                                         }
                                     }
                                 }
@@ -216,7 +233,7 @@ fun ItineraryItemRow(
 
                     if (canEdit && !isSynthetic) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().border(BorderStroke(1.dp, HorizonEthosColors.CardBorder.copy(alpha = 0.5f))).padding(horizontal = 8.dp, vertical = 2.dp)
+                            modifier = Modifier.fillMaxWidth().border(BorderStroke(1.dp, TriProColors.CardBorder.copy(alpha = 0.5f))).padding(horizontal = 8.dp, vertical = 2.dp)
                         ) {
                             TextButton(onClick = onEdit) {
                                 Icon(Icons.Filled.EditNote, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 4.dp))
@@ -242,7 +259,7 @@ private fun imageVectorForType(type: ItemType): ImageVector = when (type) {
     ItemType.FLIGHT -> Icons.Filled.FlightTakeoff
     ItemType.HOTEL -> Icons.Filled.Hotel
     ItemType.RESTAURANT -> Icons.Filled.Restaurant
-    ItemType.ATTRACTION -> Icons.Filled.Museum
+    ItemType.ATTRACTION -> Icons.Filled.Attractions
     ItemType.ACTIVITY -> Icons.Filled.Hiking
     ItemType.TRANSPORT -> Icons.Filled.DirectionsCar
     ItemType.SHOW -> Icons.Filled.TheaterComedy

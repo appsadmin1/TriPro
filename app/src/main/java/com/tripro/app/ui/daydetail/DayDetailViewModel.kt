@@ -73,7 +73,8 @@ class DayDetailViewModel(
                                 timeType = com.tripro.app.data.model.TimeType.EXACT,
                                 startTime = h.arrivalTime.ifBlank { h.checkIn }.ifBlank { null },
                                 locationName = h.address,
-                                note = h.notes
+                                note = h.notes,
+                                noteType = h.noteType
                             )
                         )
                     }
@@ -88,7 +89,8 @@ class DayDetailViewModel(
                                 timeType = com.tripro.app.data.model.TimeType.EXACT,
                                 startTime = f.arrivalTime.ifBlank { null },
                                 locationName = f.arrivalAirportCode,
-                                note = f.notes
+                                note = f.notes,
+                                noteType = f.noteType
                             )
                         )
                     }

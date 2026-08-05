@@ -11,61 +11,61 @@ import com.tripro.app.util.AppLanguage
  * literally Material 3 ColorScheme role names, because the mockups were produced from an
  * M3 export. That makes this mapping a direct 1:1 transcription rather than an approximation.
  *
- * Horizon Ethos is a light-only design system (see DESIGN.md front matter — no dark palette
+ * TriPro is a light-only design system (see DESIGN.md front matter — no dark palette
  * is specified), so we intentionally expose a single scheme rather than light/dark variants.
  * If/when a dark palette is added to DESIGN.md, add a matching darkColorScheme() here and
  * branch on isSystemInDarkTheme() in TriProTheme below.
  */
-private val HorizonEthosColorScheme = lightColorScheme(
-    primary = HorizonEthosColors.Primary,
-    onPrimary = HorizonEthosColors.OnPrimary,
-    primaryContainer = HorizonEthosColors.PrimaryContainer,
-    onPrimaryContainer = HorizonEthosColors.OnPrimaryContainer,
-    inversePrimary = HorizonEthosColors.InversePrimary,
+private val TriProColorScheme = lightColorScheme(
+    primary = TriProColors.Primary,
+    onPrimary = TriProColors.OnPrimary,
+    primaryContainer = TriProColors.PrimaryContainer,
+    onPrimaryContainer = TriProColors.OnPrimaryContainer,
+    inversePrimary = TriProColors.InversePrimary,
 
-    secondary = HorizonEthosColors.Secondary,
-    onSecondary = HorizonEthosColors.OnSecondary,
-    secondaryContainer = HorizonEthosColors.SecondaryContainer,
-    onSecondaryContainer = HorizonEthosColors.OnSecondaryContainer,
+    secondary = TriProColors.Secondary,
+    onSecondary = TriProColors.OnSecondary,
+    secondaryContainer = TriProColors.SecondaryContainer,
+    onSecondaryContainer = TriProColors.OnSecondaryContainer,
 
-    tertiary = HorizonEthosColors.Tertiary,
-    onTertiary = HorizonEthosColors.OnTertiary,
-    tertiaryContainer = HorizonEthosColors.TertiaryContainer,
-    onTertiaryContainer = HorizonEthosColors.OnTertiaryContainer,
+    tertiary = TriProColors.Tertiary,
+    onTertiary = TriProColors.OnTertiary,
+    tertiaryContainer = TriProColors.TertiaryContainer,
+    onTertiaryContainer = TriProColors.OnTertiaryContainer,
 
-    background = HorizonEthosColors.Background,
-    onBackground = HorizonEthosColors.OnBackground,
+    background = TriProColors.Background,
+    onBackground = TriProColors.OnBackground,
 
-    surface = HorizonEthosColors.Surface,
-    onSurface = HorizonEthosColors.OnSurface,
-    surfaceVariant = HorizonEthosColors.SurfaceVariant,
-    onSurfaceVariant = HorizonEthosColors.OnSurfaceVariant,
-    surfaceTint = HorizonEthosColors.SurfaceTint,
-    surfaceBright = HorizonEthosColors.SurfaceBright,
-    surfaceDim = HorizonEthosColors.SurfaceDim,
-    surfaceContainer = HorizonEthosColors.SurfaceContainer,
-    surfaceContainerLow = HorizonEthosColors.SurfaceContainerLow,
-    surfaceContainerLowest = HorizonEthosColors.SurfaceContainerLowest,
-    surfaceContainerHigh = HorizonEthosColors.SurfaceContainerHigh,
-    surfaceContainerHighest = HorizonEthosColors.SurfaceContainerHighest,
+    surface = TriProColors.Surface,
+    onSurface = TriProColors.OnSurface,
+    surfaceVariant = TriProColors.SurfaceVariant,
+    onSurfaceVariant = TriProColors.OnSurfaceVariant,
+    surfaceTint = TriProColors.SurfaceTint,
+    surfaceBright = TriProColors.SurfaceBright,
+    surfaceDim = TriProColors.SurfaceDim,
+    surfaceContainer = TriProColors.SurfaceContainer,
+    surfaceContainerLow = TriProColors.SurfaceContainerLow,
+    surfaceContainerLowest = TriProColors.SurfaceContainerLowest,
+    surfaceContainerHigh = TriProColors.SurfaceContainerHigh,
+    surfaceContainerHighest = TriProColors.SurfaceContainerHighest,
 
-    inverseSurface = HorizonEthosColors.InverseSurface,
-    inverseOnSurface = HorizonEthosColors.InverseOnSurface,
+    inverseSurface = TriProColors.InverseSurface,
+    inverseOnSurface = TriProColors.InverseOnSurface,
 
-    error = HorizonEthosColors.Error,
-    onError = HorizonEthosColors.OnError,
-    errorContainer = HorizonEthosColors.ErrorContainer,
-    onErrorContainer = HorizonEthosColors.OnErrorContainer,
+    error = TriProColors.Error,
+    onError = TriProColors.OnError,
+    errorContainer = TriProColors.ErrorContainer,
+    onErrorContainer = TriProColors.OnErrorContainer,
 
-    outline = HorizonEthosColors.Outline,
-    outlineVariant = HorizonEthosColors.OutlineVariant,
+    outline = TriProColors.Outline,
+    outlineVariant = TriProColors.OutlineVariant,
     scrim = Color.Black,
 )
 
 // DESIGN.md's "fixed" tone tokens (PrimaryFixed, SecondaryFixed, TertiaryFixed, and their
 // Dim/On variants) don't have a home in lightColorScheme()'s constructor in every Material3
 // version — that API has churned across releases. Rather than depend on a specific version
-// having them, HorizonEthosColors.PrimaryFixed etc. (in Color.kt) are just referenced
+// having them, TriProColors.PrimaryFixed etc. (in Color.kt) are just referenced
 // directly wherever a component needs that exact value, instead of routing through
 // MaterialTheme.colorScheme.
 
@@ -75,7 +75,7 @@ fun TriProTheme(content: @Composable () -> Unit) {
     // wrapping in MainActivity.attachBaseContext(). Removing manual layout direction 
     // overrides to ensure we are testing the true system-applied configuration.
     MaterialTheme(
-        colorScheme = HorizonEthosColorScheme,
+        colorScheme = TriProColorScheme,
         typography = TriProTypography,
         shapes = TriProShapes,
         content = content

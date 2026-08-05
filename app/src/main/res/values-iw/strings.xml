@@ -170,6 +170,9 @@
     <string name="itinerary_row_add_note">הוספת הערה</string>
     <string name="itinerary_row_upload_file">העלאת קובץ</string>
     <string name="itinerary_row_delete_cd">מחיקה</string>
+    <string name="itinerary_delete_confirm_title">מחיקת פעילות?</string>
+    <string name="itinerary_delete_confirm_text">האם אתם בטוחים שברצונכם למחוק את הפעילות הזו? לא ניתן לבטל פעולה זו.</string>
+    <string name="itinerary_view_all_docs">לצפייה בכל המסמכים</string>
 
     <string name="weather_checking">בודקים את התחזית…</string>
     <string name="weather_add_hotel_location">הוסיפו מיקום מלון ליום זה כדי לראות כאן את התחזית.</string>

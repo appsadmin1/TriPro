@@ -1,5 +1,5 @@
 ---
-name: Horizon Ethos
+name: TriPro
 colors:
   surface: '#f8f9ff'
   surface-dim: '#cbdbf5'

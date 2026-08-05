@@ -24,8 +24,10 @@
     <string name="nav_profile">פרופיל</string>
 
     <string name="login_tagline">המסע המשותף שלך מתחיל כאן.</string>
-    <string name="login_subtitle">תכננו, שתפו וחוו טיולים כמו מעולם לא. ארגון ברמה גבוהה, לצד הקסם שבגילוי מקומות חדשים.</string>
+    <string name="login_subtitle">תכננו, שתפו וחוו טיולים כמו מעולם לא. TriPro - המקום בו תכנון וגילוי נפגשים.</string>
     <string name="login_sign_in_google">התחברות עם Google</string>
+    <string name="login_hero_title">המסע המשותף שלך \nמתחיל כאן.</string>
+    <string name="login_hero_subtitle">תכננו, שתפו וחוו טיולים כמו מעולם לא. TriPro - המקום בו תכנון וגילוי נפגשים.</string>
 
     <string name="trips_title">הטיולים שלי</string>
     <string name="trips_subtitle">ההרפתקאות הקרובות והעבר שלך.</string>
@@ -160,6 +162,9 @@
     <string name="itinerary_row_add_note">הוספת הערה</string>
     <string name="itinerary_row_upload_file">העלאת קובץ</string>
     <string name="itinerary_row_delete_cd">מחיקה</string>
+    <string name="itinerary_delete_confirm_title">מחיקת פעילות?</string>
+    <string name="itinerary_delete_confirm_text">האם אתם בטוחים שברצונכם למחוק את הפעילות הזו? לא ניתן לבטל פעולה זו.</string>
+    <string name="itinerary_view_all_docs">לצפייה בכל המסמכים</string>
 
     <string name="weather_checking">בודקים את התחזית…</string>
     <string name="weather_add_hotel_location">הוסיפו מיקום מלון ליום זה כדי לראות כאן את התחזית.</string>
@@ -244,6 +249,8 @@
     <string name="collaborators_pending_invites">הזמנות ממתינות</string>
     <string name="collaborators_invite_pending">ההזמנה ממתינה — יצטרפו כ%1$s לאחר ההתחברות</string>
     <string name="collaborators_remove_menu_item">הסרה</string>
+    <string name="collaborators_delete_confirm_title">הסרת משתתף?</string>
+    <string name="collaborators_delete_confirm_text">האם אתם בטוחים שברצונכם להסיר את %1$s מהטיול הזה?</string>
 
     <string name="alerts_title">התראות</string>
     <string name="alerts_empty">עדיין אין עדכונים — שינויים בטיולים שלך יופיעו כאן.</string>

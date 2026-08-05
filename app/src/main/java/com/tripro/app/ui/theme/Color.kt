@@ -3,10 +3,10 @@ package com.tripro.app.ui.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * Every value here is copied verbatim from DESIGN.md ("Horizon Ethos" design system).
+ * Every value here is copied verbatim from DESIGN.md ("TriPro" design system).
  * Do not hand-tune these — if the palette changes, change DESIGN.md and regenerate this file.
  */
-object HorizonEthosColors {
+object TriProColors {
     val Surface = Color(0xFFF9FAFB)
     val SurfaceDim = Color(0xFFD1D5DB)
     val SurfaceBright = Color(0xFFF9FAFB)

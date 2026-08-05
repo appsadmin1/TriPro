@@ -52,6 +52,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -66,7 +69,7 @@ import com.tripro.app.data.model.Role
 import com.tripro.app.data.model.TripDay
 import com.tripro.app.ui.components.AvatarStack
 import com.tripro.app.ui.daydetail.AddEditItemSheet
-import com.tripro.app.ui.theme.HorizonEthosColors
+import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.DateUtils
 import com.tripro.app.util.localizedLabel
@@ -186,44 +189,55 @@ fun TripOverviewRoute(
                 ) {
                     val days = runCatching { ChronoUnit.DAYS.between(DateUtils.parse(trip.startDate), DateUtils.parse(trip.endDate)) + 1 }.getOrDefault(0)
                     StatChip(icon = Icons.Filled.CalendarMonth, value = pluralStringResource(R.plurals.trip_duration_days, days.toInt(), days.toInt()), label = stringResource(R.string.trip_overview_duration), modifier = Modifier.weight(1f))
-                    StatChip(icon = Icons.Filled.Folder, value = pluralStringResource(R.plurals.trip_overview_docs_count, uiState.totalDocsCount, uiState.totalDocsCount), label = stringResource(R.string.trip_overview_saved_docs), modifier = Modifier.weight(1f))
-                    StatChip(icon = Icons.Filled.Group, value = trip.memberIds.size.toString(), label = stringResource(R.string.trip_overview_travelers), modifier = Modifier.weight(1f))
+                    StatChip(
+                        icon = Icons.Filled.Folder, 
+                        value = pluralStringResource(R.plurals.trip_overview_docs_count, uiState.totalDocsCount, uiState.totalDocsCount), 
+                        label = stringResource(R.string.trip_overview_saved_docs), 
+                        modifier = Modifier.weight(1f),
+                        onClick = { onOpenDocs(tripId) }
+                    )
+                    StatChip(icon = Icons.Filled.Group, value = trip.memberIds.size.toString(), label = stringResource(R.string.trip_overview_travelers), modifier = Modifier.weight(1f), onClick = onOpenCollaborators)
                 }
             }
 
             item {
-                // Collaborators Card
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-                    border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = TriProSpacing.marginMobile).shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
+                // Travelers Section
+                Column(modifier = Modifier.padding(horizontal = TriProSpacing.marginMobile)) {
+                    Text(
+                        stringResource(R.string.trip_overview_travelers),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Card(
+                        onClick = onOpenCollaborators,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+                        border = BorderStroke(1.dp, TriProColors.CardBorder),
+                        modifier = Modifier.fillMaxWidth().shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
                     ) {
-                        Column {
-                            Text(stringResource(R.string.trip_overview_travelers), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                            Spacer(Modifier.height(8.dp))
-                            AvatarStack(photoUrls = uiState.collaboratorAvatars, avatarSize = 36)
-                        }
-                        Row {
-                            Button(
-                                onClick = {
-                                    val today = LocalDate.now().toString()
-                                    newItemDate = uiState.days.firstOrNull { it.date >= today }?.date ?: uiState.days.firstOrNull()?.date
-                                    showAddItemSheet = true
-                                },
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                            ) { Text(stringResource(R.string.trip_overview_add_activity), style = MaterialTheme.typography.labelLarge) }
-                            Spacer(Modifier.width(8.dp))
-                            OutlinedButton(
-                                onClick = { onOpenDocs(tripId) },
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                            ) { Text(stringResource(R.string.trip_overview_view_docs), style = MaterialTheme.typography.labelLarge) }
+                        Row(
+                            modifier = Modifier.padding(16.dp).horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            trip.memberIds.forEach { uid ->
+                                val profile = uiState.memberProfiles[uid]
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    AsyncImage(
+                                        model = profile?.photoUrl?.takeIf { it.isNotBlank() },
+                                        contentDescription = null,
+                                        modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
+                                        error = androidx.compose.ui.graphics.painter.ColorPainter(MaterialTheme.colorScheme.primaryContainer), // Placeholder color
+                                        fallback = androidx.compose.ui.graphics.painter.ColorPainter(MaterialTheme.colorScheme.primaryContainer)
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        profile?.displayName?.takeIf { it.isNotBlank() } ?: profile?.email?.takeIf { it.isNotBlank() } ?: "...",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -280,13 +294,25 @@ private fun mapCenterOrDefault(hotel: HotelInfo?): LatLng =
     if (hotel?.lat != null && hotel.lng != null) LatLng(hotel.lat, hotel.lng) else LatLng(48.8566, 2.3522)
 
 @Composable
-private fun StatChip(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier) {
+private fun StatChip(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
     Card(
+        onClick = { onClick?.invoke() },
+        enabled = onClick != null,
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-        border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest
+        ),
+        border = BorderStroke(1.dp, TriProColors.CardBorder),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 0.dp,
+            hoveredElevation = 0.dp,
+            draggedElevation = 0.dp,
+            disabledElevation = 0.dp
+        )
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
@@ -309,7 +335,14 @@ private fun DayRow(day: TripDay, items: List<ItineraryItem>, activityColors: Act
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = if (isToday) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent),
         border = if (isToday) BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)) else null,
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isToday) 2.dp else 0.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 0.dp,
+            hoveredElevation = 0.dp,
+            draggedElevation = 0.dp,
+            disabledElevation = 0.dp
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = TriProSpacing.marginMobile, vertical = 4.dp)

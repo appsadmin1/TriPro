@@ -5,7 +5,7 @@ view/edit permissions, and plan it together in real time — day-by-day schedule
 and flight info, attachments you can preview in-app, weather, a map of everything
 you've planned, and push notifications when something changes.
 
-Visual design is a direct port of the **Horizon Ethos** design system (`DESIGN.md` /
+Visual design is a direct port of the **TriPro** design system (`DESIGN.md` /
 the four `code.html` mockups) onto Jetpack Compose + Material 3 — see
 [`docs/DESIGN_MAPPING.md`](docs/DESIGN_MAPPING.md) for exactly how each token maps.
 
@@ -244,7 +244,7 @@ app/src/main/java/com/tripro/app/
   data/remote/         OpenMeteoClient
   notifications/       TriProMessagingService (FCM), NotificationHelper (channel + deep link)
   ui/theme/            Color.kt, Type.kt, Shape.kt, Spacing.kt, Theme.kt — the
-                        Horizon Ethos design system as Compose/M3
+                        TriPro design system as Compose/M3
   ui/auth/             Login screen + AuthViewModel
   ui/triplist/         Trips list, create-trip flow
   ui/tripoverview/     Trip overview (hero, stats, day list)

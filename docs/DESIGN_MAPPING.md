@@ -1,4 +1,4 @@
-# Design mapping: Horizon Ethos → Compose/Material 3
+# Design mapping: TriPro → Compose/Material 3
 
 `DESIGN.md`'s token names (`surface-container-high`, `on-primary-fixed-variant`, ...)
 are literally Material 3 `ColorScheme` role names — the mockups were exported from an

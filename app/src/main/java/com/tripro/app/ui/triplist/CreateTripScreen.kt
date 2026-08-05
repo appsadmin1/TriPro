@@ -52,7 +52,7 @@ import androidx.lifecycle.viewmodel.initializer
 import coil.compose.AsyncImage
 import com.tripro.app.R
 import com.tripro.app.TriProApplication
-import com.tripro.app.ui.theme.HorizonEthosColors
+import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.ui.theme.TriProSpacing
 import java.time.Instant
 import java.time.LocalDate
@@ -134,7 +134,7 @@ fun CreateTripRoute(
                     .height(160.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                    .border(1.dp, HorizonEthosColors.CardBorder, RoundedCornerShape(16.dp))
+                    .border(1.dp, TriProColors.CardBorder, RoundedCornerShape(16.dp))
                     .clickable {
                         photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                     },

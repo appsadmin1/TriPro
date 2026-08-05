@@ -78,7 +78,7 @@ import com.tripro.app.ui.components.ItineraryItemRow
 import com.tripro.app.ui.components.MapPin
 import com.tripro.app.ui.components.SimpleTimePickerDialog
 import com.tripro.app.ui.components.WeatherCard
-import com.tripro.app.ui.theme.HorizonEthosColors
+import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.DateUtils
 import com.tripro.app.util.PickedPlace
@@ -100,6 +100,9 @@ import androidx.compose.ui.draw.scale
 import com.tripro.app.ui.components.AvatarStack
 
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 
@@ -111,7 +114,8 @@ fun DayDetailRoute(
     currentUid: String,
     currentUserName: String,
     onBack: () -> Unit,
-    onOpenDrawer: () -> Unit
+    onOpenDrawer: () -> Unit,
+    onOpenDocs: () -> Unit
 ) {
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
@@ -140,6 +144,7 @@ fun DayDetailRoute(
     var showHotelDialog by remember { mutableStateOf(false) }
     var showFlightDialog by remember { mutableStateOf(false) }
     var showDayNoteDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf<String?>(null) }
     var pendingAttachmentItemId by remember { mutableStateOf<String?>(null) }
     var viewingAttachment by remember { mutableStateOf<Pair<String, Attachment>?>(null) }
 
@@ -296,9 +301,10 @@ fun DayDetailRoute(
                             else -> { editingItem = item; showAddItemSheet = true }
                         }
                     },
-                    onDelete = { viewModel.deleteItem(item.id) },
+                    onDelete = { showDeleteConfirm = item.id },
                     onAddAttachment = { pendingAttachmentItemId = item.id; filePicker.launch(arrayOf("*/*")) },
-                    onAttachmentClick = { attachment -> viewingAttachment = item.id to attachment }
+                    onAttachmentClick = { attachment -> viewingAttachment = item.id to attachment },
+                    onViewAllDocs = onOpenDocs
                 )
             }
         }
@@ -326,6 +332,24 @@ fun DayDetailRoute(
 
     if (showDayNoteDialog) {
         DayNoteEditDialog(existing = uiState.day?.dayNote.orEmpty(), onDismiss = { showDayNoteDialog = false }, onSave = { note -> viewModel.updateDayNote(note); showDayNoteDialog = false })
+    }
+
+    showDeleteConfirm?.let { itemId ->
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = null },
+            title = { Text(stringResource(R.string.itinerary_delete_confirm_title)) },
+            text = { Text(stringResource(R.string.itinerary_delete_confirm_text)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.deleteItem(itemId); showDeleteConfirm = null }) {
+                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
     }
 
     viewingAttachment?.let { (itemId, attachment) ->
@@ -375,6 +399,7 @@ private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave:
     var checkOut by remember { mutableStateOf(existing?.checkOut.orEmpty()) }
     var arrivalTime by remember { mutableStateOf(existing?.arrivalTime.orEmpty()) }
     var notes by remember { mutableStateOf(existing?.notes.orEmpty()) }
+    var noteType by remember { mutableStateOf(existing?.noteType ?: com.tripro.app.data.model.NoteType.NOTE) }
     var showCheckInPicker by remember { mutableStateOf(false) }
     var showCheckOutPicker by remember { mutableStateOf(false) }
     var showArrivalPicker by remember { mutableStateOf(false) }
@@ -397,13 +422,29 @@ private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave:
                 }
                 OutlinedButton(onClick = { showCheckOutPicker = true }, modifier = Modifier.fillMaxWidth()) { Text(if (checkOut.isBlank()) stringResource(R.string.day_detail_checkout_time_label) else stringResource(R.string.day_detail_checkout_prefix, checkOut)) }
                 OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text(stringResource(R.string.day_detail_note_label)) }, modifier = Modifier.fillMaxWidth(), minLines = 2)
+                
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.item_sheet_note_type_label), style = MaterialTheme.typography.labelMedium)
+                    AssistChip(
+                        onClick = { noteType = com.tripro.app.data.model.NoteType.NOTE },
+                        label = { Text(stringResource(R.string.item_sheet_note_type_info)) },
+                        leadingIcon = { if (noteType == com.tripro.app.data.model.NoteType.NOTE) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp)) else null },
+                        border = if (noteType == com.tripro.app.data.model.NoteType.NOTE) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    )
+                    AssistChip(
+                        onClick = { noteType = com.tripro.app.data.model.NoteType.ALERT },
+                        label = { Text(stringResource(R.string.item_sheet_note_type_alert)) },
+                        leadingIcon = { if (noteType == com.tripro.app.data.model.NoteType.ALERT) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp)) else null },
+                        border = if (noteType == com.tripro.app.data.model.NoteType.ALERT) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    )
+                }
             }
         },
         confirmButton = {
             TextButton(onClick = {
                 onSave(
                     if (name.isBlank()) null
-                    else (existing ?: HotelInfo()).copy(name = name, address = address, checkIn = checkIn, checkOut = checkOut, arrivalTime = arrivalTime, notes = notes, lat = lat, lng = lng, placeId = placeId)
+                    else (existing ?: HotelInfo()).copy(name = name, address = address, checkIn = checkIn, checkOut = checkOut, arrivalTime = arrivalTime, notes = notes, noteType = noteType, lat = lat, lng = lng, placeId = placeId)
                 )
             }) { Text(stringResource(R.string.action_save)) }
         },
@@ -445,6 +486,7 @@ private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () 
     var departureTime by remember { mutableStateOf(existing?.departureTime.orEmpty()) }
     var arrivalTime by remember { mutableStateOf(existing?.arrivalTime.orEmpty()) }
     var notes by remember { mutableStateOf(existing?.notes.orEmpty()) }
+    var noteType by remember { mutableStateOf(existing?.noteType ?: com.tripro.app.data.model.NoteType.NOTE) }
     var showDeparturePicker by remember { mutableStateOf(false) }
     var showArrivalPicker by remember { mutableStateOf(false) }
     var showDepartureSearch by remember { mutableStateOf(false) }
@@ -526,6 +568,22 @@ private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () 
                     OutlinedButton(onClick = { showArrivalPicker = true }, modifier = Modifier.weight(1f)) { Text(if (arrivalTime.isBlank()) stringResource(R.string.day_detail_arrives_label) else stringResource(R.string.day_detail_arrives_prefix, arrivalTime)) }
                 }
                 OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text(stringResource(R.string.day_detail_note_label)) }, modifier = Modifier.fillMaxWidth(), minLines = 2)
+
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.item_sheet_note_type_label), style = MaterialTheme.typography.labelMedium)
+                    AssistChip(
+                        onClick = { noteType = com.tripro.app.data.model.NoteType.NOTE },
+                        label = { Text(stringResource(R.string.item_sheet_note_type_info)) },
+                        leadingIcon = { if (noteType == com.tripro.app.data.model.NoteType.NOTE) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp)) else null },
+                        border = if (noteType == com.tripro.app.data.model.NoteType.NOTE) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    )
+                    AssistChip(
+                        onClick = { noteType = com.tripro.app.data.model.NoteType.ALERT },
+                        label = { Text(stringResource(R.string.item_sheet_note_type_alert)) },
+                        leadingIcon = { if (noteType == com.tripro.app.data.model.NoteType.ALERT) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp)) else null },
+                        border = if (noteType == com.tripro.app.data.model.NoteType.ALERT) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    )
+                }
             }
         },
         confirmButton = {
@@ -538,7 +596,7 @@ private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () 
                         departureAirportLat = departureLat, departureAirportLng = departureLng,
                         arrivalAirportLat = arrivalLat, arrivalAirportLng = arrivalLng,
                         departureTime = departureTime, arrivalTime = arrivalTime,
-                        notes = notes
+                        notes = notes, noteType = noteType
                     )
                 )
             }) { Text(stringResource(R.string.action_save)) }
@@ -561,7 +619,7 @@ private fun DayNoteCard(note: String, canEdit: Boolean, onEdit: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        border = BorderStroke(1.dp, HorizonEthosColors.CardBorder),
+        border = BorderStroke(1.dp, TriProColors.CardBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
