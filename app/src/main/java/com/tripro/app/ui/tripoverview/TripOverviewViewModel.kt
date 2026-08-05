@@ -14,6 +14,7 @@ import com.tripro.app.data.repository.CloudinaryRepository
 import com.tripro.app.data.repository.PushNotificationRepository
 import com.tripro.app.data.repository.TripRepository
 import com.tripro.app.data.repository.UserRepository
+import com.tripro.app.data.model.UserProfile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,6 +35,7 @@ data class TripOverviewUiState(
     val activityColors: ActivityColorPrefs = ActivityColorPrefs(),
     val myRole: Role = Role.VIEWER,
     val collaboratorAvatars: List<String> = emptyList(),
+    val memberProfiles: Map<String, UserProfile> = emptyMap(),
     val totalDocsCount: Int = 0,
     val isDeleted: Boolean = false
 )
@@ -83,6 +85,7 @@ class TripOverviewViewModel(
                     if (trip != null) {
                         val profiles = userRepository.getProfiles(trip.memberIds)
                         _uiState.value = _uiState.value.copy(
+                            memberProfiles = profiles,
                             collaboratorAvatars = trip.memberIds.mapNotNull { profiles[it]?.photoUrl?.takeIf { url -> url.isNotBlank() } }
                         )
                     }

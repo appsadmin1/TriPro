@@ -147,4 +147,11 @@ class UserRepository(
             SetOptions.merge()
         ).await()
     }
+
+    suspend fun updateUserProfile(uid: String, displayName: String, photoUrl: String) {
+        users.document(uid).set(
+            mapOf("displayName" to displayName, "photoUrl" to photoUrl),
+            SetOptions.merge()
+        ).await()
+    }
 }

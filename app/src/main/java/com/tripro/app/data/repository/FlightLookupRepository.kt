@@ -48,25 +48,31 @@ class FlightLookupRepository(
             val requestBody = JSONObject().apply {
                 put("flightNumber", flightNumber)
                 put("date", date)
-            }
+            }.toString().toRequestBody("application/json".toMediaType())
+
+            val url = baseUrl.trimEnd('/') + "/.netlify/functions/flight-lookup"
+            Log.d(tag, "Looking up flight: $flightNumber on $date at $url")
+
             val request = Request.Builder()
-                .url("$baseUrl/.netlify/functions/flight-lookup")
+                .url(url)
                 .addHeader("Authorization", "Bearer $idToken")
-                .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
+                .post(requestBody)
                 .build()
 
             httpClient.newCall(request).execute().use { response ->
-                val responseText = response.body?.string() ?: throw IOException("Empty response")
+                val responseText = response.body?.string() ?: ""
+                Log.d(tag, "Flight lookup response [${response.code}]")
+                
                 if (!response.isSuccessful) {
-                    val message = runCatching { JSONObject(responseText).optString("error") }.getOrNull()
-                        ?.takeIf { it.isNotBlank() }
-                    // Surface the raw status/body when the function didn't return our own
-                    // JSON error shape — e.g. a 404 "Page not found" means the function
-                    // isn't deployed yet, distinct from a 500 with a real error message.
-                    val detail = message ?: "HTTP ${response.code}: ${responseText.take(200).ifBlank { "(empty body)" }}"
+                    val detail = if (responseText.isNotBlank()) {
+                        runCatching { JSONObject(responseText).optString("error") }.getOrNull() ?: "Error ${response.code}"
+                    } else "HTTP ${response.code}"
+                    
                     Log.e(tag, "flight-lookup request failed: $detail")
                     return@withContext Result.failure(IOException(detail))
                 }
+                
+                if (responseText.isBlank()) throw IOException("Empty response from server")
                 val flight = JSONObject(responseText).getJSONObject("flight")
                 Result.success(parseFlight(flight))
             }

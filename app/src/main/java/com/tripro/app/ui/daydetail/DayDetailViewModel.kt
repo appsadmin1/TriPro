@@ -64,29 +64,35 @@ class DayDetailViewModel(
             combine(tripRepository.observeDay(tripId, date), tripRepository.observeItems(tripId, date)) { day, items ->
                 val syntheticItems = mutableListOf<ItineraryItem>()
                 day?.hotel?.let { h ->
-                    if (h.name.isNotBlank() && h.checkIn.isNotBlank()) {
+                    if (h.name.isNotBlank()) {
                         syntheticItems.add(
                             ItineraryItem(
                                 id = "synthetic_hotel",
                                 title = h.name,
                                 type = com.tripro.app.data.model.ItemType.HOTEL,
                                 timeType = com.tripro.app.data.model.TimeType.EXACT,
-                                startTime = h.checkIn,
-                                locationName = h.address
+                                startTime = h.arrivalTime.ifBlank { h.checkIn }.ifBlank { null },
+                                locationName = h.address,
+                                note = h.notes,
+                                noteType = h.noteType,
+                                hotelInfo = h
                             )
                         )
                     }
                 }
                 day?.flight?.let { f ->
-                    if (f.flightNumber.isNotBlank() && f.arrivalTime.isNotBlank()) {
+                    if (f.flightNumber.isNotBlank()) {
                         syntheticItems.add(
                             ItineraryItem(
                                 id = "synthetic_flight",
                                 title = "${f.airline} ${f.flightNumber}".trim(),
                                 type = com.tripro.app.data.model.ItemType.FLIGHT,
                                 timeType = com.tripro.app.data.model.TimeType.EXACT,
-                                startTime = f.arrivalTime,
-                                locationName = f.arrivalAirportCode
+                                startTime = f.arrivalTime.ifBlank { null },
+                                locationName = f.arrivalAirportCode,
+                                note = f.notes,
+                                noteType = f.noteType,
+                                flightInfo = f
                             )
                         )
                     }

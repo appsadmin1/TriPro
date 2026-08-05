@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -36,6 +37,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -57,16 +60,24 @@ import coil.compose.AsyncImage
 import com.tripro.app.R
 import com.tripro.app.TriProApplication
 import com.tripro.app.data.model.Role
-import com.tripro.app.ui.theme.HorizonEthosColors
+import com.tripro.app.ui.components.TriProTextField
+import com.tripro.app.ui.theme.PillShape
+import com.tripro.app.ui.theme.TriProTypography
+import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.localizedLabel
 
 import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.border
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.draw.scale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,7 +85,8 @@ fun CollaboratorsRoute(
     tripId: String,
     currentUid: String,
     currentUserName: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onOpenDrawer: () -> Unit
 ) {
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
@@ -87,6 +99,7 @@ fun CollaboratorsRoute(
 
     var email by remember { mutableStateOf("") }
     var inviteRole by remember { mutableStateOf(Role.EDITOR) }
+    var memberToRemove by remember { mutableStateOf<Pair<String, String>?>(null) } // uid to name
 
     Scaffold(
         topBar = {
@@ -94,90 +107,71 @@ fun CollaboratorsRoute(
                 title = {
                     Column {
                         Text(stringResource(R.string.collaborators_title), style = MaterialTheme.typography.headlineMedium)
-                        Text("Paris 2023", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(uiState.trip?.name ?: "", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back_cd)) } }
+                navigationIcon = {
+                    Row {
+                        IconButton(onClick = onOpenDrawer) {
+                            Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu_cd))
+                        }
+                        IconButton(onClick = onBack) {
+                            val backIcon = if (LocalLayoutDirection.current == LayoutDirection.Rtl) Icons.Filled.ArrowForward else Icons.Filled.ArrowBack
+                            Icon(backIcon, contentDescription = stringResource(R.string.common_back_cd))
+                        }
+                    }
+                }
             )
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(TriProSpacing.marginMobile),
-                verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackLg)
+                contentPadding = PaddingValues(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (uiState.isOwner) {
                     item {
-                        // Glass Panel Invite Section
                         Card(
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.7f)),
-                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
-                            modifier = Modifier.fillMaxWidth().shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = TriProColors.SurfaceContainerLowest),
+                            border = BorderStroke(1.dp, TriProColors.CardBorder),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                                Text(stringResource(R.string.collaborators_invite_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+                            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Text(
-                                    stringResource(R.string.collaborators_invite_subtitle),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    stringResource(R.string.collaborators_invite_title),
+                                    style = TriProTypography.headlineSmall,
+                                    color = TriProColors.Primary
                                 )
-                                OutlinedTextField(
+                                TriProTextField(
                                     value = email,
                                     onValueChange = { email = it },
-                                    placeholder = { Text(stringResource(R.string.collaborators_email_label)) },
-                                    leadingIcon = { Icon(Icons.Filled.Mail, contentDescription = null, tint = MaterialTheme.colorScheme.outline) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(8.dp)
+                                    label = stringResource(R.string.collaborators_email_label),
+                                    placeholder = "name@example.com",
+                                    modifier = Modifier.fillMaxWidth()
                                 )
-                                
                                 Button(
                                     onClick = { viewModel.invite(email, inviteRole); email = "" },
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = PillShape,
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                        containerColor = TriProColors.Primary,
+                                        contentColor = TriProColors.OnPrimary
                                     ),
                                     modifier = Modifier.fillMaxWidth().height(48.dp)
                                 ) {
-                                    Icon(Icons.Filled.Send, contentDescription = null, modifier = Modifier.size(18.dp).padding(end = 8.dp))
-                                    Text(stringResource(R.string.collaborators_send_invite), style = MaterialTheme.typography.labelLarge)
+                                    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+                                    Icon(
+                                        Icons.Filled.Send,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp).padding(end = 8.dp).let {
+                                            if (isRtl) it.scale(scaleX = -1f, scaleY = 1f) else it
+                                        }
+                                    )
+                                    Text(stringResource(R.string.collaborators_send_invite), style = TriProTypography.labelLarge)
                                 }
-
-                                if (uiState.inviteError != null) {
-                                    Text(uiState.inviteError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                                }
-                                if (uiState.inviteSuccessMessage != null) {
-                                    Text(uiState.inviteSuccessMessage!!, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
-                                }
-                            }
-                        }
-                    }
-
-                    item {
-                        // Permissions Explainer
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                                .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Icon(Icons.Filled.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-                            Column {
-                                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(stringResource(R.string.collaborators_editor_title), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                                        Text(stringResource(R.string.collaborators_editor_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(stringResource(R.string.collaborators_read_only_title), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                                        Text(stringResource(R.string.collaborators_read_only_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
+                                if (uiState.inviteError != null) Text(uiState.inviteError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                                if (uiState.inviteSuccessMessage != null) Text(uiState.inviteSuccessMessage!!, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -186,64 +180,59 @@ fun CollaboratorsRoute(
                 item {
                     Text(
                         stringResource(R.string.collaborators_current_members, uiState.members.size),
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(vertical = 4.dp)
                     )
                 }
 
                 items(uiState.members, key = { it.profile.uid }) { member ->
                     MemberRowItem(
                         displayName = member.profile.displayName,
-                        email = member.profile.email,
                         photoUrl = member.profile.photoUrl,
                         role = member.role,
                         canManage = uiState.isOwner && member.role != Role.OWNER,
                         onRoleChange = { newRole -> viewModel.changeRole(member.profile.uid, newRole) },
-                        onRemove = { viewModel.removeMember(member.profile.uid) }
+                        onRemove = { memberToRemove = member.profile.uid to member.profile.displayName }
                     )
                 }
 
                 if (uiState.pendingInvites.isNotEmpty()) {
                     item {
-                        Text(
-                            stringResource(R.string.collaborators_pending_invites),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Text(stringResource(R.string.collaborators_pending_invites), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
                     }
                     items(uiState.pendingInvites) { (pendingEmail, roleValue) ->
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceContainerLowest).padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.HourglassEmpty, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
                                 Spacer(Modifier.width(12.dp))
                                 Column {
                                     Text(pendingEmail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    Text(
-                                        stringResource(R.string.collaborators_invite_pending, Role.fromValue(roleValue).localizedLabel()),
-                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    Text(stringResource(R.string.collaborators_invite_pending, Role.fromValue(roleValue).localizedLabel()), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
                     }
                 }
             }
-
-            if (uiState.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            }
+            if (uiState.isLoading) Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         }
+    }
+
+    memberToRemove?.let { (uid, name) ->
+        com.tripro.app.ui.components.TriProAlertDialog(
+            onDismissRequest = { memberToRemove = null },
+            title = stringResource(R.string.collaborators_delete_confirm_title),
+            text = stringResource(R.string.collaborators_delete_confirm_text, name),
+            confirmButtonText = stringResource(R.string.action_delete),
+            onConfirm = { viewModel.removeMember(uid); memberToRemove = null },
+            dismissButtonText = stringResource(R.string.action_cancel),
+            onDismiss = { memberToRemove = null },
+            isDestructive = true
+        )
     }
 }
 
@@ -251,7 +240,6 @@ fun CollaboratorsRoute(
 @Composable
 private fun MemberRowItem(
     displayName: String,
-    email: String,
     photoUrl: String,
     role: Role,
     canManage: Boolean,
@@ -259,38 +247,24 @@ private fun MemberRowItem(
     onRemove: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .border(1.dp, HorizonEthosColors.CardBorder, RoundedCornerShape(12.dp))
-            .shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceContainerLowest).border(0.5.dp, TriProColors.CardBorder, RoundedCornerShape(12.dp)).padding(12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AsyncImage(
-                model = photoUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(48.dp).clip(CircleShape)
+                model = photoUrl.takeIf { it.isNotBlank() },
+                contentDescription = null, contentScale = ContentScale.Crop,
+                modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
+                error = androidx.compose.ui.graphics.painter.ColorPainter(MaterialTheme.colorScheme.primaryContainer),
+                fallback = androidx.compose.ui.graphics.painter.ColorPainter(MaterialTheme.colorScheme.primaryContainer)
             )
             Spacer(Modifier.width(12.dp))
-            Column {
-                Text(displayName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                Text(email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-            }
+            Text(displayName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
         }
-
         if (canManage) {
             Box {
-                AssistChip(
-                    onClick = { menuExpanded = true },
-                    label = { Text(role.localizedLabel()) }
-                )
+                AssistChip(onClick = { menuExpanded = true }, label = { Text(role.localizedLabel()) })
                 DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                     DropdownMenuItem(text = { Text(Role.EDITOR.localizedLabel()) }, onClick = { onRoleChange(Role.EDITOR); menuExpanded = false })
                     DropdownMenuItem(text = { Text(Role.VIEWER.localizedLabel()) }, onClick = { onRoleChange(Role.VIEWER); menuExpanded = false })
@@ -298,11 +272,7 @@ private fun MemberRowItem(
                 }
             }
         } else {
-            Text(
-                role.localizedLabel(),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text(role.localizedLabel(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

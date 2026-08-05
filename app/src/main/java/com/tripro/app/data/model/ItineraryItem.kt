@@ -40,6 +40,8 @@ data class ItineraryItem(
     val note: String = "",
     val noteType: NoteType = NoteType.ALERT,
     val customLabel: String = "",
+    val flightInfo: FlightInfo? = null,
+    val hotelInfo: HotelInfo? = null,
     val attachments: List<Attachment> = emptyList(),
     val order: Int = 0,
     /** Denormalized parent trip id — lets the "View Docs" screen run one

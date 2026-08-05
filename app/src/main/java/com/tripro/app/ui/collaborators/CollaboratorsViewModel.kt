@@ -47,18 +47,42 @@ class CollaboratorsViewModel(
 
     init {
         viewModelScope.launch {
-            combine(tripRepository.observeTrip(tripId), tripRepository.observePendingInvites(tripId)) { trip, pending -> trip to pending }
+            tripRepository.observeTrip(tripId)
                 .catch { e ->
-                    Log.e("CollaboratorsViewModel", "Error observing collaborator data: ${e.message}", e)
+                    Log.e("CollaboratorsViewModel", "Error observing trip data: ${e.message}", e)
                     _uiState.value = _uiState.value.copy(isLoading = false)
                 }
-                .collect { (trip, pending) ->
-                    if (trip == null) { _uiState.value = _uiState.value.copy(isLoading = false); return@collect }
+                .collect { trip ->
+                    if (trip == null) {
+                        _uiState.value = _uiState.value.copy(isLoading = false)
+                        return@collect
+                    }
                     currentTripName = trip.name
                     currentMemberIds = trip.memberIds
+                    val isOwner = trip.roleOf(currentUid) == Role.OWNER
+                    
                     val profiles = userRepository.getProfiles(trip.memberIds)
-                    val members = trip.memberIds.mapNotNull { uid -> profiles[uid]?.let { MemberRow(it, trip.roleOf(uid)) } }.sortedByDescending { it.role == Role.OWNER }
-                    _uiState.value = _uiState.value.copy(isLoading = false, trip = trip, members = members, pendingInvites = pending, isOwner = trip.roleOf(currentUid) == Role.OWNER)
+                    val members = trip.memberIds.mapNotNull { uid -> 
+                        profiles[uid]?.let { MemberRow(it, trip.roleOf(uid)) } 
+                    }.sortedByDescending { it.role == Role.OWNER }
+
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false, 
+                        trip = trip, 
+                        members = members, 
+                        isOwner = isOwner
+                    )
+
+                    // Only owners can see pending invites. Non-owners will see an empty list.
+                    if (isOwner) {
+                        viewModelScope.launch {
+                            tripRepository.observePendingInvites(tripId)
+                                .catch { e -> Log.e("CollaboratorsViewModel", "Error observing pending invites: ${e.message}") }
+                                .collect { pending ->
+                                    _uiState.value = _uiState.value.copy(pendingInvites = pending)
+                                }
+                        }
+                    }
                 }
         }
     }

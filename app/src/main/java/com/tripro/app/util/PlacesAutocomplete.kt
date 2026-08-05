@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.tripro.app.ui.components.TriProDialog
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.google.android.gms.maps.model.CameraPosition
@@ -108,69 +109,67 @@ fun PlaceSearchMapDialog(
             .addOnFailureListener { predictions = emptyList() }
     }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(modifier = Modifier.fillMaxWidth().padding(16.dp), shape = RoundedCornerShape(20.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.places_search_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
-                    IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_close)) }
-                }
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it; selected = null },
-                    label = { Text(stringResource(R.string.places_search_label)) },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                )
+    TriProDialog(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.places_search_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+                IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_close)) }
+            }
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it; selected = null },
+                label = { Text(stringResource(R.string.places_search_label)) },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            )
 
-                val picked = selected
-                if (picked == null) {
-                    LazyColumn(modifier = Modifier.height(220.dp)) {
-                        items(predictions, key = { it.placeId }) { row ->
-                            ListItem(
-                                headlineContent = { Text(row.primaryText) },
-                                supportingContent = { Text(row.secondaryText) },
-                                leadingContent = { Icon(Icons.Filled.Place, contentDescription = null) },
-                                modifier = Modifier.clickable {
-                                    val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG)
-                                    val fetchRequest = FetchPlaceRequest.builder(row.placeId, fields)
-                                        .setSessionToken(sessionToken)
-                                        .build()
-                                    placesClient.fetchPlace(fetchRequest).addOnSuccessListener { response ->
-                                        val place = response.place
-                                        val latLng = place.latLng ?: return@addOnSuccessListener
-                                        selected = PickedPlace(
-                                            name = place.name.orEmpty(), address = place.address.orEmpty(),
-                                            lat = latLng.latitude, lng = latLng.longitude, placeId = place.id
-                                        )
-                                        // Session just got billed/closed — fresh token for next time.
-                                        sessionToken = AutocompleteSessionToken.newInstance()
-                                    }
+            val picked = selected
+            if (picked == null) {
+                LazyColumn(modifier = Modifier.height(220.dp)) {
+                    items(predictions, key = { it.placeId }) { row ->
+                        ListItem(
+                            headlineContent = { Text(row.primaryText) },
+                            supportingContent = { Text(row.secondaryText) },
+                            leadingContent = { Icon(Icons.Filled.Place, contentDescription = null) },
+                            modifier = Modifier.clickable {
+                                val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG)
+                                val fetchRequest = FetchPlaceRequest.builder(row.placeId, fields)
+                                    .setSessionToken(sessionToken)
+                                    .build()
+                                placesClient.fetchPlace(fetchRequest).addOnSuccessListener { response ->
+                                    val place = response.place
+                                    val latLng = place.latLng ?: return@addOnSuccessListener
+                                    selected = PickedPlace(
+                                        name = place.name.orEmpty(), address = place.address.orEmpty(),
+                                        lat = latLng.latitude, lng = latLng.longitude, placeId = place.id
+                                    )
+                                    // Session just got billed/closed — fresh token for next time.
+                                    sessionToken = AutocompleteSessionToken.newInstance()
                                 }
-                            )
-                        }
-                    }
-                } else {
-                    val cameraState = rememberCameraPositionState {
-                        position = CameraPosition.fromLatLngZoom(LatLng(picked.lat, picked.lng), 15f)
-                    }
-                    Column(modifier = Modifier.padding(top = 12.dp)) {
-                        Text(picked.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                        Text(picked.address, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        GoogleMap(
-                            modifier = Modifier.fillMaxWidth().height(180.dp).padding(top = 8.dp),
-                            cameraPositionState = cameraState
-                        ) {
-                            Marker(state = MarkerState(position = LatLng(picked.lat, picked.lng)))
-                        }
-                        Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                            TextButton(onClick = { selected = null }) { Text(stringResource(R.string.places_search_again)) }
-                            Spacer(Modifier.weight(1f))
-                            Button(onClick = { onPlacePicked(picked) }) {
-                                Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                                Text(stringResource(R.string.places_search_use_this))
                             }
+                        )
+                    }
+                }
+            } else {
+                val cameraState = rememberCameraPositionState {
+                    position = CameraPosition.fromLatLngZoom(LatLng(picked.lat, picked.lng), 15f)
+                }
+                Column(modifier = Modifier.padding(top = 12.dp)) {
+                    Text(picked.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(picked.address, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    GoogleMap(
+                        modifier = Modifier.fillMaxWidth().height(180.dp).padding(top = 8.dp),
+                        cameraPositionState = cameraState
+                    ) {
+                        Marker(state = remember { MarkerState(position = LatLng(picked.lat, picked.lng)) })
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+                        TextButton(onClick = { selected = null }) { Text(stringResource(R.string.places_search_again)) }
+                        Spacer(Modifier.weight(1f))
+                        Button(onClick = { onPlacePicked(picked) }) {
+                            Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
+                            Text(stringResource(R.string.places_search_use_this))
                         }
                     }
                 }

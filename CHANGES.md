@@ -8,7 +8,7 @@ disk, so a fresh copy was the only way to hand them back to you.
 
 ## 1. Fonts + visual refresh
 - `app/src/main/res/font/plus_jakarta_sans.ttf`, `work_sans.ttf`, `jetbrains_mono.ttf` —
-  the real Horizon Ethos webfonts (pulled from the OFL google/fonts repo), replacing the
+  the real TriPro webfonts (pulled from the OFL google/fonts repo), replacing the
   `FontFamily.Default` placeholder. Each is a variable font, so one file per family
   covers every weight DESIGN.md calls for.
 - `ui/theme/Type.kt` — wires those files in via `FontVariation` (real SemiBold/Bold/
@@ -30,7 +30,7 @@ disk, so a fresh copy was the only way to hand them back to you.
   screen. Compose automatically flips layout direction (Row order, Arrangement.Start,
   TextAlign.Start, ...) to match an RTL device locale (Hebrew, Arabic, ...) *regardless*
   of the `android:supportsRtl` manifest flag — that flag only affects the old View
-  system. Horizon Ethos has no RTL variant (DESIGN.md, icon directions, and the "Start
+  system. TriPro has no RTL variant (DESIGN.md, icon directions, and the "Start
   date | End date" button order are all LTR-only, and there's no non-English string
   anywhere), so `TriProTheme` now wraps its content in
   `CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr)`. This

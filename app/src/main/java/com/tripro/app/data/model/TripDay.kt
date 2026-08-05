@@ -25,7 +25,10 @@ data class HotelInfo(
     val lng: Double? = null,
     val placeId: String? = null,
     val checkIn: String = "",
-    val checkOut: String = ""
+    val checkOut: String = "",
+    val arrivalTime: String = "",
+    val notes: String = "",
+    val noteType: NoteType = NoteType.NOTE
 )
 
 data class FlightInfo(
@@ -38,5 +41,7 @@ data class FlightInfo(
     val arrivalAirportLat: Double? = null,
     val arrivalAirportLng: Double? = null,
     val departureTime: String = "", // "HH:mm", local to departure airport
-    val arrivalTime: String = ""
+    val arrivalTime: String = "",
+    val notes: String = "",
+    val noteType: NoteType = NoteType.NOTE
 )

@@ -61,7 +61,7 @@ fun TripCard(
         onClick = onClick,
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-        border = BorderStroke(1.dp, com.tripro.app.ui.theme.HorizonEthosColors.CardBorder),
+        border = BorderStroke(1.dp, com.tripro.app.ui.theme.TriProColors.CardBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = interactionSource,
         modifier = Modifier

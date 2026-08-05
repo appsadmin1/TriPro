@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Horizon Ethos - My Trips</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&amp;family=JetBrains+Mono:wght@500&amp;family=Work+Sans:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface": "#f8f9ff",
+                    "error": "#ba1a1a",
+                    "secondary-fixed-dim": "#ffba3f",
+                    "on-tertiary-container": "#909395",
+                    "on-secondary-fixed-variant": "#604100",
+                    "on-primary-container": "#7594ca",
+                    "surface-container-high": "#dce9ff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-error": "#ffffff",
+                    "surface-container": "#e5eeff",
+                    "surface-variant": "#d3e4fe",
+                    "on-secondary": "#ffffff",
+                    "inverse-surface": "#213145",
+                    "primary": "#001736",
+                    "on-tertiary-fixed-variant": "#444749",
+                    "primary-fixed-dim": "#a9c7ff",
+                    "on-secondary-fixed": "#281800",
+                    "tertiary": "#141819",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed-variant": "#264778",
+                    "on-background": "#0b1c30",
+                    "inverse-on-surface": "#eaf1ff",
+                    "tertiary-fixed": "#e0e3e5",
+                    "primary-fixed": "#d6e3ff",
+                    "secondary-container": "#f9ad00",
+                    "surface-bright": "#f8f9ff",
+                    "surface-container-highest": "#d3e4fe",
+                    "surface-tint": "#405f91",
+                    "on-primary-fixed": "#001b3d",
+                    "tertiary-container": "#292c2e",
+                    "on-error-container": "#93000a",
+                    "outline": "#747780",
+                    "surface-container-low": "#eff4ff",
+                    "on-secondary-container": "#664500",
+                    "secondary-fixed": "#ffdeae",
+                    "on-tertiary-fixed": "#191c1e",
+                    "on-surface-variant": "#43474f",
+                    "background": "#f8f9ff",
+                    "error-container": "#ffdad6",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed-dim": "#c4c7c9",
+                    "surface-dim": "#cbdbf5",
+                    "on-surface": "#0b1c30",
+                    "inverse-primary": "#a9c7ff",
+                    "secondary": "#7f5600",
+                    "primary-container": "#002b5b",
+                    "outline-variant": "#c4c6d0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "8px",
+                    "gutter": "24px",
+                    "margin-desktop": "40px",
+                    "stack-sm": "4px",
+                    "stack-md": "12px",
+                    "stack-lg": "24px",
+                    "margin-mobile": "16px",
+                    "container-max": "1280px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "headline-lg": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "headline-md": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "label-sm": [
+                            "JetBrains Mono"
+                    ],
+                    "body-sm": [
+                            "Work Sans"
+                    ],
+                    "label-md": [
+                            "JetBrains Mono"
+                    ],
+                    "body-md": [
+                            "Work Sans"
+                    ],
+                    "body-lg": [
+                            "Work Sans"
+                    ],
+                    "display-lg": [
+                            "Plus Jakarta Sans"
+                    ]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-md": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-sm": [
+                            "10px",
+                            {
+                                    "lineHeight": "14px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-sm": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-md": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "display-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1;
+        }
+        .trip-card-hover {
+            transition: all 0.3s ease;
+        }
+        .trip-card-hover:hover {
+            box-shadow: 0px 4px 20px rgba(0, 43, 91, 0.08);
+            transform: translateY(-2px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen pb-[100px] md:pb-0 md:pt-20"><div class="fixed inset-0 z-[100] flex items-center justify-center p-4" id="trip-details-modal">
+<!-- Backdrop -->
+<div class="absolute inset-0 bg-primary/40 backdrop-blur-sm"></div>
+<!-- Modal Content -->
+<div class="relative bg-surface-container-lowest rounded-xl shadow-lg max-w-md w-full p-8 flex flex-col gap-4 border border-outline-variant/30">
+<div class="flex justify-between items-start">
+<h2 class="font-headline-lg text-headline-lg text-primary">Create New Trip</h2>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors p-1" onclick="document.getElementById('trip-details-modal').remove()">
+        close
+      </button>
+</div>
+<div class="flex flex-col gap-2"><form class="flex flex-col gap-4">
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface-variant" for="trip-name">Trip Name</label>
+<input class="w-full px-4 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-low text-on-surface font-body-md focus:outline-none focus:border-primary transition-colors" id="trip-name" placeholder="e.g. Summer in Kyoto" type="text"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface-variant" for="destination">Destination</label>
+<input class="w-full px-4 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-low text-on-surface font-body-md focus:outline-none focus:border-primary transition-colors" id="destination" placeholder="Where to?" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface-variant" for="start-date">Start Date</label>
+<input class="w-full px-4 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-low text-on-surface font-body-md focus:outline-none focus:border-primary transition-colors" id="start-date" type="date"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface-variant" for="end-date">End Date</label>
+<input class="w-full px-4 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-low text-on-surface font-body-md focus:outline-none focus:border-primary transition-colors" id="end-date" type="date"/>
+</div>
+</div>
+</form></div>
+<div class="mt-4 flex justify-end"><div class="flex gap-2">
+<button class="px-6 py-2 rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors" onclick="document.getElementById('trip-details-modal').remove()">
+    Cancel
+  </button>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-label-md text-label-md hover:opacity-90 transition-opacity" onclick="document.getElementById('trip-details-modal').remove()">
+    Create Trip
+  </button>
+</div></div>
+</div>
+</div>
+<!-- TopAppBar (Hidden on Mobile) -->
+<header class="hidden md:flex justify-between items-center px-margin-desktop w-full h-16 fixed top-0 bg-surface z-50">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary cursor-pointer hover:bg-surface-container-low transition-colors rounded-full p-2" data-icon="menu">menu</span>
+<span class="font-headline-lg text-headline-lg text-primary tracking-tight">Horizon Ethos</span>
+</div>
+<!-- Desktop Navigation Cluster (Mirrors Bottom Nav) -->
+<nav class="flex gap-8">
+<a class="flex items-center gap-2 text-primary font-bold opacity-80 scale-95 duration-150 relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[2px] after:bg-primary" href="#">
+<span class="material-symbols-outlined filled">explore</span>
+<span class="font-label-md text-label-md">Trips</span>
+</a>
+<a class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-md text-label-md">Search</span>
+</a>
+<a class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-label-md text-label-md">Alerts</span>
+</a>
+<a class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+<button class="font-label-md text-label-md text-primary px-4 py-2 hover:bg-surface-container-low transition-colors rounded-full border border-primary">
+            Share
+        </button>
+</header>
+<!-- Mobile Header (Simplified) -->
+<header class="md:hidden flex justify-between items-center px-margin-mobile w-full h-16 bg-surface sticky top-0 z-40">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight">Horizon Ethos</span>
+<button class="material-symbols-outlined text-primary" data-icon="search">search</button>
+</header>
+<main class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h1 class="font-display-lg text-display-lg text-primary mb-2">My Trips</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Your upcoming and past adventures.</p>
+</div>
+<!-- Desktop FAB equivalent -->
+<button class="hidden md:flex items-center gap-2 bg-secondary-container text-on-secondary-container px-6 py-3 rounded-full font-label-md text-label-md font-bold hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined">add</span>
+                Create New Vacation
+            </button>
+</div>
+<section class="mb-12">
+<h2 class="font-headline-md text-headline-md text-primary mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="flight_takeoff">flight_takeoff</span>
+                Upcoming
+            </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-stack-lg">
+<!-- Trip Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden border border-[#E2E8F0] trip-card-hover flex flex-col relative group cursor-pointer">
+<!-- Accent Bar -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary group-hover:w-2 transition-all duration-300"></div>
+<div class="h-48 relative overflow-hidden">
+<img alt="Kyoto, Japan" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A serene landscape view of Kyoto, Japan in autumn. Vibrant red and orange maple leaves frame a traditional wooden pagoda in the distance. Soft, warm sunlight filters through the trees, casting gentle shadows. Professional photography style, clean composition, high-end travel aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJQc013WYFjnVHeDcqP0pOmwR38R9R2QHs4V_KeUO-fY7-c5tWRZINMcrV-qJCeTCkMMZzG4j8JTdVRdjnbKFGfq30gahuAzQ34NCmNSqlXwfVTXr7UcAfl-KMtoDmeYt3bi1CSnDjM5JobngBSAaCHyV3u0RXYUN_My8TakjIpxfezXe389dT5BH64L6gVA42fdxpN68T3HL9W1I0whB9E4yWGC036T3acwogNQOAYykkWAuDWzRT1hQV70lYtAaLPyZN0BQmdII"/>
+<div class="absolute top-4 right-4 bg-surface-container-lowest/90 backdrop-blur-sm px-3 py-1 rounded-full border border-surface">
+<span class="font-label-sm text-label-sm text-primary tracking-wider">4 DAYS AWAY</span>
+</div>
+</div>
+<div class="p-6 flex flex-col flex-grow pl-8">
+<h3 class="font-headline-md text-headline-md text-primary mb-1">Kyoto Retreat</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mb-4">
+<span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span>
+                            Oct 12 - Oct 18, 2023
+                        </p>
+<div class="mt-auto pt-4 border-t border-outline-variant/30 flex justify-between items-center">
+<!-- Avatar Group -->
+<div class="flex -space-x-3">
+<img alt="Traveler 1" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest object-cover z-30" data-alt="A small, circular profile picture of a young professional woman with dark hair, smiling warmly. Clean white background, modern corporate headshot style, high quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDosESIIM1qp541StLcZagX6416guvakmlueBuli7qks0JpyoiFKfHPUlPmyA1pvmf5DzaZGVqlAwCsp_ozlYsUgynilsetPcjFB5J7sX8a3aRwyJDWaI4OqMnyYAQ59eO-TMIEXzxwakez91mBDkY5Y6B8m9N4hJkJGAgxsCfUIyjscBsDDYQyQ6cOW6YJ0Ep850OWqUvEX_8_OXeVgpp1D2KF1v3ketDvfrMehzM--_Oek6UNcQU4aya-dhjM2S1JWd9swfLzmH4"/>
+<img alt="Traveler 2" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest object-cover z-20" data-alt="A small, circular profile picture of a man with glasses and a beard, looking relaxed. Bright natural lighting, soft background, modern aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCt4a7YABrqdwliWKfKUL2YoOKcfjillGAZPDgYbD0yXMa2RjgghnWlD29EvwcZRsdXCNXykPLzKn6J40dUMMA1AjYbci1or-Wm-dozfpMpCq47iy9zmoJkcnKnSDO0w_0B8TaH4KVcYascUNI1FAgq-Mcb0dErUqKYa5Brk0jdVChRnDZuU03dxNvWfIQ46FvaIZWo-c8tjvvN3KMOGcHFESip6Xt2jriePzY1JV1aUV_jdKK9Pr-hw45JReiMlmGL-_d1NQgufvg"/>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-surface-variant flex items-center justify-center text-on-surface-variant font-label-sm text-label-sm z-10">
+                                    +2
+                                </div>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Trip Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden border border-[#E2E8F0] trip-card-hover flex flex-col relative group cursor-pointer">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary group-hover:w-2 transition-all duration-300"></div>
+<div class="h-48 relative overflow-hidden">
+<img alt="Amalfi Coast, Italy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A stunning aerial view of the Amalfi Coast, Italy. Colorful pastel houses cascade down rugged cliffs to meet deep blue Mediterranean waters. Clear sunny sky, bright lighting, aspirational luxury travel photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkt9nkipkG_RKHdYDnAY52B0YaDB5jlms0-Jo1VLp2SKkB410a_68rc_mvKdtHlvQYbLvqaZAHUFozO91ida_Y_oPYmGoi2WNE7rGkcLvhTDdZuVA0A0eKvGJzj5oTsajqArqMeyWs5RnFaMcMQNkpmLzcOx8dSBa8PHCT7bJ7Lc4nAYsFQNRWIF13QS6EswYslt1TbSpw0F82IAHcEp0_znmp-WEVL6Kyp54lBQRt1xWQ_XVxk80N3mwg4Lm3GxHmzV5cXA1DRqc"/>
+</div>
+<div class="p-6 flex flex-col flex-grow pl-8">
+<h3 class="font-headline-md text-headline-md text-primary mb-1">Amalfi Summer</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mb-4">
+<span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span>
+                            Nov 05 - Nov 12, 2023
+                        </p>
+<div class="mt-auto pt-4 border-t border-outline-variant/30 flex justify-between items-center">
+<div class="flex -space-x-3">
+<img alt="Traveler 1" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest object-cover z-30" data-alt="A small, circular profile picture of an older gentleman with white hair, wearing a casual linen shirt. Relaxed Mediterranean vacation vibe, soft lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHEjxpRAlPBkon-WKQY5CP5Ga-D6P0d7ZuNrDfyGxCBJTH51Mn0mLW41bRTjuejS9NX-CQbG-4R5D-mEA9MOIakQ59DMneTF6dnzc3ISU_XLe8p1VTHElfLTgu2TWwf4CC6oid-mclSywafcv96AAH3bOMqzQA5Iun7wgwP422itoy9d21OGRXDe6_uEdo13cQOhDoWqLNRDuIhZAq-BJrd6KgeWyWt_r3-S6793ZhK0VvaLOXljPVXtpYRFICT0z09vVKcMwtNoI"/>
+<img alt="Traveler 2" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest object-cover z-20" data-alt="A small, circular profile picture of a woman with short blonde hair and sunglasses on her head. Bright, cheerful expression, modern travel lifestyle aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZLq0crj3J2xxb8ya-5vwliH9M5NyPMcUWM7H-SE4kdk-2NzpzczJTSC01uo3xDrXywV4mf1bbamK1wSH5Ok7pU14VKI2HpChdBv9mxrnsSoePv7W-y4nL6aAG0r30q6t7ZodsM08Q8OT2KRd7AfPhRpTbhWVYsJOIMDt0j1qapeDcqMRRrjIK-kMeYtXHhtFcBpTdYvIfxnPOf5I5nzf43aqtZY-3UeJ66WI9xpxh7DaNFFAFNBuZn6nnVFevq1ubHyLFyujhlwU"/>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section>
+<h2 class="font-headline-md text-headline-md text-outline mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+                Past Adventures
+            </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-stack-lg opacity-80">
+<!-- Past Trip Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden border border-[#E2E8F0] hover:bg-surface-variant/30 transition-colors flex flex-col relative group cursor-pointer grayscale-[0.2]">
+<div class="h-40 relative overflow-hidden">
+<img alt="San Francisco, USA" class="w-full h-full object-cover" data-alt="A foggy morning view of the Golden Gate Bridge in San Francisco. The red towers peek through thick white mist. Moody, cinematic lighting, professional architectural landscape photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAgmL6d49LZeeQzvuBFiZajzeDIfgBbxBEHHlTKIyHAFgt0VT49R10HgAA5J9WXZSnxzHxyEVBk5HxjGk1pKh1iEMvflbirWMO_XLaTAzOv5MaK2W6RqC_ODlnk8vquuLYkZ_rPCcJ2Ry3A92IqQsffZImcv3V99H3ha5Fc2KaLmy6EiP4he1t7wT8ow6WITSrPDJBPzr-u7CG7Bd5vlYq5N1Q-f8xDcfyzh6LSsalSy7q6U50be_K75fmgoTnSj_NrpqOGcY8K6E"/>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<h3 class="font-body-lg text-body-lg text-primary font-medium mb-1">San Francisco Tech Conf</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+                            Aug 15 - Aug 18, 2023
+                        </p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button (Mobile) -->
+<button aria-label="Create New Vacation" class="md:hidden fixed bottom-28 right-6 w-14 h-14 bg-secondary-container text-on-secondary-container rounded-full shadow-lg flex items-center justify-center z-40 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined" data-icon="add" style="font-size: 28px;">add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 flex justify-around items-center h-20 px-4 pb-safe bg-surface-container-lowest dark:bg-tertiary-container shadow-[0_-4px_20px_rgba(0,0,0,0.05)] rounded-t-xl">
+<!-- Active Tab: Trips -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full px-4 py-1 opacity-80 scale-95 duration-150 group" href="#">
+<span class="material-symbols-outlined filled group-hover:scale-110 transition-transform" data-icon="explore">explore</span>
+<span class="font-label-sm text-label-sm mt-1">Trips</span>
+</a>
+<!-- Inactive Tabs -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-tertiary-container px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="search">search</span>
+<span class="font-label-sm text-label-sm mt-1">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-tertiary-container px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-colors group relative" href="#">
+<div class="absolute top-1 right-3 w-2 h-2 bg-error rounded-full"></div>
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="notifications">notifications</span>
+<span class="font-label-sm text-label-sm mt-1">Alerts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-tertiary-container px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

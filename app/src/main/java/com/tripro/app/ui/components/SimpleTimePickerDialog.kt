@@ -13,10 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,6 +22,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import com.tripro.app.ui.components.TriProAlertDialog
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -36,11 +33,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.runtime.CompositionLocalProvider
+import com.tripro.app.ui.theme.TriProColors
+import com.tripro.app.ui.theme.TriProShapes
+import com.tripro.app.ui.theme.TriProTypography
 import com.tripro.app.R
 
 /**
@@ -76,34 +75,13 @@ fun SimpleTimePickerDialog(
         }
     }
 
-    AlertDialog(
+    TriProAlertDialog(
         onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = { onConfirm("%02d:%02d".format(selectedHour, selectedMinute)) }) {
-                Text(stringResource(R.string.action_ok))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        },
-        title = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(title)
-                IconButton(onClick = { showManualInput = !showManualInput }) {
-                    Icon(
-                        imageVector = if (showManualInput) Icons.Default.AccessTime else Icons.Default.Keyboard,
-                        contentDescription = if (showManualInput) "Switch to wheels" else "Switch to keyboard"
-                    )
-                }
-            }
-        },
-        text = {
+        confirmButtonText = stringResource(R.string.action_ok),
+        onConfirm = { onConfirm("%02d:%02d".format(selectedHour, selectedMinute)) },
+        dismissButtonText = stringResource(R.string.action_cancel),
+        title = title,
+        content = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -118,9 +96,8 @@ fun SimpleTimePickerDialog(
                 ) {
                     Text(
                         text = "%02d:%02d".format(selectedHour, selectedMinute),
-                        style = MaterialTheme.typography.displayMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                        style = TriProTypography.displayLarge.copy(
+                            color = TriProColors.Primary
                         )
                     )
                 }
@@ -142,7 +119,9 @@ fun SimpleTimePickerDialog(
                             )
                             Text(
                                 ":",
-                                style = MaterialTheme.typography.displaySmall,
+                                style = TriProTypography.displayLarge.copy(
+                                    color = TriProColors.Primary
+                                ),
                                 modifier = Modifier.padding(horizontal = 8.dp)
                             )
                             WheelPicker(
@@ -191,7 +170,7 @@ private fun WheelPicker(
                 .height(itemHeight)
                 .padding(horizontal = 4.dp)
                 .alpha(0.12f)
-                .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small)
+                .background(TriProColors.Primary, TriProShapes.small)
         )
 
         LazyColumn(
@@ -212,13 +191,12 @@ private fun WheelPicker(
                     Text(
                         text = "%02d".format(value),
                         style = if (isSelected) {
-                            MaterialTheme.typography.headlineMedium.copy(
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold
+                            TriProTypography.headlineMedium.copy(
+                                color = TriProColors.Primary
                             )
                         } else {
-                            MaterialTheme.typography.bodyLarge.copy(
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            TriProTypography.bodyLarge.copy(
+                                color = TriProColors.OnSurfaceVariant.copy(alpha = 0.5f)
                             )
                         }
                     )
