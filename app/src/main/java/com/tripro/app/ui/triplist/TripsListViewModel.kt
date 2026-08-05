@@ -38,6 +38,10 @@ class TripsListViewModel(
     }
 
     fun refresh() {
+        if (_uiState.value.isRefreshing) {
+            Log.d("TripsListViewModel", "Refresh already in progress, ignoring request")
+            return
+        }
         Log.d("TripsListViewModel", "Manual refresh requested")
         _uiState.value = _uiState.value.copy(isRefreshing = true)
         

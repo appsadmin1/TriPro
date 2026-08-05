@@ -110,6 +110,8 @@
     <string name="day_detail_change_hotel">Change hotel</string>
     <string name="day_detail_hotel_name_label">Hotel name</string>
     <string name="day_detail_address_label">Address</string>
+    <string name="day_detail_arrival_time_label">Arrival time</string>
+    <string name="day_detail_arrival_prefix">Arrival: %1$s</string>
     <string name="day_detail_checkin_time_label">Check-in time</string>
     <string name="day_detail_checkin_prefix">Check-in: %1$s</string>
     <string name="day_detail_checkout_time_label">Check-out time</string>

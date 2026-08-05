@@ -83,7 +83,6 @@ fun ItineraryItemRow(
     modifier: Modifier = Modifier
 ) {
     val isSynthetic = item.id.startsWith("synthetic_")
-    val effectiveCanEdit = canEdit && !isSynthetic
 
     Row(modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
         Column(modifier = Modifier.width(100.dp).padding(top = 8.dp)) {
@@ -208,14 +207,14 @@ fun ItineraryItemRow(
                                 }
                             }
                         }
-                        if (effectiveCanEdit) {
+                        if (canEdit) {
                             IconButton(onClick = onEdit) {
                                 Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.itinerary_row_edit_cd), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
 
-                    if (effectiveCanEdit) {
+                    if (canEdit && !isSynthetic) {
                         Row(
                             modifier = Modifier.fillMaxWidth().border(BorderStroke(1.dp, HorizonEthosColors.CardBorder.copy(alpha = 0.5f))).padding(horizontal = 8.dp, vertical = 2.dp)
                         ) {
