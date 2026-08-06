@@ -55,10 +55,21 @@ import com.tripro.app.util.DateUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TripDocsRoute(tripId: String, onBack: () -> Unit) {
+fun TripDocsRoute(tripId: String, currentUid: String, onBack: () -> Unit) {
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
-    val viewModel: TripDocsViewModel = viewModel(factory = viewModelFactory { initializer { TripDocsViewModel(container.tripRepository, tripId) } })
+    val viewModel: TripDocsViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer {
+                TripDocsViewModel(
+                    container.tripRepository,
+                    container.pushNotificationRepository,
+                    tripId,
+                    currentUid
+                )
+            }
+        }
+    )
     val uiState by viewModel.uiState.collectAsState()
     var viewing by remember { mutableStateOf<Triple<String, String, Attachment>?>(null) }
     
@@ -142,7 +153,8 @@ fun TripDocsRoute(tripId: String, onBack: () -> Unit) {
         AttachmentViewerDialog(
             attachment = attachment,
             onDismiss = { viewing = null },
-            onRename = { newName -> viewModel.renameAttachment(date, itemId, attachment, newName) }
+            onRemove = if (uiState.canEdit) ({ viewModel.removeAttachment(date, itemId, attachment.id) }) else null,
+            onRename = if (uiState.canEdit) ({ newName -> viewModel.renameAttachment(date, itemId, attachment, newName) }) else null
         )
     }
 }

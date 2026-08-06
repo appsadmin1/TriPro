@@ -41,10 +41,14 @@ import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.ui.theme.TriProShapes
 import com.tripro.app.ui.theme.TriProTypography
 import com.tripro.app.R
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.TimePickerDefaults
 
 /**
  * A time entry dialog supporting both scrolling wheels and digital input (TimeInput).
- * Tapping the time header toggles between the two modes.
+ * A toggle button at the bottom switches between the two modes.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,6 +79,13 @@ fun SimpleTimePickerDialog(
         }
     }
 
+    val timeInputColors = TimePickerDefaults.colors(
+        timeSelectorSelectedContainerColor = TriProColors.Primary.copy(alpha = 0.12f),
+        timeSelectorUnselectedContainerColor = TriProColors.SurfaceContainerLow,
+        timeSelectorSelectedContentColor = TriProColors.Primary,
+        timeSelectorUnselectedContentColor = TriProColors.OnSurfaceVariant
+    )
+
     TriProAlertDialog(
         onDismissRequest = onDismiss,
         confirmButtonText = stringResource(R.string.action_ok),
@@ -86,11 +97,10 @@ fun SimpleTimePickerDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Clickable Time Header
+                // Non-clickable Time Header
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showManualInput = !showManualInput }
                         .padding(bottom = 24.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -102,35 +112,53 @@ fun SimpleTimePickerDialog(
                     )
                 }
 
-                if (showManualInput && timeInputState != null) {
-                    TimeInput(state = timeInputState)
-                } else {
-                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().height(160.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            WheelPicker(
-                                count = 24,
-                                initialValue = selectedHour,
-                                onValueChange = { selectedHour = it },
-                                modifier = Modifier.width(70.dp)
-                            )
-                            Text(
-                                ":",
-                                style = TriProTypography.displayLarge.copy(
-                                    color = TriProColors.Primary
-                                ),
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            )
-                            WheelPicker(
-                                count = 60,
-                                initialValue = selectedMinute,
-                                onValueChange = { selectedMinute = it },
-                                modifier = Modifier.width(70.dp)
-                            )
+                Box(
+                    modifier = Modifier.height(160.dp).fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (showManualInput && timeInputState != null) {
+                        TimeInput(state = timeInputState, colors = timeInputColors)
+                    } else {
+                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                WheelPicker(
+                                    count = 24,
+                                    initialValue = selectedHour,
+                                    onValueChange = { selectedHour = it },
+                                    modifier = Modifier.width(70.dp).clickable { showManualInput = true }
+                                )
+                                Text(
+                                    ":",
+                                    style = TriProTypography.displayLarge.copy(
+                                        color = TriProColors.Primary
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 8.dp).clickable { showManualInput = true }
+                                )
+                                WheelPicker(
+                                    count = 60,
+                                    initialValue = selectedMinute,
+                                    onValueChange = { selectedMinute = it },
+                                    modifier = Modifier.width(70.dp).clickable { showManualInput = true }
+                                )
+                            }
                         }
+                    }
+                }
+
+                if (showManualInput) {
+                    IconButton(
+                        onClick = { showManualInput = false },
+                        modifier = Modifier.padding(top = 16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = "Switch to wheels",
+                            tint = TriProColors.Primary
+                        )
                     }
                 }
             }

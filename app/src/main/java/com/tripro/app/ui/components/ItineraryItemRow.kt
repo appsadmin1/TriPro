@@ -90,8 +90,6 @@ fun ItineraryItemRow(
     onViewAllDocs: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isSynthetic = item.id.startsWith("synthetic_")
-
     Row(modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
         Column(modifier = Modifier.width(100.dp).padding(top = 8.dp)) {
             when (item.timeType) {
@@ -254,7 +252,7 @@ fun ItineraryItemRow(
                         }
                     }
 
-                    if (canEdit && !isSynthetic) {
+                    if (canEdit) {
                         Row(
                             modifier = Modifier.fillMaxWidth().border(BorderStroke(1.dp, TriProColors.CardBorder.copy(alpha = 0.5f))).padding(horizontal = 8.dp, vertical = 2.dp)
                         ) {

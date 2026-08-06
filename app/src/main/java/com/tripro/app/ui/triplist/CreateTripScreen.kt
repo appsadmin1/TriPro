@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -64,7 +65,9 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DateRangePicker
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.DisplayMode
 
@@ -227,21 +230,65 @@ fun CreateTripRoute(
             initialSelectedEndDateMillis = endDate?.toEpochMilli(),
             initialDisplayMode = DisplayMode.Picker
         )
-        DatePickerDialog(
+        val pickerColors = DatePickerDefaults.colors(
+            containerColor = Color.Transparent,
+            selectedDayContainerColor = TriProColors.Primary,
+            selectedDayContentColor = TriProColors.OnPrimary,
+            dayInSelectionRangeContainerColor = TriProColors.SecondaryContainer,
+            dayInSelectionRangeContentColor = TriProColors.OnSecondaryContainer,
+            todayContentColor = TriProColors.Primary,
+            todayDateBorderColor = TriProColors.Primary,
+            dividerColor = Color.Transparent
+        )
+
+        com.tripro.app.ui.components.TriProDialog(
             onDismissRequest = { pickingDates = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    startDate = dateRangePickerState.selectedStartDateMillis?.toLocalDate()
-                    endDate = dateRangePickerState.selectedEndDateMillis?.toLocalDate()
-                    pickingDates = false
-                }) { Text(stringResource(R.string.action_ok)) }
-            },
-            dismissButton = { TextButton(onClick = { pickingDates = false }) { Text(stringResource(R.string.action_cancel)) } }
+            padding = PaddingValues(horizontal = 8.dp, vertical = 24.dp)
         ) {
-            DateRangePicker(
-                state = dateRangePickerState,
-                modifier = Modifier.height(600.dp)
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    stringResource(R.string.trip_edit_pick_dates),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                
+                Box(modifier = Modifier.height(450.dp)) {
+                    DateRangePicker(
+                        state = dateRangePickerState,
+                        modifier = Modifier.fillMaxSize(),
+                        showModeToggle = false,
+                        title = null,
+                        headline = null,
+                        colors = pickerColors
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = { pickingDates = false }) {
+                        Text(stringResource(R.string.action_cancel), color = TriProColors.OnSurfaceVariant)
+                    }
+                    Button(
+                        onClick = {
+                            startDate = dateRangePickerState.selectedStartDateMillis?.toLocalDate()
+                            endDate = dateRangePickerState.selectedEndDateMillis?.toLocalDate()
+                            pickingDates = false
+                        },
+                        enabled = dateRangePickerState.selectedStartDateMillis != null && dateRangePickerState.selectedEndDateMillis != null,
+                        shape = PillShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = TriProColors.Primary,
+                            contentColor = TriProColors.OnPrimary
+                        )
+                    ) {
+                        Text(stringResource(R.string.action_ok))
+                    }
+                }
+            }
         }
     }
 }

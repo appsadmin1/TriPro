@@ -17,6 +17,13 @@ import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.ui.theme.TriProShapes
 import com.tripro.app.ui.theme.TriProTypography
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
+
 @Composable
 fun TriProTextField(
     value: String,
@@ -24,6 +31,7 @@ fun TriProTextField(
     label: String,
     modifier: Modifier = Modifier,
     placeholder: String? = null,
+    leadingIcon: @Composable (() -> Unit)? = null,
     singleLine: Boolean = true,
     minLines: Int = 1,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default
@@ -44,7 +52,7 @@ fun TriProTextField(
             keyboardOptions = keyboardOptions,
             cursorBrush = SolidColor(TriProColors.Primary),
             decorationBox = { innerTextField ->
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(TriProShapes.medium)
@@ -54,16 +62,33 @@ fun TriProTextField(
                             color = TriProColors.OutlineVariant.copy(alpha = 0.3f),
                             shape = TriProShapes.medium
                         )
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (value.isEmpty() && placeholder != null) {
-                        Text(
-                            text = placeholder,
-                            style = TriProTypography.bodyMedium,
-                            color = TriProColors.OnSurfaceVariant.copy(alpha = 0.5f)
-                        )
+                    if (leadingIcon != null) {
+                        Box(
+                            modifier = Modifier.size(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            leadingIcon()
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
                     }
-                    innerTextField()
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 14.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (value.isEmpty() && placeholder != null) {
+                            Text(
+                                text = placeholder,
+                                style = TriProTypography.bodyMedium,
+                                color = TriProColors.OnSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                        }
+                        innerTextField()
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth()

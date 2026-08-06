@@ -19,6 +19,8 @@ data class Trip(
     val name: String = "",
     val destination: String = "",
     val coverImageUrl: String = "",
+    val coverImagePublicId: String = "",
+    val coverImageResourceType: String = "",
     val startDate: String = "", // ISO-8601 yyyy-MM-dd
     val endDate: String = "",
     val ownerId: String = "",

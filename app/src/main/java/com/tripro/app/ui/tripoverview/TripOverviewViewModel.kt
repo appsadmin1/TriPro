@@ -62,12 +62,18 @@ class TripOverviewViewModel(
             }
 
             dataFlow
-                .catch { e -> Log.e("TripOverviewViewModel", "Error observing trip data: ${e.message}", e); _uiState.value = _uiState.value.copy(isLoading = false) }
                 .flatMapLatest { (trip, days, colors) ->
                     val dates = days.map { it.date }
                     tripRepository.observeAllItemsForTrip(tripId, dates).map { itemsByDate ->
                         DataTuple(trip, days, colors, itemsByDate)
                     }
+                }
+                .catch { e ->
+                    // PERMISSION_DENIED is expected during trip deletion — ignore it to avoid crashes
+                    if (e.message?.contains("PERMISSION_DENIED") != true) {
+                        Log.e("TripOverviewViewModel", "Error observing trip data: ${e.message}", e)
+                    }
+                    _uiState.value = _uiState.value.copy(isLoading = false)
                 }
                 .collect { (trip, days, colors, itemsByDate) ->
                     val totalDocs = itemsByDate.values.flatten().sumOf { it.attachments.size }
@@ -107,23 +113,36 @@ class TripOverviewViewModel(
         newCoverImageUri: Uri?, startDate: LocalDate, endDate: LocalDate
     ) = viewModelScope.launch {
         runCatching {
-            val coverImageUrl = newCoverImageUri?.let { uri ->
-                cloudinaryRepository.upload(contentResolver, uri, "cover_${System.currentTimeMillis()}.jpg", currentUid).downloadUrl
+            val coverAttachment = newCoverImageUri?.let { uri ->
+                cloudinaryRepository.upload(contentResolver, uri, "cover_${System.currentTimeMillis()}.jpg", currentUid)
             }
-            tripRepository.updateTripDetails(tripId, name, destination, coverImageUrl, startDate, endDate)
+            
+            // Clean up the OLD cover image if we're uploading a new one
+            if (coverAttachment != null) {
+                _uiState.value.trip?.let { oldTrip ->
+                    if (oldTrip.coverImagePublicId.isNotBlank()) {
+                        pushNotificationRepository.deleteCloudinaryAsset(tripId, oldTrip.coverImagePublicId, oldTrip.coverImageResourceType)
+                    }
+                }
+            }
+
+            tripRepository.updateTripDetails(
+                tripId, name, destination, 
+                coverAttachment?.downloadUrl, coverAttachment?.publicId, coverAttachment?.resourceType,
+                startDate, endDate
+            )
             pushNotificationRepository.notifyTripUpdate(tripId, what = "Trip details")
         }.onFailure { e -> Log.e("TripOverviewViewModel", "Failed to update trip details: ${e.message}", e) }
     }
 
     fun deleteTrip() = viewModelScope.launch {
-        // Clean up all Cloudinary assets in the trip
-        _uiState.value.itemsByDate.values.flatten().forEach { item ->
-            item.attachments.forEach { attachment ->
-                pushNotificationRepository.deleteAttachment(tripId, attachment.publicId, attachment.resourceType)
-            }
+        // Backend now handles Cloudinary cleanup of all assets and recursive Firestore delete in one call
+        pushNotificationRepository.deleteTrip(tripId).onSuccess {
+            _uiState.value = _uiState.value.copy(isDeleted = true)
+        }.onFailure { e ->
+            Log.e("TripOverviewViewModel", "Failed to delete trip: ${e.message}", e)
+            // Still mark as deleted if we want to leave the screen, or show an error
+            _uiState.value = _uiState.value.copy(isDeleted = true)
         }
-        
-        runCatching { tripRepository.deleteTrip(tripId) }.onFailure { e -> Log.e("TripOverviewViewModel", "Failed to delete trip: ${e.message}", e) }
-        _uiState.value = _uiState.value.copy(isDeleted = true)
     }
 }

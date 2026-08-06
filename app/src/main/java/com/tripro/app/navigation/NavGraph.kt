@@ -251,7 +251,7 @@ fun TriProNavGraph(
                             arguments = listOf(navArgument(Destinations.ARG_TRIP_ID) { type = NavType.StringType })
                         ) { backStackEntry ->
                             val tripId = backStackEntry.arguments?.getString(Destinations.ARG_TRIP_ID).orEmpty()
-                            TripDocsRoute(tripId = tripId, onBack = { navController.popBackStack() })
+                            TripDocsRoute(tripId = tripId, currentUid = uid, onBack = { navController.popBackStack() })
                         }
                     }
                 }

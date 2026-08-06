@@ -121,6 +121,8 @@
     <string name="day_detail_departure_time_title">שעת יציאה</string>
     <string name="day_detail_arrival_time_title">שעת הגעה</string>
     <string name="day_detail_remove_flight">הסרת טיסה</string>
+    <string name="day_detail_remove_hotel_confirm_title">להסיר מלון?</string>
+    <string name="day_detail_remove_flight_confirm_title">להסיר טיסה?</string>
     <string name="day_detail_edit_day_note_cd">עריכת הערת יום</string>
     <string name="day_detail_day_note_placeholder">הוסיפו הערה ליום כולו (למשל \"קחו מטריה, זה אזור גשום\")</string>
     <string name="day_detail_note_dialog_title">הערה ליום זה</string>
@@ -157,6 +159,7 @@
     <string name="item_sheet_note_label">הערה או התראה (למשל \"18+ בלבד\", \"נסגר מוקדם ב-18:00\")</string>
     <string name="item_sheet_start_time_title">שעת התחלה</string>
     <string name="item_sheet_end_time_title">שעת סיום</string>
+    <string name="item_sheet_attachments_label">קבצים מצורפים</string>
 
     <string name="itinerary_row_edit_cd">עריכה</string>
     <string name="itinerary_row_add_note">הוספת הערה</string>

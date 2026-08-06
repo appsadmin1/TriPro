@@ -26,6 +26,19 @@ import com.tripro.app.ui.theme.*
 import com.tripro.app.util.PlaceSearchMapDialog
 import com.tripro.app.util.localizedLabel
 import com.tripro.app.ui.rememberAppContainer
+import com.tripro.app.ui.components.TriProDialog
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.UploadFile
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,7 +50,8 @@ fun AddEditItemSheet(
     onSave: (ItineraryItem) -> Unit,
     dateOptions: List<Pair<String, String>> = emptyList(),
     selectedDate: String? = null,
-    onDateSelected: ((String) -> Unit)? = null
+    onDateSelected: ((String) -> Unit)? = null,
+    currentUid: String = ""
 ) {
     var title by remember { mutableStateOf(existing?.title.orEmpty()) }
     var type by remember { mutableStateOf(existing?.type ?: ItemType.CUSTOM) }
@@ -55,9 +69,34 @@ fun AddEditItemSheet(
     }
     var note by remember { mutableStateOf(existing?.note.orEmpty()) }
     var noteType by remember { mutableStateOf(existing?.noteType ?: NoteType.ALERT) }
+    var attachments by remember { mutableStateOf(existing?.attachments.orEmpty()) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showLocationSearch by remember { mutableStateOf(false) }
+
+    val container = rememberAppContainer()
+    val scope = rememberCoroutineScope()
+
+    val context = LocalContext.current
+    val contentResolver = context.contentResolver
+    var isUploadingFile by remember { mutableStateOf(false) }
+
+    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        if (uri != null) {
+            isUploadingFile = true
+            scope.launch {
+                try {
+                    val fileName = queryFileName(contentResolver, uri) ?: "file"
+                    val attachment = container.cloudinaryRepository.upload(contentResolver, uri, fileName, currentUid)
+                    attachments = attachments + attachment
+                } catch (e: Exception) {
+                    // silent error
+                } finally {
+                    isUploadingFile = false
+                }
+            }
+        }
+    }
 
     // Specialized fields for Flight/Hotel alignment
     val flightInfo = existing?.flightInfo
@@ -88,9 +127,6 @@ fun AddEditItemSheet(
     var showCheckOutPicker by remember { mutableStateOf(false) }
     var showHotelArrivalPicker by remember { mutableStateOf(false) }
 
-    val container = rememberAppContainer()
-    val scope = rememberCoroutineScope()
-
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(pin ?: defaultMapCenter, 13f)
     }
@@ -99,12 +135,19 @@ fun AddEditItemSheet(
         pin?.let { cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(it, 15f)) }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    TriProDialog(
+        onDismissRequest = onDismiss,
+        padding = PaddingValues(
+            start = TriProSpacing.marginMobile,
+            top = 40.dp,
+            end = TriProSpacing.marginMobile,
+            bottom = TriProSpacing.marginMobile
+        )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(TriProSpacing.marginMobile),
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)
         ) {
             Text(
@@ -312,6 +355,45 @@ fun AddEditItemSheet(
                 )
             }
 
+            Text(stringResource(R.string.item_sheet_attachments_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                attachments.forEach { attachment ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                            .border(1.dp, TriProColors.CardBorder, RoundedCornerShape(12.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                            val attachmentIcon = if (attachment.fileName.endsWith(".pdf", ignoreCase = true)) Icons.Filled.PictureAsPdf else Icons.Filled.AttachFile
+                            val attachmentTint = if (attachment.fileName.endsWith(".pdf", ignoreCase = true)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            Icon(attachmentIcon, contentDescription = null, tint = attachmentTint, modifier = Modifier.size(20.dp).padding(end = 8.dp))
+                            Text(attachment.fileName, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                        }
+                        IconButton(onClick = { attachments = attachments.filter { it.id != attachment.id } }) {
+                            Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+                OutlinedButton(
+                    onClick = { filePicker.launch(arrayOf("*/*")) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isUploadingFile,
+                    shape = TriProShapes.medium
+                ) {
+                    if (isUploadingFile) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                        Text(stringResource(R.string.itinerary_row_upload_file))
+                    }
+                }
+            }
+
             Button(
                 onClick = {
                     onSave(
@@ -329,16 +411,19 @@ fun AddEditItemSheet(
                             lng = pin?.longitude,
                             note = note,
                             noteType = noteType,
+                            attachments = attachments,
                             flightInfo = if (type == ItemType.FLIGHT) com.tripro.app.data.model.FlightInfo(
                                 airline = airline, flightNumber = flightNumber,
                                 departureAirportCode = depCode, arrivalAirportCode = arrCode,
                                 departureAirportLat = depLat, departureAirportLng = depLng,
                                 arrivalAirportLat = arrLat, arrivalAirportLng = arrLng,
-                                departureTime = depTime, arrivalTime = arrTime
+                                departureTime = depTime, arrivalTime = arrTime,
+                                attachments = attachments
                             ) else null,
                             hotelInfo = if (type == ItemType.HOTEL) com.tripro.app.data.model.HotelInfo(
                                 name = title, address = address, lat = pin?.latitude, lng = pin?.longitude,
-                                checkIn = checkIn, checkOut = checkOut, arrivalTime = hotelArrival
+                                checkIn = checkIn, checkOut = checkOut, arrivalTime = hotelArrival,
+                                attachments = attachments
                             ) else null
                         )
                     )
@@ -395,4 +480,12 @@ fun AddEditItemSheet(
             showLocationSearch = false
         }
     )
+}
+
+private fun queryFileName(resolver: android.content.ContentResolver, uri: Uri): String? {
+    resolver.query(uri, null, null, null, null)?.use { cursor ->
+        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+        if (nameIndex >= 0 && cursor.moveToFirst()) return cursor.getString(nameIndex)
+    }
+    return null
 }
