@@ -56,12 +56,17 @@ class DayDetailViewModel(
     init {
         viewModelScope.launch {
             tripRepository.observeTrip(tripId)
-                .catch { e -> Log.e("DayDetailViewModel", "Error observing trip: ${e.message}", e) }
+                .catch { e ->
+                    if (e.message?.contains("PERMISSION_DENIED") != true) {
+                        Log.e("DayDetailViewModel", "Error observing trip: ${e.message}", e)
+                    }
+                }
                 .collect { trip -> _uiState.value = _uiState.value.copy(canEdit = trip?.roleOf(currentUid)?.canEdit() ?: false) }
         }
 
         viewModelScope.launch {
             combine(tripRepository.observeDay(tripId, date), tripRepository.observeItems(tripId, date)) { day, items ->
+                // ... same synthetic logic ...
                 val syntheticItems = mutableListOf<ItineraryItem>()
                 day?.hotel?.let { h ->
                     if (h.name.isNotBlank()) {
@@ -101,7 +106,9 @@ class DayDetailViewModel(
                 day to allItems
             }
                 .catch { e ->
-                    Log.e("DayDetailViewModel", "Error observing day details: ${e.message}", e)
+                    if (e.message?.contains("PERMISSION_DENIED") != true) {
+                        Log.e("DayDetailViewModel", "Error observing day details: ${e.message}", e)
+                    }
                     _uiState.value = _uiState.value.copy(isLoading = false)
                 }
                 .collect { (day, items) -> _uiState.value = _uiState.value.copy(isLoading = false, day = day, items = items) }
@@ -137,16 +144,8 @@ class DayDetailViewModel(
     }
 
     fun deleteItem(itemId: String) = launchCatching {
-        val item = _uiState.value.items.firstOrNull { it.id == itemId }
-        val title = item?.title ?: "An item"
-        tripRepository.deleteItem(tripId, date, itemId)
-        
-        // Clean up all associated Cloudinary attachments
-        item?.attachments?.forEach { attachment ->
-            pushNotificationRepository.deleteAttachment(tripId, attachment.publicId, attachment.resourceType)
-        }
-        
-        pushNotificationRepository.notifyItineraryChange(tripId, date, title, action = "removed")
+        // Backend handles Firestore deletion, Cloudinary cleanup, and notification in one go
+        pushNotificationRepository.deleteItem(tripId, date, itemId).getOrThrow()
     }
 
     fun updateHotel(hotel: HotelInfo?) = launchCatching {
@@ -181,10 +180,9 @@ class DayDetailViewModel(
         }
     }
 
-    fun removeAttachment(itemId: String, attachment: Attachment) = launchCatching {
-        val current = _uiState.value.items.firstOrNull { it.id == itemId } ?: return@launchCatching
-        tripRepository.updateItem(tripId, date, current.copy(attachments = current.attachments.filterNot { it.id == attachment.id }), updatedBy = currentUid)
-        pushNotificationRepository.deleteAttachment(tripId, attachment.publicId, attachment.resourceType)
+    fun removeAttachment(itemId: String, attachmentId: String) = launchCatching {
+        // Backend handles both Firestore update and Cloudinary cleanup
+        pushNotificationRepository.deleteAttachment(tripId, date, itemId, attachmentId)
     }
 
     /** Renames an attachment's display name in place — a pure Firestore field edit, since

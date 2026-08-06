@@ -58,8 +58,31 @@ class PushNotificationRepository(
         })
     }
 
-    suspend fun deleteAttachment(tripId: String, publicId: String, resourceType: String) {
+    suspend fun deleteAttachment(tripId: String, date: String, itemId: String, attachmentId: String) {
         post("delete-attachment", JSONObject().apply {
+            put("tripId", tripId)
+            put("date", date)
+            put("itemId", itemId)
+            put("attachmentId", attachmentId)
+        })
+    }
+
+    suspend fun deleteItem(tripId: String, date: String, itemId: String): Result<Unit> {
+        return post("delete-item", JSONObject().apply {
+            put("tripId", tripId)
+            put("date", date)
+            put("itemId", itemId)
+        })
+    }
+
+    suspend fun deleteTrip(tripId: String): Result<Unit> {
+        return post("delete-trip", JSONObject().apply {
+            put("tripId", tripId)
+        })
+    }
+
+    suspend fun deleteCloudinaryAsset(tripId: String, publicId: String, resourceType: String): Result<Unit> {
+        return post("delete-cloudinary-asset", JSONObject().apply {
             put("tripId", tripId)
             put("publicId", publicId)
             put("resourceType", resourceType)
@@ -74,19 +97,24 @@ class PushNotificationRepository(
         })
     }
 
-    private suspend fun post(functionName: String, body: JSONObject) = withContext(Dispatchers.IO) {
+    private suspend fun post(functionName: String, body: JSONObject): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             if (baseUrl.isBlank()) return@runCatching // notifications backend not configured — skip silently
             val idToken = FirebaseAuth.getInstance().currentUser?.getIdToken(true)?.await()?.token
                 ?: return@runCatching
 
             val request = Request.Builder()
-                .url("$baseUrl/.netlify/functions/$functionName")
+                .url("${baseUrl.trimEnd('/')}/.netlify/functions/$functionName")
                 .addHeader("Authorization", "Bearer $idToken")
                 .post(body.toString().toRequestBody("application/json".toMediaType()))
                 .build()
 
-            httpClient.newCall(request).execute().close()
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    val errorBody = response.body?.string()
+                    throw Exception("Netlify function $functionName failed: ${response.code} $errorBody")
+                }
+            }
         }
     }
 }

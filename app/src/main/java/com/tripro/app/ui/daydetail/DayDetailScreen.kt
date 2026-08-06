@@ -358,7 +358,7 @@ fun DayDetailRoute(
         AttachmentViewerDialog(
             attachment = attachment,
             onDismiss = { viewingAttachment = null },
-            onRemove = if (uiState.canEdit) ({ viewModel.removeAttachment(itemId, attachment) }) else null,
+            onRemove = if (uiState.canEdit) ({ viewModel.removeAttachment(itemId, attachment.id) }) else null,
             onRename = if (uiState.canEdit) ({ newName -> viewModel.renameAttachment(itemId, attachment, newName) }) else null
         )
     }

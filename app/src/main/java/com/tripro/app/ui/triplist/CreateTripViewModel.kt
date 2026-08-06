@@ -49,19 +49,21 @@ class CreateTripViewModel(
         _uiState.value = _uiState.value.copy(isSaving = true, error = null, validationError = false)
         viewModelScope.launch {
             try {
-                val coverImageUrl = coverImageUri?.let { uri ->
+                val coverAttachment = coverImageUri?.let { uri ->
                     cloudinaryRepository.upload(
                         contentResolver = contentResolver,
                         fileUri = uri,
                         fileName = "cover_${System.currentTimeMillis()}.jpg",
                         uploadedBy = ownerId
-                    ).downloadUrl
-                }.orEmpty()
+                    )
+                }
 
                 val id = tripRepository.createTrip(
                     name = name,
                     destination = destination,
-                    coverImageUrl = coverImageUrl,
+                    coverImageUrl = coverAttachment?.downloadUrl.orEmpty(),
+                    coverImagePublicId = coverAttachment?.publicId.orEmpty(),
+                    coverImageResourceType = coverAttachment?.resourceType.orEmpty(),
                     startDate = startDate,
                     endDate = endDate,
                     ownerId = ownerId,

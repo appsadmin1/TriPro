@@ -52,11 +52,14 @@ class TripRepository(
 
     suspend fun createTrip(
         name: String, destination: String, coverImageUrl: String,
+        coverImagePublicId: String, coverImageResourceType: String,
         startDate: LocalDate, endDate: LocalDate, ownerId: String, ownerName: String
     ): String {
         val tripRef = trips.document()
         val trip = Trip(
-            id = tripRef.id, name = name, destination = destination, coverImageUrl = coverImageUrl,
+            id = tripRef.id, name = name, destination = destination, 
+            coverImageUrl = coverImageUrl, coverImagePublicId = coverImagePublicId,
+            coverImageResourceType = coverImageResourceType,
             startDate = startDate.format(dateFormatter), endDate = endDate.format(dateFormatter),
             ownerId = ownerId, ownerName = ownerName,
             members = mapOf(ownerId to Role.OWNER.value), memberIds = listOf(ownerId)
@@ -79,7 +82,8 @@ class TripRepository(
      *  under them) outside the new range in place rather than deleting them — Firestore
      *  can't cascade-delete subcollections client-side (same limitation as deleteTrip). */
     suspend fun updateTripDetails(
-        tripId: String, name: String, destination: String, coverImageUrl: String?,
+        tripId: String, name: String, destination: String, 
+        coverImageUrl: String?, coverImagePublicId: String?, coverImageResourceType: String?,
         startDate: LocalDate, endDate: LocalDate
     ) {
         val tripRef = trips.document(tripId)
@@ -90,7 +94,11 @@ class TripRepository(
             "name" to name, "destination" to destination,
             "startDate" to startDate.format(dateFormatter), "endDate" to endDate.format(dateFormatter)
         )
-        if (coverImageUrl != null) updateMap["coverImageUrl"] = coverImageUrl
+        if (coverImageUrl != null) {
+            updateMap["coverImageUrl"] = coverImageUrl
+            updateMap["coverImagePublicId"] = coverImagePublicId.orEmpty()
+            updateMap["coverImageResourceType"] = coverImageResourceType.orEmpty()
+        }
         batch.update(tripRef, updateMap)
 
         var date = startDate
