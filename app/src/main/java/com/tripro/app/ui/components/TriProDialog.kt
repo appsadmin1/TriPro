@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -133,11 +135,17 @@ fun TriProDialog(
 ) {
     Dialog(
         onDismissRequest = onDismissRequest,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
         androidx.compose.material3.Surface(
             modifier = Modifier
-                .padding(16.dp)
+                .safeDrawingPadding()
+                .imePadding()
+                .padding(horizontal = 24.dp)
+                .padding(top = 40.dp, bottom = 80.dp)
                 .fillMaxWidth()
                 .border(
                     width = 1.dp,
@@ -149,6 +157,11 @@ fun TriProDialog(
             tonalElevation = 0.dp
         ) {
             Box {
+                Column(
+                    modifier = Modifier.padding(padding),
+                    content = content
+                )
+
                 if (showCloseButton) {
                     IconButton(
                         onClick = onDismissRequest,
@@ -161,10 +174,6 @@ fun TriProDialog(
                         )
                     }
                 }
-                Column(
-                    modifier = Modifier.padding(padding),
-                    content = content
-                )
             }
         }
     }

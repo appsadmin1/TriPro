@@ -90,12 +90,19 @@ fun TripEditSheet(
         ActivityResultContracts.PickVisualMedia()
     ) { uri -> if (uri != null) coverImageUri = uri }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    com.tripro.app.ui.components.TriProDialog(
+        onDismissRequest = onDismiss,
+        padding = PaddingValues(
+            start = TriProSpacing.marginMobile,
+            top = 40.dp,
+            end = TriProSpacing.marginMobile,
+            bottom = TriProSpacing.marginMobile
+        )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(TriProSpacing.marginMobile),
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)
         ) {
             Text(stringResource(R.string.trip_edit_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)

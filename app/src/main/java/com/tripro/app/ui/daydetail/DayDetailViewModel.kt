@@ -8,9 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.tripro.app.data.model.ActivityColorPrefs
 import com.tripro.app.data.model.Attachment
 import com.tripro.app.data.model.DailyWeather
-import com.tripro.app.data.model.FlightInfo
-import com.tripro.app.data.model.HotelInfo
 import com.tripro.app.data.model.ItineraryItem
+import com.tripro.app.data.model.ItemType
 import com.tripro.app.data.model.TripDay
 import com.tripro.app.data.model.canEdit
 import com.tripro.app.data.repository.CloudinaryRepository
@@ -66,46 +65,7 @@ class DayDetailViewModel(
 
         viewModelScope.launch {
             combine(tripRepository.observeDay(tripId, date), tripRepository.observeItems(tripId, date)) { day, items ->
-                // ... same synthetic logic ...
-                val syntheticItems = mutableListOf<ItineraryItem>()
-                day?.hotel?.let { h ->
-                    if (h.name.isNotBlank()) {
-                        syntheticItems.add(
-                            ItineraryItem(
-                                id = "synthetic_hotel",
-                                title = h.name,
-                                type = com.tripro.app.data.model.ItemType.HOTEL,
-                                timeType = com.tripro.app.data.model.TimeType.EXACT,
-                                startTime = h.arrivalTime.ifBlank { h.checkIn }.ifBlank { null },
-                                locationName = h.address,
-                                note = h.notes,
-                                noteType = h.noteType,
-                                hotelInfo = h,
-                                attachments = h.attachments
-                            )
-                        )
-                    }
-                }
-                day?.flight?.let { f ->
-                    if (f.flightNumber.isNotBlank()) {
-                        syntheticItems.add(
-                            ItineraryItem(
-                                id = "synthetic_flight",
-                                title = "${f.airline} ${f.flightNumber}".trim(),
-                                type = com.tripro.app.data.model.ItemType.FLIGHT,
-                                timeType = com.tripro.app.data.model.TimeType.EXACT,
-                                startTime = f.arrivalTime.ifBlank { null },
-                                locationName = f.arrivalAirportCode,
-                                note = f.notes,
-                                noteType = f.noteType,
-                                flightInfo = f,
-                                attachments = f.attachments
-                            )
-                        )
-                    }
-                }
-                val allItems = (items + syntheticItems).sortedBy { it.sortMinutes() }
-                day to allItems
+                day to items
             }
                 .catch { e ->
                     if (e.message?.contains("PERMISSION_DENIED") != true) {
@@ -123,7 +83,10 @@ class DayDetailViewModel(
         }
 
         viewModelScope.launch {
-            _uiState.map { it.day?.hotel?.lat to it.day?.hotel?.lng }
+            _uiState.map { state ->
+                val firstHotel = state.items.firstOrNull { it.type == ItemType.HOTEL }
+                firstHotel?.lat to firstHotel?.lng
+            }
                 .distinctUntilChanged()
                 .collect { (lat, lng) ->
                     _uiState.value = _uiState.value.copy(weatherLoading = true)
@@ -146,24 +109,8 @@ class DayDetailViewModel(
     }
 
     fun deleteItem(itemId: String) = launchCatching {
-        if (itemId == "synthetic_hotel") {
-            updateHotel(null)
-        } else if (itemId == "synthetic_flight") {
-            updateFlight(null)
-        } else {
-            // Backend handles Firestore deletion, Cloudinary cleanup, and notification in one go
-            pushNotificationRepository.deleteItem(tripId, date, itemId).getOrThrow()
-        }
-    }
-
-    fun updateHotel(hotel: HotelInfo?) = launchCatching {
-        tripRepository.updateHotel(tripId, date, hotel, updatedBy = currentUid)
-        pushNotificationRepository.notifyDayChange(tripId, date, what = "Hotel")
-    }
-
-    fun updateFlight(flight: FlightInfo?) = launchCatching {
-        tripRepository.updateFlight(tripId, date, flight, updatedBy = currentUid)
-        pushNotificationRepository.notifyDayChange(tripId, date, what = "Flight")
+        // Backend handles Firestore deletion, Cloudinary cleanup, and notification in one go
+        pushNotificationRepository.deleteItem(tripId, date, itemId).getOrThrow()
     }
 
     fun updateDayNote(note: String) = launchCatching {
@@ -176,17 +123,9 @@ class DayDetailViewModel(
         viewModelScope.launch {
             try {
                 val attachment: Attachment = cloudinaryRepository.upload(contentResolver, uri, fileName, currentUid)
-                if (itemId == "synthetic_hotel") {
-                    val currentHotel = _uiState.value.day?.hotel ?: HotelInfo()
-                    updateHotel(currentHotel.copy(attachments = currentHotel.attachments + attachment))
-                } else if (itemId == "synthetic_flight") {
-                    val currentFlight = _uiState.value.day?.flight ?: FlightInfo()
-                    updateFlight(currentFlight.copy(attachments = currentFlight.attachments + attachment))
-                } else {
-                    val current = _uiState.value.items.firstOrNull { it.id == itemId }
-                    if (current != null) {
-                        tripRepository.updateItem(tripId, date, current.copy(attachments = current.attachments + attachment), updatedBy = currentUid)
-                    }
+                val current = _uiState.value.items.firstOrNull { it.id == itemId }
+                if (current != null) {
+                    tripRepository.updateItem(tripId, date, current.copy(attachments = current.attachments + attachment), updatedBy = currentUid)
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message ?: "Upload failed")
@@ -204,17 +143,7 @@ class DayDetailViewModel(
     /** Renames an attachment's display name in place — a pure Firestore field edit, since
      *  Cloudinary's own asset id never needs to change. */
     fun renameAttachment(itemId: String, attachment: Attachment, newName: String) = launchCatching {
-        if (itemId == "synthetic_hotel") {
-            val currentHotel = _uiState.value.day?.hotel ?: return@launchCatching
-            val updated = currentHotel.attachments.map { if (it.id == attachment.id) it.copy(fileName = newName) else it }
-            updateHotel(currentHotel.copy(attachments = updated))
-        } else if (itemId == "synthetic_flight") {
-            val currentFlight = _uiState.value.day?.flight ?: return@launchCatching
-            val updated = currentFlight.attachments.map { if (it.id == attachment.id) it.copy(fileName = newName) else it }
-            updateFlight(currentFlight.copy(attachments = updated))
-        } else {
-            tripRepository.renameAttachment(tripId, date, itemId, attachment.id, newName)
-        }
+        tripRepository.renameAttachment(tripId, date, itemId, attachment.id, newName)
     }
 
     private fun launchCatching(block: suspend () -> Unit) {

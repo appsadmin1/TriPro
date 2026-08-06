@@ -11,10 +11,8 @@ data class TripDay(
     @DocumentId
     val date: String = "", // yyyy-MM-dd
     val dayIndex: Int = 0, // 1-based day number within the trip, for "Day 3" style headers
-    val hotel: HotelInfo? = null,
-    val flight: FlightInfo? = null,
     val dayNote: String = "", // free-text note for the whole day (e.g. "Pack light layers")
-    val updatedBy: String = "" // uid of the last person to edit hotel/flight/dayNote — used
+    val updatedBy: String = "" // uid of the last person to edit dayNote — used
                                 // to exclude them from the "this day changed" push notification
 )
 

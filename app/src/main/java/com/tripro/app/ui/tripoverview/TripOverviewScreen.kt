@@ -1,19 +1,26 @@
 package com.tripro.app.ui.tripoverview
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,14 +30,14 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.HourglassTop
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -45,16 +52,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -64,38 +74,19 @@ import coil.compose.AsyncImage
 import com.google.android.gms.maps.model.LatLng
 import com.tripro.app.R
 import com.tripro.app.TriProApplication
-import com.tripro.app.data.model.HotelInfo
+import com.tripro.app.data.model.ActivityColorPrefs
+import com.tripro.app.data.model.ItemType
+import com.tripro.app.data.model.ItineraryItem
+import com.tripro.app.data.model.MarkerColorKey
 import com.tripro.app.data.model.Role
 import com.tripro.app.data.model.TripDay
-import com.tripro.app.ui.components.AvatarStack
+import com.tripro.app.data.model.toMarkerColorKey
 import com.tripro.app.ui.daydetail.AddEditItemSheet
 import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.DateUtils
-import com.tripro.app.util.localizedLabel
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
-
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.border
-import androidx.compose.ui.unit.em
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.ui.draw.shadow
-
-import androidx.compose.material.icons.filled.Menu
-
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
-import com.tripro.app.data.model.ActivityColorPrefs
-import com.tripro.app.data.model.ItineraryItem
-import com.tripro.app.data.model.MarkerColorKey
-import com.tripro.app.data.model.toMarkerColorKey
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,7 +100,6 @@ fun TripOverviewRoute(
     onTripDeleted: () -> Unit,
     onOpenDrawer: () -> Unit
 ) {
-    // ... existing viewModel setup ...
     val app = LocalContext.current.applicationContext as TriProApplication
     val container = app.container
     val viewModel: TripOverviewViewModel = viewModel(
@@ -260,12 +250,11 @@ fun TripOverviewRoute(
             }
         }
     }
-    // ... dialogs ...
 
     if (showAddItemSheet) {
         AddEditItemSheet(
             existing = null,
-            defaultMapCenter = mapCenterOrDefault(uiState.days.firstOrNull { it.date == newItemDate }?.hotel),
+            defaultMapCenter = mapCenterOrDefault(uiState.itemsByDate[newItemDate].orEmpty()),
             onDismiss = { showAddItemSheet = false },
             onSave = { item -> newItemDate?.let { date -> viewModel.addItem(date, item) }; showAddItemSheet = false },
             dateOptions = uiState.days.map { it.date to "${DateUtils.formatWeekdayShort(it.date)} ${DateUtils.formatDayNumber(it.date)}" },
@@ -287,8 +276,11 @@ fun TripOverviewRoute(
     }
 }
 
-private fun mapCenterOrDefault(hotel: HotelInfo?): LatLng =
-    if (hotel?.lat != null && hotel.lng != null) LatLng(hotel.lat, hotel.lng) else LatLng(48.8566, 2.3522)
+private fun mapCenterOrDefault(items: List<ItineraryItem>): LatLng {
+    val firstHotel = items.firstOrNull { it.type == ItemType.HOTEL }
+    if (firstHotel?.lat != null && firstHotel.lng != null) return LatLng(firstHotel.lat, firstHotel.lng)
+    return LatLng(48.8566, 2.3522)
+}
 
 @Composable
 private fun StatChip(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
@@ -326,20 +318,12 @@ private fun StatChip(icon: ImageVector, value: String, label: String, modifier: 
 private fun DayRow(day: TripDay, items: List<ItineraryItem>, activityColors: ActivityColorPrefs, onClick: () -> Unit) {
     val isToday = runCatching { DateUtils.parse(day.date) == LocalDate.now() }.getOrDefault(false)
     
-    // Outer container matching design shadow and background
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = if (isToday) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent),
         border = if (isToday) BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)) else null,
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 0.dp,
-            focusedElevation = 0.dp,
-            hoveredElevation = 0.dp,
-            draggedElevation = 0.dp,
-            disabledElevation = 0.dp
-        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = TriProSpacing.marginMobile, vertical = 4.dp)
@@ -351,7 +335,6 @@ private fun DayRow(day: TripDay, items: List<ItineraryItem>, activityColors: Act
                 .height(IntrinsicSize.Min),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Day/Date Column
             Column(modifier = Modifier.width(44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     DateUtils.formatWeekdayShort(day.date).uppercase(),
@@ -367,7 +350,6 @@ private fun DayRow(day: TripDay, items: List<ItineraryItem>, activityColors: Act
             
             Spacer(Modifier.width(16.dp))
             
-            // Vertical Timeline Line with Dot
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
@@ -391,12 +373,14 @@ private fun DayRow(day: TripDay, items: List<ItineraryItem>, activityColors: Act
             
             Spacer(Modifier.width(16.dp))
             
-            // Info Column
             Column(modifier = Modifier.weight(1f)) {
+                val firstHotel = items.firstOrNull { it.type == ItemType.HOTEL }
                 Text(
-                    if (day.hotel != null) day.hotel.name else stringResource(R.string.day_row_free_day),
+                    firstHotel?.title ?: stringResource(R.string.day_row_free_day),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (isToday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.onSurface
+                    color = if (isToday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     stringResource(R.string.trip_overview_day_label, day.dayIndex),
@@ -404,36 +388,10 @@ private fun DayRow(day: TripDay, items: List<ItineraryItem>, activityColors: Act
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
-                // Design-inspired activity indicator bars sorted chronologically
-                val indicators = remember(day, items) {
-                    val list = mutableListOf<Pair<Int, MarkerColorKey>>()
-                    
-                    fun parseMinutes(t: String?): Int = t?.let {
-                        val parts = it.split(":")
-                        val h = parts.getOrNull(0)?.toIntOrNull() ?: 0
-                        val m = parts.getOrNull(1)?.toIntOrNull() ?: 0
-                        h * 60 + m
-                    } ?: 0
-
-                    day.hotel?.let { h ->
-                        if (!h.checkIn.isNullOrBlank()) list.add(parseMinutes(h.checkIn) to MarkerColorKey.HOTEL)
-                        if (!h.checkOut.isNullOrBlank()) list.add(parseMinutes(h.checkOut) to MarkerColorKey.HOTEL)
-                        if (h.checkIn.isNullOrBlank() && h.checkOut.isNullOrBlank()) list.add(0 to MarkerColorKey.HOTEL)
-                    }
-                    day.flight?.let { f ->
-                        if (!f.departureTime.isNullOrBlank()) list.add(parseMinutes(f.departureTime) to MarkerColorKey.FLIGHT)
-                        if (!f.arrivalTime.isNullOrBlank()) list.add(parseMinutes(f.arrivalTime) to MarkerColorKey.FLIGHT)
-                        if (f.departureTime.isNullOrBlank() && f.arrivalTime.isNullOrBlank()) list.add(0 to MarkerColorKey.FLIGHT)
-                    }
-                    items.forEach { item ->
-                        list.add(item.sortMinutes() to item.type.toMarkerColorKey())
-                    }
-                    
-                    list.sortBy { it.first }
-                    // Distinct by type to avoid too many redundant bars if many items of same type exist, 
-                    // but keep the chronological order of the FIRST occurrence of each type.
-                    // Actually, let's just show them all in order as the user asked for "order by items".
-                    list.map { it.second }
+                val indicators = remember(items) {
+                    items.map { it.sortMinutes() to it.type.toMarkerColorKey() }
+                        .sortedBy { it.first }
+                        .map { it.second }
                 }
 
                 Row(modifier = Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {

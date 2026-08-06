@@ -26,6 +26,7 @@ import com.tripro.app.ui.theme.*
 import com.tripro.app.util.PlaceSearchMapDialog
 import com.tripro.app.util.localizedLabel
 import com.tripro.app.ui.rememberAppContainer
+import com.tripro.app.ui.components.TriProDialog
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.net.Uri
@@ -134,12 +135,19 @@ fun AddEditItemSheet(
         pin?.let { cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(it, 15f)) }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    TriProDialog(
+        onDismissRequest = onDismiss,
+        padding = PaddingValues(
+            start = TriProSpacing.marginMobile,
+            top = 40.dp,
+            end = TriProSpacing.marginMobile,
+            bottom = TriProSpacing.marginMobile
+        )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(TriProSpacing.marginMobile),
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)
         ) {
             Text(

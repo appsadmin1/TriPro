@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 data class DocEntry(val date: String, val itemId: String, val itemTitle: String, val attachment: Attachment)
@@ -45,19 +44,29 @@ class TripDocsViewModel(
             }
         }
         viewModelScope.launch {
-            tripRepository.observeDays(tripId)
-                .flatMapLatest { days -> tripRepository.observeAllItemsForTrip(tripId, days.map { it.date }) }
-                .catch { e -> 
+            val daysFlow = tripRepository.observeDays(tripId)
+            val itemsFlow = daysFlow.flatMapLatest { days ->
+                tripRepository.observeAllItemsForTrip(tripId, days.map { it.date })
+            }
+
+            combine(daysFlow, itemsFlow) { days, itemsByDate ->
+                days.mapNotNull { day ->
+                    val date = day.date
+                    val items = itemsByDate[date].orEmpty()
+
+                    val entries = items.flatMap { item ->
+                        item.attachments.map { att -> DocEntry(date, item.id, item.title, att) }
+                    }
+                    if (entries.isEmpty()) null else date to entries
+                }.sortedBy { it.first }
+            }
+                .catch { e ->
                     if (e.message?.contains("PERMISSION_DENIED") != true) {
                         Log.e("TripDocsViewModel", "Error loading docs: ${e.message}", e)
                     }
-                    _uiState.value = _uiState.value.copy(isLoading = false) 
+                    _uiState.value = _uiState.value.copy(isLoading = false)
                 }
-                .collect { itemsByDate ->
-                    val grouped = itemsByDate.entries.sortedBy { it.key }.mapNotNull { (date, items) ->
-                        val entries = items.flatMap { item -> item.attachments.map { att -> DocEntry(date, item.id, item.title, att) } }
-                        if (entries.isEmpty()) null else date to entries
-                    }
+                .collect { grouped ->
                     _uiState.value = _uiState.value.copy(isLoading = false, docsByDate = grouped)
                 }
         }

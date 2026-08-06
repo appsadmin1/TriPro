@@ -90,8 +90,6 @@ fun ItineraryItemRow(
     onViewAllDocs: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isSynthetic = item.id.startsWith("synthetic_")
-
     Row(modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
         Column(modifier = Modifier.width(100.dp).padding(top = 8.dp)) {
             when (item.timeType) {
@@ -258,15 +256,13 @@ fun ItineraryItemRow(
                         Row(
                             modifier = Modifier.fillMaxWidth().border(BorderStroke(1.dp, TriProColors.CardBorder.copy(alpha = 0.5f))).padding(horizontal = 8.dp, vertical = 2.dp)
                         ) {
-                            if (!isSynthetic) {
-                                TextButton(onClick = onEdit) {
-                                    Icon(Icons.Filled.EditNote, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 4.dp))
-                                    Text(stringResource(R.string.itinerary_row_add_note), style = MaterialTheme.typography.labelSmall)
-                                }
-                                TextButton(onClick = onAddAttachment) {
-                                    Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 4.dp))
-                                    Text(stringResource(R.string.itinerary_row_upload_file), style = MaterialTheme.typography.labelSmall)
-                                }
+                            TextButton(onClick = onEdit) {
+                                Icon(Icons.Filled.EditNote, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 4.dp))
+                                Text(stringResource(R.string.itinerary_row_add_note), style = MaterialTheme.typography.labelSmall)
+                            }
+                            TextButton(onClick = onAddAttachment) {
+                                Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 4.dp))
+                                Text(stringResource(R.string.itinerary_row_upload_file), style = MaterialTheme.typography.labelSmall)
                             }
                             Spacer(Modifier.weight(1f))
                             IconButton(onClick = onDelete) {

@@ -4,8 +4,6 @@ import android.util.Log
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.tripro.app.data.model.FlightInfo
-import com.tripro.app.data.model.HotelInfo
 import com.tripro.app.data.model.ItineraryItem
 import com.tripro.app.data.model.Role
 import com.tripro.app.data.model.Trip
@@ -134,16 +132,6 @@ class TripRepository(
                 trySend(snapshot?.toObject(TripDay::class.java))
             }
         awaitClose { registration.remove() }
-    }
-
-    suspend fun updateHotel(tripId: String, date: String, hotel: HotelInfo?, updatedBy: String) {
-        trips.document(tripId).collection("days").document(date)
-            .set(mapOf("hotel" to hotel, "updatedBy" to updatedBy), com.google.firebase.firestore.SetOptions.merge()).await()
-    }
-
-    suspend fun updateFlight(tripId: String, date: String, flight: FlightInfo?, updatedBy: String) {
-        trips.document(tripId).collection("days").document(date)
-            .set(mapOf("flight" to flight, "updatedBy" to updatedBy), com.google.firebase.firestore.SetOptions.merge()).await()
     }
 
     suspend fun updateDayNote(tripId: String, date: String, note: String, updatedBy: String) {

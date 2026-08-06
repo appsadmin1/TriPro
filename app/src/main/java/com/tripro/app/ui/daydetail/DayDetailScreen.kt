@@ -6,6 +6,7 @@ import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,11 +27,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.FlightTakeoff
-import androidx.compose.material.icons.filled.Hotel
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.StickyNote2
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,11 +37,8 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,68 +49,35 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.google.android.gms.maps.model.LatLng
 import com.tripro.app.R
 import com.tripro.app.TriProApplication
-import com.tripro.app.data.model.ActivityColorPrefs
-import com.tripro.app.data.model.MarkerColorKey
-import androidx.compose.ui.graphics.Color
 import com.tripro.app.data.model.Attachment
-import com.tripro.app.data.model.FlightInfo
-import com.tripro.app.data.model.HotelInfo
 import com.tripro.app.data.model.ItemType
 import com.tripro.app.data.model.ItineraryItem
+import com.tripro.app.data.model.MarkerColorKey
 import com.tripro.app.data.model.WeatherStatus
+import com.tripro.app.data.model.toMarkerColorKey
 import com.tripro.app.ui.components.AttachmentViewerDialog
 import com.tripro.app.ui.components.DayMapPreview
 import com.tripro.app.ui.components.ItineraryItemRow
 import com.tripro.app.ui.components.MapPin
-import com.tripro.app.ui.components.SimpleTimePickerDialog
+import com.tripro.app.ui.components.TriProAlertDialog
+import com.tripro.app.ui.components.TriProTextField
 import com.tripro.app.ui.components.WeatherCard
 import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.DateUtils
-import com.tripro.app.util.PickedPlace
-import com.tripro.app.util.PlaceSearchMapDialog
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
-import com.tripro.app.data.model.toMarkerColorKey
-import com.tripro.app.ui.rememberAppContainer
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.height
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.em
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.draw.scale
-import com.tripro.app.ui.components.AvatarStack
-import com.tripro.app.ui.components.TriProTextField
-import com.tripro.app.ui.components.TriProAlertDialog
-import com.tripro.app.ui.theme.TriProShapes
-
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
-
-import com.tripro.app.ui.components.TriProTextField
-import com.tripro.app.ui.components.TriProAlertDialog
-import com.tripro.app.ui.theme.TriProShapes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,8 +114,6 @@ fun DayDetailRoute(
 
     var showAddItemSheet by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<ItineraryItem?>(null) }
-    var showHotelDialog by remember { mutableStateOf(false) }
-    var showFlightDialog by remember { mutableStateOf(false) }
     var showDayNoteDialog by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf<String?>(null) }
     var pendingAttachmentItemId by remember { mutableStateOf<String?>(null) }
@@ -230,11 +190,6 @@ fun DayDetailRoute(
         val day = uiState.day
         val activityColors = uiState.activityColors
         val pins = buildList {
-            day?.hotel?.let { h ->
-                if (h.lat != null && h.lng != null) {
-                    add(MapPin("Hotel: ${h.name}", h.address, h.lat, h.lng, colorInt = activityColors.colorInt(MarkerColorKey.HOTEL)))
-                }
-            }
             uiState.items.forEach { i ->
                 if (i.lat != null && i.lng != null) {
                     add(MapPin(i.title, i.locationName, i.lat, i.lng, colorInt = activityColors.colorInt(i.type.toMarkerColorKey())))
@@ -257,35 +212,13 @@ fun DayDetailRoute(
                 )
             }
 
-            if (editingAllowed) {
-                if (day?.hotel == null || day.hotel.name.isBlank()) {
-                    item {
-                        OutlinedButton(onClick = { showHotelDialog = true }, modifier = Modifier.fillMaxWidth()) {
-                            Icon(Icons.Filled.Hotel, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                            Text(stringResource(R.string.day_detail_search_hotel))
-                        }
-                    }
-                }
-                if (day?.flight == null || day.flight.flightNumber.isBlank()) {
-                    item {
-                        val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-                        OutlinedButton(onClick = { showFlightDialog = true }, modifier = Modifier.fillMaxWidth()) {
-                            Icon(
-                                Icons.Filled.FlightTakeoff,
-                                contentDescription = null,
-                                modifier = Modifier.padding(end = 8.dp).let { if (isRtl) it.scale(scaleX = -1f, scaleY = 1f) else it }
-                            )
-                            Text(stringResource(R.string.day_detail_add_flight_button))
-                        }
-                    }
-                }
-            }
-
             if (pins.isNotEmpty()) {
                 item { DayMapPreview(pins = pins) }
             }
 
-            item { DayNoteCard(note = day?.dayNote.orEmpty(), canEdit = editingAllowed, onEdit = { showDayNoteDialog = true }) }
+            if (isEditMode || !day?.dayNote.isNullOrBlank()) {
+                item { DayNoteCard(note = day?.dayNote.orEmpty(), canEdit = editingAllowed, onEdit = { showDayNoteDialog = true }) }
+            }
 
             item {
                 Text(
@@ -306,11 +239,7 @@ fun DayDetailRoute(
                     activityColors = uiState.activityColors,
                     canEdit = editingAllowed,
                     onEdit = {
-                        when (item.id) {
-                            "synthetic_hotel" -> showHotelDialog = true
-                            "synthetic_flight" -> showFlightDialog = true
-                            else -> { editingItem = item; showAddItemSheet = true }
-                        }
+                        editingItem = item; showAddItemSheet = true
                     },
                     onDelete = { showDeleteConfirm = item.id },
                     onAddAttachment = { pendingAttachmentItemId = item.id; filePicker.launch(arrayOf("*/*")) },
@@ -324,7 +253,7 @@ fun DayDetailRoute(
     if (showAddItemSheet) {
         AddEditItemSheet(
             existing = editingItem,
-            defaultMapCenter = mapCenterOrDefault(uiState.day?.hotel),
+            defaultMapCenter = mapCenterOrDefault(uiState.items),
             onDismiss = { showAddItemSheet = false },
             selectedDate = date,
             onSave = { item ->
@@ -335,14 +264,6 @@ fun DayDetailRoute(
         )
     }
 
-    if (showHotelDialog) {
-        HotelEditDialog(existing = uiState.day?.hotel, onDismiss = { showHotelDialog = false }, onSave = { hotel -> viewModel.updateHotel(hotel); showHotelDialog = false }, currentUid = currentUid)
-    }
-
-    if (showFlightDialog) {
-        FlightEditDialog(existing = uiState.day?.flight, date = date, onDismiss = { showFlightDialog = false }, onSave = { flight -> viewModel.updateFlight(flight); showFlightDialog = false }, currentUid = currentUid)
-    }
-
     if (showDayNoteDialog) {
         DayNoteEditDialog(existing = uiState.day?.dayNote.orEmpty(), onDismiss = { showDayNoteDialog = false }, onSave = { note -> viewModel.updateDayNote(note); showDayNoteDialog = false })
     }
@@ -350,10 +271,7 @@ fun DayDetailRoute(
     showDeleteConfirm?.let { itemId ->
         TriProAlertDialog(
             onDismissRequest = { showDeleteConfirm = null },
-            title = if (itemId.startsWith("synthetic_")) {
-                if (itemId == "synthetic_hotel") stringResource(R.string.day_detail_remove_hotel_confirm_title)
-                else stringResource(R.string.day_detail_remove_flight_confirm_title)
-            } else stringResource(R.string.itinerary_delete_confirm_title),
+            title = stringResource(R.string.itinerary_delete_confirm_title),
             text = stringResource(R.string.itinerary_delete_confirm_text),
             confirmButtonText = stringResource(R.string.action_delete),
             onConfirm = { viewModel.deleteItem(itemId); showDeleteConfirm = null },
@@ -392,135 +310,10 @@ fun DayDetailRoute(
     }
 }
 
-private fun mapCenterOrDefault(hotel: HotelInfo?): LatLng =
-    if (hotel?.lat != null && hotel.lng != null) LatLng(hotel.lat, hotel.lng) else LatLng(48.8566, 2.3522)
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave: (HotelInfo?) -> Unit, currentUid: String) {
-    var name by remember { mutableStateOf(existing?.name.orEmpty()) }
-    var address by remember { mutableStateOf(existing?.address.orEmpty()) }
-    var lat by remember { mutableStateOf(existing?.lat) }
-    var lng by remember { mutableStateOf(existing?.lng) }
-    var placeId by remember { mutableStateOf(existing?.placeId) }
-    var checkIn by remember { mutableStateOf(existing?.checkIn.orEmpty()) }
-    var checkOut by remember { mutableStateOf(existing?.checkOut.orEmpty()) }
-    var arrivalTime by remember { mutableStateOf(existing?.arrivalTime.orEmpty()) }
-    var notes by remember { mutableStateOf(existing?.notes.orEmpty()) }
-    var noteType by remember { mutableStateOf(existing?.noteType ?: com.tripro.app.data.model.NoteType.NOTE) }
-    var attachments by remember { mutableStateOf(existing?.attachments.orEmpty()) }
-    var showCheckInPicker by remember { mutableStateOf(false) }
-    var showCheckOutPicker by remember { mutableStateOf(false) }
-    var showArrivalPicker by remember { mutableStateOf(false) }
-    var showSearch by remember { mutableStateOf(false) }
-
-    val app = LocalContext.current.applicationContext as TriProApplication
-    val container = app.container
-    val scope = rememberCoroutineScope()
-    val contentResolver = LocalContext.current.contentResolver
-    var isUploading by remember { mutableStateOf(false) }
-    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            isUploading = true
-            scope.launch {
-                try {
-                    val name = queryFileName(contentResolver, uri) ?: "file"
-                    val att = container.cloudinaryRepository.upload(contentResolver, uri, name, currentUid)
-                    attachments = attachments + att
-                } catch (e: Exception) {} finally { isUploading = false }
-            }
-        }
-    }
-
-    TriProAlertDialog(
-        onDismissRequest = onDismiss,
-        title = stringResource(R.string.day_detail_hotel_dialog_title),
-        content = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { showSearch = true }, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                    Text(if (name.isBlank()) stringResource(R.string.day_detail_search_hotel) else stringResource(R.string.day_detail_change_hotel))
-                }
-                TriProTextField(
-                    value = name,
-                    onValueChange = { name = it; placeId = null },
-                    label = stringResource(R.string.day_detail_hotel_name_label),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                TriProTextField(
-                    value = address,
-                    onValueChange = { address = it },
-                    label = stringResource(R.string.day_detail_address_label),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { showCheckInPicker = true }, modifier = Modifier.weight(1f)) { Text(if (checkIn.isBlank()) stringResource(R.string.day_detail_checkin_time_label) else stringResource(R.string.day_detail_checkin_prefix, checkIn)) }
-                    OutlinedButton(onClick = { showCheckOutPicker = true }, modifier = Modifier.weight(1f)) { Text(if (checkOut.isBlank()) stringResource(R.string.day_detail_checkout_time_label) else stringResource(R.string.day_detail_checkout_prefix, checkOut)) }
-                }
-                OutlinedButton(onClick = { showArrivalPicker = true }, modifier = Modifier.fillMaxWidth()) { Text(if (arrivalTime.isBlank()) stringResource(R.string.day_detail_arrival_time_label) else stringResource(R.string.day_detail_arrival_prefix, arrivalTime)) }
-                TriProTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = stringResource(R.string.day_detail_note_label),
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    singleLine = false
-                )
-                
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.item_sheet_note_type_label), style = MaterialTheme.typography.labelMedium)
-                    AssistChip(
-                        onClick = { noteType = com.tripro.app.data.model.NoteType.NOTE },
-                        label = { Text(stringResource(R.string.item_sheet_note_type_info)) },
-                        leadingIcon = { if (noteType == com.tripro.app.data.model.NoteType.NOTE) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp)) else null },
-                        border = if (noteType == com.tripro.app.data.model.NoteType.NOTE) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    )
-                    AssistChip(
-                        onClick = { noteType = com.tripro.app.data.model.NoteType.ALERT },
-                        label = { Text(stringResource(R.string.item_sheet_note_type_alert)) },
-                        leadingIcon = { if (noteType == com.tripro.app.data.model.NoteType.ALERT) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp)) else null },
-                        border = if (noteType == com.tripro.app.data.model.NoteType.ALERT) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    )
-                }
-
-                Text(stringResource(R.string.item_sheet_attachments_label), style = MaterialTheme.typography.labelMedium)
-                attachments.forEach { att ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow).padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(att.fileName, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f), maxLines = 1)
-                        IconButton(onClick = { attachments = attachments.filter { it.id != att.id } }) {
-                            Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                        }
-                    }
-                }
-                OutlinedButton(onClick = { filePicker.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth(), enabled = !isUploading) {
-                    if (isUploading) CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                    else {
-                        Icon(Icons.Filled.AttachFile, contentDescription = null, modifier = Modifier.size(18.dp).padding(end = 4.dp))
-                        Text(stringResource(R.string.itinerary_row_upload_file))
-                    }
-                }
-            }
-        },
-        confirmButtonText = stringResource(R.string.action_save),
-        onConfirm = {
-            onSave(
-                if (name.isBlank()) null
-                else (existing ?: HotelInfo()).copy(name = name, address = address, checkIn = checkIn, checkOut = checkOut, arrivalTime = arrivalTime, notes = notes, noteType = noteType, lat = lat, lng = lng, placeId = placeId, attachments = attachments)
-            )
-        },
-        dismissButtonText = stringResource(R.string.action_cancel)
-    )
-
-    if (showCheckInPicker) SimpleTimePickerDialog(stringResource(R.string.day_detail_checkin_time_label), checkIn.ifBlank { "15:00" }, { showCheckInPicker = false }, { checkIn = it; showCheckInPicker = false })
-    if (showCheckOutPicker) SimpleTimePickerDialog(stringResource(R.string.day_detail_checkout_time_label), checkOut.ifBlank { "11:00" }, { showCheckOutPicker = false }, { checkOut = it; showCheckOutPicker = false })
-    if (showArrivalPicker) SimpleTimePickerDialog(stringResource(R.string.day_detail_arrival_time_label), arrivalTime.ifBlank { "14:00" }, { showArrivalPicker = false }, { arrivalTime = it; showArrivalPicker = false })
-    PlaceSearchMapDialog(
-        visible = showSearch, typesFilter = listOf("lodging"), onDismiss = { showSearch = false },
-        onPlacePicked = { picked: PickedPlace -> name = picked.name; address = picked.address; lat = picked.lat; lng = picked.lng; placeId = picked.placeId; showSearch = false }
-    )
+private fun mapCenterOrDefault(items: List<ItineraryItem>): LatLng {
+    val firstHotel = items.firstOrNull { it.type == ItemType.HOTEL }
+    if (firstHotel?.lat != null && firstHotel.lng != null) return LatLng(firstHotel.lat, firstHotel.lng)
+    return LatLng(48.8566, 2.3522)
 }
 
 private fun queryFileName(resolver: android.content.ContentResolver, uri: Uri): String? {
@@ -529,217 +322,6 @@ private fun queryFileName(resolver: android.content.ContentResolver, uri: Uri): 
         if (nameIndex >= 0 && cursor.moveToFirst()) return cursor.getString(nameIndex)
     }
     return null
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () -> Unit, onSave: (FlightInfo?) -> Unit, currentUid: String) {
-    val container = rememberAppContainer()
-    val scope = rememberCoroutineScope()
-    val contentResolver = LocalContext.current.contentResolver
-    val defaultLookupError = stringResource(R.string.day_detail_lookup_failed_default)
-
-    var airline by remember { mutableStateOf(existing?.airline.orEmpty()) }
-    var flightNumber by remember { mutableStateOf(existing?.flightNumber.orEmpty()) }
-    var departureCode by remember { mutableStateOf(existing?.departureAirportCode.orEmpty()) }
-    var arrivalCode by remember { mutableStateOf(existing?.arrivalAirportCode.orEmpty()) }
-    var departureLat by remember { mutableStateOf(existing?.departureAirportLat) }
-    var departureLng by remember { mutableStateOf(existing?.departureAirportLng) }
-    var arrivalLat by remember { mutableStateOf(existing?.arrivalAirportLat) }
-    var arrivalLng by remember { mutableStateOf(existing?.arrivalAirportLng) }
-    var departureTime by remember { mutableStateOf(existing?.departureTime.orEmpty()) }
-    var arrivalTime by remember { mutableStateOf(existing?.arrivalTime.orEmpty()) }
-    var notes by remember { mutableStateOf(existing?.notes.orEmpty()) }
-    var noteType by remember { mutableStateOf(existing?.noteType ?: com.tripro.app.data.model.NoteType.NOTE) }
-    var attachments by remember { mutableStateOf(existing?.attachments.orEmpty()) }
-    var showDeparturePicker by remember { mutableStateOf(false) }
-    var showArrivalPicker by remember { mutableStateOf(false) }
-    var showDepartureSearch by remember { mutableStateOf(false) }
-    var showArrivalSearch by remember { mutableStateOf(false) }
-
-    var flightNumberQuery by remember { mutableStateOf(existing?.flightNumber.orEmpty().replace(" ", "")) }
-    var isLookingUp by remember { mutableStateOf(false) }
-    var lookupError by remember { mutableStateOf<String?>(null) }
-    var isUploading by remember { mutableStateOf(false) }
-
-    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            isUploading = true
-            scope.launch {
-                try {
-                    val name = queryFileName(contentResolver, uri) ?: "file"
-                    val att = container.cloudinaryRepository.upload(contentResolver, uri, name, currentUid)
-                    attachments = attachments + att
-                } catch (e: Exception) {} finally { isUploading = false }
-            }
-        }
-    }
-
-    fun lookupFlight() {
-        val query = flightNumberQuery.trim()
-        if (query.isBlank() || isLookingUp) return
-        isLookingUp = true
-        lookupError = null
-        scope.launch {
-            container.flightLookupRepository.lookup(query, date)
-                .onSuccess { result ->
-                    airline = result.airline.ifBlank { airline }
-                    flightNumber = result.flightNumber.ifBlank { flightNumber }
-                    if (result.departureAirportCode.isNotBlank()) departureCode = result.departureAirportCode
-                    if (result.arrivalAirportCode.isNotBlank()) arrivalCode = result.arrivalAirportCode
-                    result.departureAirportLat?.let { departureLat = it }
-                    result.departureAirportLng?.let { departureLng = it }
-                    result.arrivalAirportLat?.let { arrivalLat = it }
-                    result.arrivalAirportLng?.let { arrivalLng = it }
-                    if (result.departureTime.isNotBlank()) departureTime = result.departureTime
-                    if (result.arrivalTime.isNotBlank()) arrivalTime = result.arrivalTime
-                }
-                .onFailure { e -> lookupError = e.message ?: defaultLookupError }
-            isLookingUp = false
-        }
-    }
-
-    TriProAlertDialog(
-        onDismissRequest = onDismiss,
-        title = stringResource(R.string.day_detail_flight_dialog_title),
-        content = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-                    TriProTextField(
-                        value = flightNumberQuery,
-                        onValueChange = { flightNumberQuery = it.uppercase() },
-                        label = stringResource(R.string.day_detail_flight_number_label),
-                        modifier = Modifier.weight(1f)
-                    )
-                    OutlinedButton(
-                        onClick = { lookupFlight() },
-                        enabled = !isLookingUp && flightNumberQuery.isNotBlank(),
-                        shape = TriProShapes.medium,
-                        modifier = Modifier.height(48.dp)
-                    ) {
-                        if (isLookingUp) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                        } else {
-                            Text(stringResource(R.string.day_detail_look_up))
-                        }
-                    }
-                }
-                if (lookupError != null) {
-                    Text(lookupError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TriProTextField(
-                        value = airline,
-                        onValueChange = { airline = it },
-                        label = stringResource(R.string.day_detail_airline_label),
-                        modifier = Modifier.weight(1f)
-                    )
-                    TriProTextField(
-                        value = flightNumber,
-                        onValueChange = { flightNumber = it },
-                        label = stringResource(R.string.day_detail_flight_number_short_label),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(TriProSpacing.base)) {
-                    TriProTextField(
-                        value = departureCode,
-                        onValueChange = { departureCode = it.uppercase() },
-                        label = stringResource(R.string.day_detail_from_code_label),
-                        modifier = Modifier.weight(1f)
-                    )
-                    TriProTextField(
-                        value = arrivalCode,
-                        onValueChange = { arrivalCode = it.uppercase() },
-                        label = stringResource(R.string.day_detail_to_code_label),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { showDepartureSearch = true }, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                        Text(if (departureLat == null) stringResource(R.string.day_detail_find_departure_airport) else stringResource(R.string.day_detail_departure_confirmed), maxLines = 1)
-                    }
-                    OutlinedButton(onClick = { showArrivalSearch = true }, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                        Text(if (arrivalLat == null) stringResource(R.string.day_detail_find_arrival_airport) else stringResource(R.string.day_detail_arrival_confirmed), maxLines = 1)
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { showDeparturePicker = true }, modifier = Modifier.weight(1f)) { Text(if (departureTime.isBlank()) stringResource(R.string.day_detail_departs_label) else stringResource(R.string.day_detail_departs_prefix, departureTime)) }
-                    OutlinedButton(onClick = { showArrivalPicker = true }, modifier = Modifier.weight(1f)) { Text(if (arrivalTime.isBlank()) stringResource(R.string.day_detail_arrives_label) else stringResource(R.string.day_detail_arrives_prefix, arrivalTime)) }
-                }
-                TriProTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = stringResource(R.string.day_detail_note_label),
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    singleLine = false
-                )
-
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.item_sheet_note_type_label), style = MaterialTheme.typography.labelMedium)
-                    AssistChip(
-                        onClick = { noteType = com.tripro.app.data.model.NoteType.NOTE },
-                        label = { Text(stringResource(R.string.item_sheet_note_type_info)) },
-                        leadingIcon = { if (noteType == com.tripro.app.data.model.NoteType.NOTE) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp)) else null },
-                        border = if (noteType == com.tripro.app.data.model.NoteType.NOTE) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    )
-                    AssistChip(
-                        onClick = { noteType = com.tripro.app.data.model.NoteType.ALERT },
-                        label = { Text(stringResource(R.string.item_sheet_note_type_alert)) },
-                        leadingIcon = { if (noteType == com.tripro.app.data.model.NoteType.ALERT) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp)) else null },
-                        border = if (noteType == com.tripro.app.data.model.NoteType.ALERT) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    )
-                }
-
-                Text(stringResource(R.string.item_sheet_attachments_label), style = MaterialTheme.typography.labelMedium)
-                attachments.forEach { att ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow).padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(att.fileName, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f), maxLines = 1)
-                        IconButton(onClick = { attachments = attachments.filter { it.id != att.id } }) {
-                            Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                        }
-                    }
-                }
-                OutlinedButton(onClick = { filePicker.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth(), enabled = !isUploading) {
-                    if (isUploading) CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                    else {
-                        Icon(Icons.Filled.AttachFile, contentDescription = null, modifier = Modifier.size(18.dp).padding(end = 4.dp))
-                        Text(stringResource(R.string.itinerary_row_upload_file))
-                    }
-                }
-            }
-        },
-        confirmButtonText = stringResource(R.string.action_save),
-        onConfirm = {
-            onSave(
-                if (airline.isBlank() && flightNumber.isBlank()) null
-                else (existing ?: FlightInfo()).copy(
-                    airline = airline, flightNumber = flightNumber,
-                    departureAirportCode = departureCode, arrivalAirportCode = arrivalCode,
-                    departureAirportLat = departureLat, departureAirportLng = departureLng,
-                    arrivalAirportLat = arrivalLat, arrivalAirportLng = arrivalLng,
-                    departureTime = departureTime, arrivalTime = arrivalTime,
-                    notes = notes, noteType = noteType, attachments = attachments
-                )
-            )
-        },
-        dismissButtonText = stringResource(R.string.action_cancel),
-        onDismiss = onDismiss
-    )
-
-    if (showDeparturePicker) SimpleTimePickerDialog(stringResource(R.string.day_detail_departure_time_title), departureTime.ifBlank { "09:00" }, { showDeparturePicker = false }, { departureTime = it; showDeparturePicker = false })
-    if (showArrivalPicker) SimpleTimePickerDialog(stringResource(R.string.day_detail_arrival_time_title), arrivalTime.ifBlank { "11:00" }, { showArrivalPicker = false }, { arrivalTime = it; showArrivalPicker = false })
-    PlaceSearchMapDialog(visible = showDepartureSearch, typesFilter = listOf("airport"), onDismiss = { showDepartureSearch = false },
-        onPlacePicked = { picked -> departureLat = picked.lat; departureLng = picked.lng; showDepartureSearch = false })
-    PlaceSearchMapDialog(visible = showArrivalSearch, typesFilter = listOf("airport"), onDismiss = { showArrivalSearch = false },
-        onPlacePicked = { picked -> arrivalLat = picked.lat; arrivalLng = picked.lng; showArrivalSearch = false })
 }
 
 @Composable
