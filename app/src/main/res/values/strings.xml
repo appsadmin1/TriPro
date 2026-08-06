@@ -216,6 +216,8 @@
     <string name="attachment_rename_cd">Rename file</string>
     <string name="attachment_download_cd">Download</string>
     <string name="attachment_remove_cd">Remove from itinerary item</string>
+    <string name="attachment_delete_confirm_title">Remove document?</string>
+    <string name="attachment_delete_confirm_text">Are you sure you want to remove this document? This will delete the file permanently.</string>
     <string name="attachment_rename_title">Rename file</string>
     <string name="attachment_opening_pdf">Opening PDF…</string>
     <string name="attachment_pdf_error_default">Couldn\'t open this PDF</string>
@@ -249,6 +251,7 @@
     <string name="trip_edit_add_photo">Add a photo from your device</string>
     <string name="trip_edit_start_date">Start date</string>
     <string name="trip_edit_end_date">End date</string>
+    <string name="trip_edit_pick_dates">Pick dates</string>
     <string name="trip_edit_save_changes">Save changes</string>
     <string name="trip_edit_delete_trip">Delete trip</string>
     <string name="trip_edit_delete_confirm_title">Delete this trip?</string>
@@ -266,6 +269,8 @@
     <!-- Trip docs -->
     <string name="trip_docs_title">Docs — %1$s</string>
     <string name="trip_docs_empty">No documents uploaded yet.</string>
+    <string name="trip_docs_expand_all">Expand All</string>
+    <string name="trip_docs_collapse_all">Collapse All</string>
 
     <!-- Collaborators -->
     <string name="collaborators_title">Collaborators</string>

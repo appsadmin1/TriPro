@@ -116,6 +116,13 @@ class TripOverviewViewModel(
     }
 
     fun deleteTrip() = viewModelScope.launch {
+        // Clean up all Cloudinary assets in the trip
+        _uiState.value.itemsByDate.values.flatten().forEach { item ->
+            item.attachments.forEach { attachment ->
+                pushNotificationRepository.deleteAttachment(tripId, attachment.publicId, attachment.resourceType)
+            }
+        }
+        
         runCatching { tripRepository.deleteTrip(tripId) }.onFailure { e -> Log.e("TripOverviewViewModel", "Failed to delete trip: ${e.message}", e) }
         _uiState.value = _uiState.value.copy(isDeleted = true)
     }

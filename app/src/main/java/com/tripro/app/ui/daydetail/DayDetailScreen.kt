@@ -343,20 +343,14 @@ fun DayDetailRoute(
     }
 
     showDeleteConfirm?.let { itemId ->
-        AlertDialog(
+        TriProAlertDialog(
             onDismissRequest = { showDeleteConfirm = null },
-            title = { Text(stringResource(R.string.itinerary_delete_confirm_title)) },
-            text = { Text(stringResource(R.string.itinerary_delete_confirm_text)) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.deleteItem(itemId); showDeleteConfirm = null }) {
-                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = null }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            }
+            title = stringResource(R.string.itinerary_delete_confirm_title),
+            text = stringResource(R.string.itinerary_delete_confirm_text),
+            confirmButtonText = stringResource(R.string.action_delete),
+            onConfirm = { viewModel.deleteItem(itemId); showDeleteConfirm = null },
+            dismissButtonText = stringResource(R.string.action_cancel),
+            isDestructive = true
         )
     }
 
@@ -370,23 +364,22 @@ fun DayDetailRoute(
     }
 
     pendingUpload?.let { (itemId, uri) ->
-        AlertDialog(
+        TriProAlertDialog(
             onDismissRequest = { pendingUpload = null },
-            title = { Text(stringResource(R.string.day_detail_name_file_title)) },
-            text = {
+            title = stringResource(R.string.day_detail_name_file_title),
+            content = {
                 TriProTextField(
                     value = pendingUploadName,
                     onValueChange = { pendingUploadName = it },
                     label = stringResource(R.string.day_detail_name_file_title)
                 )
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.uploadAttachment(contentResolver, itemId, uri, pendingUploadName.ifBlank { "file" })
-                    pendingUpload = null
-                }) { Text(stringResource(R.string.action_upload)) }
+            confirmButtonText = stringResource(R.string.action_upload),
+            onConfirm = {
+                viewModel.uploadAttachment(contentResolver, itemId, uri, pendingUploadName.ifBlank { "file" })
+                pendingUpload = null
             },
-            dismissButton = { TextButton(onClick = { pendingUpload = null }) { Text(stringResource(R.string.action_cancel)) } }
+            dismissButtonText = stringResource(R.string.action_cancel)
         )
     }
 }

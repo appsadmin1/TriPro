@@ -134,9 +134,9 @@ fun TripEditSheet(
 
             Row(horizontalArrangement = Arrangement.spacedBy(TriProSpacing.stackMd)) {
                 OutlinedButton(onClick = { pickingDates = true }, modifier = Modifier.fillMaxWidth()) {
-                    val startLabel = startDate?.format(DateTimeFormatter.ofPattern("MMM d")) ?: stringResource(R.string.trip_edit_start_date)
+                    val startLabel = startDate?.format(DateTimeFormatter.ofPattern("MMM d")) ?: stringResource(R.string.trip_edit_pick_dates)
                     val endLabel = endDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: stringResource(R.string.trip_edit_end_date)
-                    Text(if (startDate != null && endDate != null) "$startLabel – $endLabel" else stringResource(R.string.trip_edit_start_date))
+                    Text(if (startDate != null && endDate != null) "$startLabel – $endLabel" else stringResource(R.string.trip_edit_pick_dates))
                 }
             }
 
@@ -181,7 +181,7 @@ fun TripEditSheet(
         ) {
             DateRangePicker(
                 state = dateRangePickerState,
-                modifier = Modifier.height(400.dp)
+                modifier = Modifier.height(600.dp)
             )
         }
     }

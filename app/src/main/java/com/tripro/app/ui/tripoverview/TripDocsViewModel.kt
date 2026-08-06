@@ -17,7 +17,8 @@ data class DocEntry(val date: String, val itemId: String, val itemTitle: String,
 data class TripDocsUiState(
     val isLoading: Boolean = true,
     val tripName: String = "",
-    val docsByDate: List<Pair<String, List<DocEntry>>> = emptyList()
+    val docsByDate: List<Pair<String, List<DocEntry>>> = emptyList(),
+    val expandedDates: Set<String> = emptySet()
 )
 
 class TripDocsViewModel(private val tripRepository: TripRepository, private val tripId: String) : ViewModel() {
@@ -40,6 +41,21 @@ class TripDocsViewModel(private val tripRepository: TripRepository, private val 
                     _uiState.value = _uiState.value.copy(isLoading = false, docsByDate = grouped)
                 }
         }
+    }
+
+    fun toggleDateExpanded(date: String) {
+        val current = _uiState.value.expandedDates
+        _uiState.value = _uiState.value.copy(
+            expandedDates = if (current.contains(date)) current - date else current + date
+        )
+    }
+
+    fun expandAll() {
+        _uiState.value = _uiState.value.copy(expandedDates = _uiState.value.docsByDate.map { it.first }.toSet())
+    }
+
+    fun collapseAll() {
+        _uiState.value = _uiState.value.copy(expandedDates = emptySet())
     }
 
     fun renameAttachment(date: String, itemId: String, attachment: Attachment, newName: String) = viewModelScope.launch {

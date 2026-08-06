@@ -182,10 +182,10 @@ fun CreateTripRoute(
                     shape = RoundedCornerShape(8.dp),
                     border = BorderStroke(1.dp, TriProColors.OutlineVariant.copy(alpha = 0.3f))
                 ) {
-                    val startLabel = startDate?.format(DateTimeFormatter.ofPattern("MMM d")) ?: stringResource(R.string.trip_edit_start_date)
+                    val startLabel = startDate?.format(DateTimeFormatter.ofPattern("MMM d")) ?: stringResource(R.string.trip_edit_pick_dates)
                     val endLabel = endDate?.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) ?: stringResource(R.string.trip_edit_end_date)
                     Text(
-                        if (startDate != null && endDate != null) "$startLabel – $endLabel" else stringResource(R.string.trip_edit_start_date),
+                        if (startDate != null && endDate != null) "$startLabel – $endLabel" else stringResource(R.string.trip_edit_pick_dates),
                         color = TriProColors.OnSurface
                     )
                 }
@@ -240,7 +240,7 @@ fun CreateTripRoute(
         ) {
             DateRangePicker(
                 state = dateRangePickerState,
-                modifier = Modifier.height(400.dp)
+                modifier = Modifier.height(600.dp)
             )
         }
     }

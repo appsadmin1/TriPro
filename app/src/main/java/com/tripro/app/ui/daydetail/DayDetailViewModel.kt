@@ -137,8 +137,15 @@ class DayDetailViewModel(
     }
 
     fun deleteItem(itemId: String) = launchCatching {
-        val title = _uiState.value.items.firstOrNull { it.id == itemId }?.title ?: "An item"
+        val item = _uiState.value.items.firstOrNull { it.id == itemId }
+        val title = item?.title ?: "An item"
         tripRepository.deleteItem(tripId, date, itemId)
+        
+        // Clean up all associated Cloudinary attachments
+        item?.attachments?.forEach { attachment ->
+            pushNotificationRepository.deleteAttachment(tripId, attachment.publicId, attachment.resourceType)
+        }
+        
         pushNotificationRepository.notifyItineraryChange(tripId, date, title, action = "removed")
     }
 

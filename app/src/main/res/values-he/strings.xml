@@ -192,6 +192,8 @@
     <string name="attachment_rename_cd">שינוי שם קובץ</string>
     <string name="attachment_download_cd">הורדה</string>
     <string name="attachment_remove_cd">הסרה מפריט המסלול</string>
+    <string name="attachment_delete_confirm_title">הסרת מסמך?</string>
+    <string name="attachment_delete_confirm_text">האם אתם בטוחים שברצונכם להסיר את המסמך הזה? פעולה זו תמחוק את הקובץ לצמיתות.</string>
     <string name="attachment_rename_title">שינוי שם קובץ</string>
     <string name="attachment_opening_pdf">פותחים PDF…</string>
     <string name="attachment_pdf_error_default">לא ניתן היה לפתוח את קובץ ה-PDF</string>
@@ -219,6 +221,7 @@
     <string name="trip_edit_add_photo">הוספת תמונה מהמכשיר</string>
     <string name="trip_edit_start_date">תאריך התחלה</string>
     <string name="trip_edit_end_date">תאריך סיום</string>
+    <string name="trip_edit_pick_dates">בחירת תאריכים</string>
     <string name="trip_edit_save_changes">שמירת שינויים</string>
     <string name="trip_edit_delete_trip">מחיקת טיול</string>
     <string name="trip_edit_delete_confirm_title">למחוק את הטיול?</string>
@@ -234,6 +237,8 @@
 
     <string name="trip_docs_title">מסמכים — %1$s</string>
     <string name="trip_docs_empty">עדיין לא הועלו מסמכים.</string>
+    <string name="trip_docs_expand_all">הרחב הכל</string>
+    <string name="trip_docs_collapse_all">כווץ הכל</string>
 
     <string name="collaborators_title">משתתפים</string>
     <string name="collaborators_invite_title">הזמנת משתתפים</string>

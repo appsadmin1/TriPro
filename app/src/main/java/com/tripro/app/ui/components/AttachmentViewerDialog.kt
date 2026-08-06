@@ -70,6 +70,7 @@ fun AttachmentViewerDialog(
 ) {
     val context = LocalContext.current
     var renaming by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
     var currentName by remember(attachment.id) { mutableStateOf(attachment.fileName) }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -85,7 +86,7 @@ fun AttachmentViewerDialog(
                         Icon(Icons.Filled.Download, contentDescription = stringResource(R.string.attachment_download_cd))
                     }
                     if (onRemove != null) {
-                        IconButton(onClick = { onRemove(); onDismiss() }) {
+                        IconButton(onClick = { showDeleteConfirm = true }) {
                             Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.attachment_remove_cd), tint = MaterialTheme.colorScheme.error)
                         }
                     }
@@ -113,6 +114,18 @@ fun AttachmentViewerDialog(
             confirmButtonText = stringResource(R.string.action_save),
             onConfirm = { onRename?.invoke(currentName); renaming = false },
             dismissButtonText = stringResource(R.string.action_cancel)
+        )
+    }
+
+    if (showDeleteConfirm) {
+        TriProAlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = stringResource(R.string.attachment_delete_confirm_title),
+            text = stringResource(R.string.attachment_delete_confirm_text),
+            confirmButtonText = stringResource(R.string.action_delete),
+            onConfirm = { onRemove?.invoke(); showDeleteConfirm = false; onDismiss() },
+            dismissButtonText = stringResource(R.string.action_cancel),
+            isDestructive = true
         )
     }
 }
