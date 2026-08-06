@@ -90,6 +90,10 @@ import com.tripro.app.data.model.toMarkerColorKey
 import com.tripro.app.ui.rememberAppContainer
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
@@ -326,16 +330,17 @@ fun DayDetailRoute(
             onSave = { item ->
                 if (editingItem == null) viewModel.addItem(item) else viewModel.updateItem(item)
                 showAddItemSheet = false
-            }
+            },
+            currentUid = currentUid
         )
     }
 
     if (showHotelDialog) {
-        HotelEditDialog(existing = uiState.day?.hotel, onDismiss = { showHotelDialog = false }, onSave = { hotel -> viewModel.updateHotel(hotel); showHotelDialog = false })
+        HotelEditDialog(existing = uiState.day?.hotel, onDismiss = { showHotelDialog = false }, onSave = { hotel -> viewModel.updateHotel(hotel); showHotelDialog = false }, currentUid = currentUid)
     }
 
     if (showFlightDialog) {
-        FlightEditDialog(existing = uiState.day?.flight, date = date, onDismiss = { showFlightDialog = false }, onSave = { flight -> viewModel.updateFlight(flight); showFlightDialog = false })
+        FlightEditDialog(existing = uiState.day?.flight, date = date, onDismiss = { showFlightDialog = false }, onSave = { flight -> viewModel.updateFlight(flight); showFlightDialog = false }, currentUid = currentUid)
     }
 
     if (showDayNoteDialog) {
@@ -345,7 +350,10 @@ fun DayDetailRoute(
     showDeleteConfirm?.let { itemId ->
         TriProAlertDialog(
             onDismissRequest = { showDeleteConfirm = null },
-            title = stringResource(R.string.itinerary_delete_confirm_title),
+            title = if (itemId.startsWith("synthetic_")) {
+                if (itemId == "synthetic_hotel") stringResource(R.string.day_detail_remove_hotel_confirm_title)
+                else stringResource(R.string.day_detail_remove_flight_confirm_title)
+            } else stringResource(R.string.itinerary_delete_confirm_title),
             text = stringResource(R.string.itinerary_delete_confirm_text),
             confirmButtonText = stringResource(R.string.action_delete),
             onConfirm = { viewModel.deleteItem(itemId); showDeleteConfirm = null },
@@ -389,7 +397,7 @@ private fun mapCenterOrDefault(hotel: HotelInfo?): LatLng =
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave: (HotelInfo?) -> Unit) {
+private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave: (HotelInfo?) -> Unit, currentUid: String) {
     var name by remember { mutableStateOf(existing?.name.orEmpty()) }
     var address by remember { mutableStateOf(existing?.address.orEmpty()) }
     var lat by remember { mutableStateOf(existing?.lat) }
@@ -400,16 +408,35 @@ private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave:
     var arrivalTime by remember { mutableStateOf(existing?.arrivalTime.orEmpty()) }
     var notes by remember { mutableStateOf(existing?.notes.orEmpty()) }
     var noteType by remember { mutableStateOf(existing?.noteType ?: com.tripro.app.data.model.NoteType.NOTE) }
+    var attachments by remember { mutableStateOf(existing?.attachments.orEmpty()) }
     var showCheckInPicker by remember { mutableStateOf(false) }
     var showCheckOutPicker by remember { mutableStateOf(false) }
     var showArrivalPicker by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
 
+    val app = LocalContext.current.applicationContext as TriProApplication
+    val container = app.container
+    val scope = rememberCoroutineScope()
+    val contentResolver = LocalContext.current.contentResolver
+    var isUploading by remember { mutableStateOf(false) }
+    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            isUploading = true
+            scope.launch {
+                try {
+                    val name = queryFileName(contentResolver, uri) ?: "file"
+                    val att = container.cloudinaryRepository.upload(contentResolver, uri, name, currentUid)
+                    attachments = attachments + att
+                } catch (e: Exception) {} finally { isUploading = false }
+            }
+        }
+    }
+
     TriProAlertDialog(
         onDismissRequest = onDismiss,
         title = stringResource(R.string.day_detail_hotel_dialog_title),
         content = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { showSearch = true }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                     Text(if (name.isBlank()) stringResource(R.string.day_detail_search_hotel) else stringResource(R.string.day_detail_change_hotel))
@@ -455,13 +482,33 @@ private fun HotelEditDialog(existing: HotelInfo?, onDismiss: () -> Unit, onSave:
                         border = if (noteType == com.tripro.app.data.model.NoteType.ALERT) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     )
                 }
+
+                Text(stringResource(R.string.item_sheet_attachments_label), style = MaterialTheme.typography.labelMedium)
+                attachments.forEach { att ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow).padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(att.fileName, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f), maxLines = 1)
+                        IconButton(onClick = { attachments = attachments.filter { it.id != att.id } }) {
+                            Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+                OutlinedButton(onClick = { filePicker.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth(), enabled = !isUploading) {
+                    if (isUploading) CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                    else {
+                        Icon(Icons.Filled.AttachFile, contentDescription = null, modifier = Modifier.size(18.dp).padding(end = 4.dp))
+                        Text(stringResource(R.string.itinerary_row_upload_file))
+                    }
+                }
             }
         },
         confirmButtonText = stringResource(R.string.action_save),
         onConfirm = {
             onSave(
                 if (name.isBlank()) null
-                else (existing ?: HotelInfo()).copy(name = name, address = address, checkIn = checkIn, checkOut = checkOut, arrivalTime = arrivalTime, notes = notes, noteType = noteType, lat = lat, lng = lng, placeId = placeId)
+                else (existing ?: HotelInfo()).copy(name = name, address = address, checkIn = checkIn, checkOut = checkOut, arrivalTime = arrivalTime, notes = notes, noteType = noteType, lat = lat, lng = lng, placeId = placeId, attachments = attachments)
             )
         },
         dismissButtonText = stringResource(R.string.action_cancel)
@@ -486,9 +533,10 @@ private fun queryFileName(resolver: android.content.ContentResolver, uri: Uri): 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () -> Unit, onSave: (FlightInfo?) -> Unit) {
+private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () -> Unit, onSave: (FlightInfo?) -> Unit, currentUid: String) {
     val container = rememberAppContainer()
     val scope = rememberCoroutineScope()
+    val contentResolver = LocalContext.current.contentResolver
     val defaultLookupError = stringResource(R.string.day_detail_lookup_failed_default)
 
     var airline by remember { mutableStateOf(existing?.airline.orEmpty()) }
@@ -503,6 +551,7 @@ private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () 
     var arrivalTime by remember { mutableStateOf(existing?.arrivalTime.orEmpty()) }
     var notes by remember { mutableStateOf(existing?.notes.orEmpty()) }
     var noteType by remember { mutableStateOf(existing?.noteType ?: com.tripro.app.data.model.NoteType.NOTE) }
+    var attachments by remember { mutableStateOf(existing?.attachments.orEmpty()) }
     var showDeparturePicker by remember { mutableStateOf(false) }
     var showArrivalPicker by remember { mutableStateOf(false) }
     var showDepartureSearch by remember { mutableStateOf(false) }
@@ -511,6 +560,20 @@ private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () 
     var flightNumberQuery by remember { mutableStateOf(existing?.flightNumber.orEmpty().replace(" ", "")) }
     var isLookingUp by remember { mutableStateOf(false) }
     var lookupError by remember { mutableStateOf<String?>(null) }
+    var isUploading by remember { mutableStateOf(false) }
+
+    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            isUploading = true
+            scope.launch {
+                try {
+                    val name = queryFileName(contentResolver, uri) ?: "file"
+                    val att = container.cloudinaryRepository.upload(contentResolver, uri, name, currentUid)
+                    attachments = attachments + att
+                } catch (e: Exception) {} finally { isUploading = false }
+            }
+        }
+    }
 
     fun lookupFlight() {
         val query = flightNumberQuery.trim()
@@ -540,7 +603,7 @@ private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () 
         onDismissRequest = onDismiss,
         title = stringResource(R.string.day_detail_flight_dialog_title),
         content = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
                     TriProTextField(
                         value = flightNumberQuery,
@@ -631,6 +694,26 @@ private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () 
                         border = if (noteType == com.tripro.app.data.model.NoteType.ALERT) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     )
                 }
+
+                Text(stringResource(R.string.item_sheet_attachments_label), style = MaterialTheme.typography.labelMedium)
+                attachments.forEach { att ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow).padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(att.fileName, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f), maxLines = 1)
+                        IconButton(onClick = { attachments = attachments.filter { it.id != att.id } }) {
+                            Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+                OutlinedButton(onClick = { filePicker.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth(), enabled = !isUploading) {
+                    if (isUploading) CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                    else {
+                        Icon(Icons.Filled.AttachFile, contentDescription = null, modifier = Modifier.size(18.dp).padding(end = 4.dp))
+                        Text(stringResource(R.string.itinerary_row_upload_file))
+                    }
+                }
             }
         },
         confirmButtonText = stringResource(R.string.action_save),
@@ -643,12 +726,12 @@ private fun FlightEditDialog(existing: FlightInfo?, date: String, onDismiss: () 
                     departureAirportLat = departureLat, departureAirportLng = departureLng,
                     arrivalAirportLat = arrivalLat, arrivalAirportLng = arrivalLng,
                     departureTime = departureTime, arrivalTime = arrivalTime,
-                    notes = notes, noteType = noteType
+                    notes = notes, noteType = noteType, attachments = attachments
                 )
             )
         },
-        dismissButtonText = stringResource(R.string.day_detail_remove_flight),
-        onDismiss = { onSave(null); onDismiss() }
+        dismissButtonText = stringResource(R.string.action_cancel),
+        onDismiss = onDismiss
     )
 
     if (showDeparturePicker) SimpleTimePickerDialog(stringResource(R.string.day_detail_departure_time_title), departureTime.ifBlank { "09:00" }, { showDeparturePicker = false }, { departureTime = it; showDeparturePicker = false })

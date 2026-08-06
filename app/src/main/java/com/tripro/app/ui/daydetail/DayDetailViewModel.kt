@@ -80,7 +80,8 @@ class DayDetailViewModel(
                                 locationName = h.address,
                                 note = h.notes,
                                 noteType = h.noteType,
-                                hotelInfo = h
+                                hotelInfo = h,
+                                attachments = h.attachments
                             )
                         )
                     }
@@ -97,7 +98,8 @@ class DayDetailViewModel(
                                 locationName = f.arrivalAirportCode,
                                 note = f.notes,
                                 noteType = f.noteType,
-                                flightInfo = f
+                                flightInfo = f,
+                                attachments = f.attachments
                             )
                         )
                     }
@@ -144,8 +146,14 @@ class DayDetailViewModel(
     }
 
     fun deleteItem(itemId: String) = launchCatching {
-        // Backend handles Firestore deletion, Cloudinary cleanup, and notification in one go
-        pushNotificationRepository.deleteItem(tripId, date, itemId).getOrThrow()
+        if (itemId == "synthetic_hotel") {
+            updateHotel(null)
+        } else if (itemId == "synthetic_flight") {
+            updateFlight(null)
+        } else {
+            // Backend handles Firestore deletion, Cloudinary cleanup, and notification in one go
+            pushNotificationRepository.deleteItem(tripId, date, itemId).getOrThrow()
+        }
     }
 
     fun updateHotel(hotel: HotelInfo?) = launchCatching {
@@ -168,9 +176,17 @@ class DayDetailViewModel(
         viewModelScope.launch {
             try {
                 val attachment: Attachment = cloudinaryRepository.upload(contentResolver, uri, fileName, currentUid)
-                val current = _uiState.value.items.firstOrNull { it.id == itemId }
-                if (current != null) {
-                    tripRepository.updateItem(tripId, date, current.copy(attachments = current.attachments + attachment), updatedBy = currentUid)
+                if (itemId == "synthetic_hotel") {
+                    val currentHotel = _uiState.value.day?.hotel ?: HotelInfo()
+                    updateHotel(currentHotel.copy(attachments = currentHotel.attachments + attachment))
+                } else if (itemId == "synthetic_flight") {
+                    val currentFlight = _uiState.value.day?.flight ?: FlightInfo()
+                    updateFlight(currentFlight.copy(attachments = currentFlight.attachments + attachment))
+                } else {
+                    val current = _uiState.value.items.firstOrNull { it.id == itemId }
+                    if (current != null) {
+                        tripRepository.updateItem(tripId, date, current.copy(attachments = current.attachments + attachment), updatedBy = currentUid)
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message ?: "Upload failed")
@@ -181,14 +197,24 @@ class DayDetailViewModel(
     }
 
     fun removeAttachment(itemId: String, attachmentId: String) = launchCatching {
-        // Backend handles both Firestore update and Cloudinary cleanup
-        pushNotificationRepository.deleteAttachment(tripId, date, itemId, attachmentId)
+        // Backend handles both Firestore update and Cloudinary cleanup for both standard and synthetic items
+        pushNotificationRepository.deleteAttachment(tripId, date, itemId, attachmentId).onFailure { throw it }
     }
 
     /** Renames an attachment's display name in place — a pure Firestore field edit, since
      *  Cloudinary's own asset id never needs to change. */
     fun renameAttachment(itemId: String, attachment: Attachment, newName: String) = launchCatching {
-        tripRepository.renameAttachment(tripId, date, itemId, attachment.id, newName)
+        if (itemId == "synthetic_hotel") {
+            val currentHotel = _uiState.value.day?.hotel ?: return@launchCatching
+            val updated = currentHotel.attachments.map { if (it.id == attachment.id) it.copy(fileName = newName) else it }
+            updateHotel(currentHotel.copy(attachments = updated))
+        } else if (itemId == "synthetic_flight") {
+            val currentFlight = _uiState.value.day?.flight ?: return@launchCatching
+            val updated = currentFlight.attachments.map { if (it.id == attachment.id) it.copy(fileName = newName) else it }
+            updateFlight(currentFlight.copy(attachments = updated))
+        } else {
+            tripRepository.renameAttachment(tripId, date, itemId, attachment.id, newName)
+        }
     }
 
     private fun launchCatching(block: suspend () -> Unit) {

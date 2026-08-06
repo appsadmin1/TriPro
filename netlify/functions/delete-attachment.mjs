@@ -32,33 +32,48 @@ export default async (request) => {
     await verifyCallerIsTripMember(request, tripId);
 
     const db = getAdminFirestore();
-    const itemRef = db.collection("trips").doc(tripId).collection("days").doc(date).collection("items").doc(itemId);
-    const itemSnap = await itemRef.get();
+    const dayRef = db.collection("trips").doc(tripId).collection("days").doc(date);
 
-    if (!itemSnap.exists) {
-      return Response.json({ error: "Itinerary item not found" }, { status: 404 });
+    let itemRef;
+    let attachment;
+    let isSynthetic = itemId.startsWith("synthetic_");
+
+    if (isSynthetic) {
+      const daySnap = await dayRef.get();
+      if (!daySnap.exists) return Response.json({ error: "Day not found" }, { status: 404 });
+      const dayData = daySnap.data();
+      const type = itemId === "synthetic_hotel" ? "hotel" : "flight";
+      const info = dayData[type];
+      if (!info) return Response.json({ error: `${type} not found` }, { status: 404 });
+      attachment = (info.attachments || []).find(a => a.id === attachmentId);
+      if (!attachment) return Response.json({ ok: true, message: "Attachment already removed" });
+
+      // Remove from Cloudinary
+      await deleteFromCloudinary(attachment.publicId, attachment.resourceType);
+
+      // Update Day document
+      const updatedAttachments = info.attachments.filter(a => a.id !== attachmentId);
+      await dayRef.update({
+        [`${type}.attachments`]: updatedAttachments
+      });
+    } else {
+      itemRef = dayRef.collection("items").doc(itemId);
+      const itemSnap = await itemRef.get();
+      if (!itemSnap.exists) return Response.json({ error: "Itinerary item not found" }, { status: 404 });
+      const itemData = itemSnap.data();
+      attachment = (itemData.attachments || []).find(a => a.id === attachmentId);
+      if (!attachment) return Response.json({ ok: true, message: "Attachment already removed" });
+
+      // 1. Delete from Cloudinary
+      await deleteFromCloudinary(attachment.publicId, attachment.resourceType);
+
+      // 2. Remove from Firestore array
+      await itemRef.update({
+        attachments: FieldValue.arrayRemove(attachment)
+      });
     }
 
-    const itemData = itemSnap.data();
-    const attachment = (itemData.attachments || []).find(a => a.id === attachmentId);
-
-    if (!attachment) {
-      // Already gone or never existed — treat as success
-      return Response.json({ ok: true, message: "Attachment already removed" });
-    }
-
-    // 1. Delete from Cloudinary
-    console.log(`Starting Cloudinary deletion for publicId: ${attachment.publicId}`);
-    const cloudinaryResult = await deleteFromCloudinary(attachment.publicId, attachment.resourceType);
-
-    // 2. Remove from Firestore array
-    console.log(`Removing attachment ${attachmentId} from Firestore...`);
-    await itemRef.update({
-      attachments: FieldValue.arrayRemove(attachment)
-    });
-    console.log("Firestore update complete.");
-
-    return Response.json({ ok: true, cloudinary: cloudinaryResult });
+    return Response.json({ ok: true });
   } catch (error) {
     const status = error.status || 500;
     if (status === 500) console.error("delete-attachment function error:", error);

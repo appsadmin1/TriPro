@@ -137,6 +137,8 @@
     <string name="day_detail_departure_time_title">Departure time</string>
     <string name="day_detail_arrival_time_title">Arrival time</string>
     <string name="day_detail_remove_flight">Remove flight</string>
+    <string name="day_detail_remove_hotel_confirm_title">Remove hotel?</string>
+    <string name="day_detail_remove_flight_confirm_title">Remove flight?</string>
     <string name="day_detail_edit_day_note_cd">Edit day note</string>
     <string name="day_detail_day_note_placeholder">Add a note for this whole day (e.g. \"Pack umbrella, it\'s a rainy area\")</string>
     <string name="day_detail_note_dialog_title">Note for this day</string>
@@ -176,6 +178,7 @@
     <string name="item_sheet_note_type_label">Note type</string>
     <string name="item_sheet_note_type_alert">Alert</string>
     <string name="item_sheet_note_type_info">Info</string>
+    <string name="item_sheet_attachments_label">Attachments</string>
     <string name="item_sheet_start_time_title">Start time</string>
     <string name="item_sheet_end_time_title">End time</string>
 

@@ -254,17 +254,19 @@ fun ItineraryItemRow(
                         }
                     }
 
-                    if (canEdit && !isSynthetic) {
+                    if (canEdit) {
                         Row(
                             modifier = Modifier.fillMaxWidth().border(BorderStroke(1.dp, TriProColors.CardBorder.copy(alpha = 0.5f))).padding(horizontal = 8.dp, vertical = 2.dp)
                         ) {
-                            TextButton(onClick = onEdit) {
-                                Icon(Icons.Filled.EditNote, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 4.dp))
-                                Text(stringResource(R.string.itinerary_row_add_note), style = MaterialTheme.typography.labelSmall)
-                            }
-                            TextButton(onClick = onAddAttachment) {
-                                Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 4.dp))
-                                Text(stringResource(R.string.itinerary_row_upload_file), style = MaterialTheme.typography.labelSmall)
+                            if (!isSynthetic) {
+                                TextButton(onClick = onEdit) {
+                                    Icon(Icons.Filled.EditNote, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 4.dp))
+                                    Text(stringResource(R.string.itinerary_row_add_note), style = MaterialTheme.typography.labelSmall)
+                                }
+                                TextButton(onClick = onAddAttachment) {
+                                    Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 4.dp))
+                                    Text(stringResource(R.string.itinerary_row_upload_file), style = MaterialTheme.typography.labelSmall)
+                                }
                             }
                             Spacer(Modifier.weight(1f))
                             IconButton(onClick = onDelete) {

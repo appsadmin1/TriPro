@@ -28,7 +28,8 @@ data class HotelInfo(
     val checkOut: String = "",
     val arrivalTime: String = "",
     val notes: String = "",
-    val noteType: NoteType = NoteType.NOTE
+    val noteType: NoteType = NoteType.NOTE,
+    val attachments: List<Attachment> = emptyList()
 )
 
 data class FlightInfo(
@@ -43,5 +44,6 @@ data class FlightInfo(
     val departureTime: String = "", // "HH:mm", local to departure airport
     val arrivalTime: String = "",
     val notes: String = "",
-    val noteType: NoteType = NoteType.NOTE
+    val noteType: NoteType = NoteType.NOTE,
+    val attachments: List<Attachment> = emptyList()
 )

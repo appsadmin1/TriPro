@@ -68,6 +68,10 @@ import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.localizedLabel
 
 import androidx.compose.material.icons.filled.Mail
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ArrowForward
@@ -100,6 +104,7 @@ fun CollaboratorsRoute(
     var email by remember { mutableStateOf("") }
     var inviteRole by remember { mutableStateOf(Role.EDITOR) }
     var memberToRemove by remember { mutableStateOf<Pair<String, String>?>(null) } // uid to name
+    var memberToManage by remember { mutableStateOf<MemberRow?>(null) }
 
     Scaffold(
         topBar = {
@@ -149,16 +154,17 @@ fun CollaboratorsRoute(
                                     onValueChange = { email = it },
                                     label = stringResource(R.string.collaborators_email_label),
                                     placeholder = "name@example.com",
+                                    leadingIcon = { Icon(Icons.Filled.Mail, contentDescription = null, tint = TriProColors.Outline) },
                                     modifier = Modifier.fillMaxWidth()
                                 )
                                 Button(
                                     onClick = { viewModel.invite(email, inviteRole); email = "" },
-                                    shape = PillShape,
+                                    shape = RoundedCornerShape(12.dp),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = TriProColors.Primary,
-                                        contentColor = TriProColors.OnPrimary
+                                        containerColor = TriProColors.SecondaryContainer,
+                                        contentColor = TriProColors.OnSecondaryContainer
                                     ),
-                                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                                    modifier = Modifier.fillMaxWidth().height(56.dp)
                                 ) {
                                     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
                                     Icon(
@@ -174,6 +180,9 @@ fun CollaboratorsRoute(
                                 if (uiState.inviteSuccessMessage != null) Text(uiState.inviteSuccessMessage!!, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
                             }
                         }
+                    }
+                    item {
+                        PermissionsExplainer()
                     }
                 }
 
@@ -192,8 +201,7 @@ fun CollaboratorsRoute(
                         photoUrl = member.profile.photoUrl,
                         role = member.role,
                         canManage = uiState.isOwner && member.role != Role.OWNER,
-                        onRoleChange = { newRole -> viewModel.changeRole(member.profile.uid, newRole) },
-                        onRemove = { memberToRemove = member.profile.uid to member.profile.displayName }
+                        onClick = { if (uiState.isOwner && member.role != Role.OWNER) memberToManage = member }
                     )
                 }
 
@@ -234,6 +242,133 @@ fun CollaboratorsRoute(
             isDestructive = true
         )
     }
+
+    memberToManage?.let { member ->
+        RoleSelectionDialog(
+            currentRole = member.role,
+            onDismiss = { memberToManage = null },
+            onRoleSelected = { newRole ->
+                viewModel.changeRole(member.profile.uid, newRole)
+                memberToManage = null
+            },
+            onRemove = {
+                memberToRemove = member.profile.uid to member.profile.displayName
+                memberToManage = null
+            }
+        )
+    }
+}
+
+@Composable
+private fun RoleSelectionDialog(
+    currentRole: Role,
+    onDismiss: () -> Unit,
+    onRoleSelected: (Role) -> Unit,
+    onRemove: () -> Unit
+) {
+    com.tripro.app.ui.components.TriProDialog(onDismissRequest = onDismiss) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                stringResource(R.string.collaborators_permission_label),
+                style = TriProTypography.headlineSmall,
+                color = TriProColors.Primary
+            )
+            
+            RoleOptionBox(
+                title = stringResource(R.string.collaborators_editor_title),
+                description = stringResource(R.string.collaborators_editor_desc),
+                isSelected = currentRole == Role.EDITOR,
+                onClick = { onRoleSelected(Role.EDITOR) }
+            )
+            
+            RoleOptionBox(
+                title = stringResource(R.string.collaborators_read_only_title),
+                description = stringResource(R.string.collaborators_read_only_desc),
+                isSelected = currentRole == Role.VIEWER,
+                onClick = { onRoleSelected(Role.VIEWER) }
+            )
+            
+            Spacer(Modifier.height(8.dp))
+            
+            Button(
+                onClick = onRemove,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp)
+            ) {
+                Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                Text(stringResource(R.string.collaborators_remove_menu_item), style = TriProTypography.labelMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RoleOptionBox(
+    title: String,
+    description: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val borderColor = if (isSelected) TriProColors.Primary else TriProColors.CardBorder
+    val bgColor = if (isSelected) TriProColors.Primary.copy(alpha = 0.05f) else Color.Transparent
+    
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = bgColor),
+        border = BorderStroke(if (isSelected) 2.dp else 1.dp, borderColor),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = TriProTypography.labelMedium, color = TriProColors.Primary)
+                Text(description, style = TriProTypography.bodySmall, color = TriProColors.OnSurfaceVariant)
+            }
+            if (isSelected) {
+                Icon(Icons.Filled.Check, contentDescription = null, tint = TriProColors.Primary)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PermissionsExplainer() {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = TriProColors.SurfaceContainerLow),
+        border = BorderStroke(1.dp, TriProColors.CardBorder),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(modifier = Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Box(
+                modifier = Modifier.size(32.dp).clip(CircleShape).background(TriProColors.Primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.Info, contentDescription = null, tint = TriProColors.Primary, modifier = Modifier.size(18.dp))
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.collaborators_editor_title), style = TriProTypography.labelMedium, color = TriProColors.Primary)
+                        Text(stringResource(R.string.collaborators_editor_desc), style = TriProTypography.bodySmall, color = TriProColors.OnSurfaceVariant)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.collaborators_read_only_title), style = TriProTypography.labelMedium, color = TriProColors.Primary)
+                        Text(stringResource(R.string.collaborators_read_only_desc), style = TriProTypography.bodySmall, color = TriProColors.OnSurfaceVariant)
+                    }
+                }
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -243,36 +378,68 @@ private fun MemberRowItem(
     photoUrl: String,
     role: Role,
     canManage: Boolean,
-    onRoleChange: (Role) -> Unit,
-    onRemove: () -> Unit
+    onClick: () -> Unit
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
-    Row(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceContainerLowest).border(0.5.dp, TriProColors.CardBorder, RoundedCornerShape(12.dp)).padding(12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            AsyncImage(
-                model = photoUrl.takeIf { it.isNotBlank() },
-                contentDescription = null, contentScale = ContentScale.Crop,
-                modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
-                error = androidx.compose.ui.graphics.painter.ColorPainter(MaterialTheme.colorScheme.primaryContainer),
-                fallback = androidx.compose.ui.graphics.painter.ColorPainter(MaterialTheme.colorScheme.primaryContainer)
-            )
-            Spacer(Modifier.width(12.dp))
-            Text(displayName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-        }
-        if (canManage) {
-            Box {
-                AssistChip(onClick = { menuExpanded = true }, label = { Text(role.localizedLabel()) })
-                DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                    DropdownMenuItem(text = { Text(Role.EDITOR.localizedLabel()) }, onClick = { onRoleChange(Role.EDITOR); menuExpanded = false })
-                    DropdownMenuItem(text = { Text(Role.VIEWER.localizedLabel()) }, onClick = { onRoleChange(Role.VIEWER); menuExpanded = false })
-                    DropdownMenuItem(text = { Text(stringResource(R.string.collaborators_remove_menu_item)) }, onClick = { onRemove(); menuExpanded = false })
+    val label = role.localizedLabel()
+
+    val cardContent = @Composable {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                AsyncImage(
+                    model = photoUrl.takeIf { it.isNotBlank() },
+                    contentDescription = null, contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(48.dp).clip(CircleShape).border(2.dp, TriProColors.SurfaceContainerLowest, CircleShape).shadow(1.dp, CircleShape),
+                    error = androidx.compose.ui.graphics.painter.ColorPainter(MaterialTheme.colorScheme.primaryContainer),
+                    fallback = androidx.compose.ui.graphics.painter.ColorPainter(MaterialTheme.colorScheme.primaryContainer)
+                )
+                Spacer(Modifier.width(16.dp))
+                Column {
+                    Text(displayName, style = TriProTypography.headlineSmall.copy(fontSize = 16.sp), color = TriProColors.Primary)
                 }
             }
-        } else {
-            Text(role.localizedLabel(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (canManage) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(1.dp, TriProColors.OutlineVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(label, style = TriProTypography.labelMedium, color = TriProColors.Primary)
+                    Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.padding(start = 4.dp).size(18.dp), tint = TriProColors.Primary)
+                }
+            } else {
+                Text(
+                    label,
+                    style = TriProTypography.labelMedium,
+                    color = TriProColors.OnSurfaceVariant,
+                    modifier = Modifier.clip(PillShape).background(TriProColors.SurfaceContainer).padding(horizontal = 12.dp, vertical = 4.dp)
+                )
+            }
+        }
+    }
+
+    if (canManage) {
+        Card(
+            onClick = onClick,
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = TriProColors.SurfaceContainerLowest),
+            border = BorderStroke(1.dp, TriProColors.CardBorder),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            cardContent()
+        }
+    } else {
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = TriProColors.SurfaceContainerLowest),
+            border = BorderStroke(1.dp, TriProColors.CardBorder),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            cardContent()
         }
     }
 }

@@ -58,14 +58,13 @@ class PushNotificationRepository(
         })
     }
 
-    suspend fun deleteAttachment(tripId: String, date: String, itemId: String, attachmentId: String) {
+    suspend fun deleteAttachment(tripId: String, date: String, itemId: String, attachmentId: String) =
         post("delete-attachment", JSONObject().apply {
             put("tripId", tripId)
             put("date", date)
             put("itemId", itemId)
             put("attachmentId", attachmentId)
         })
-    }
 
     suspend fun deleteItem(tripId: String, date: String, itemId: String): Result<Unit> {
         return post("delete-item", JSONObject().apply {
