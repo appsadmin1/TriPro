@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -18,6 +19,8 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SearchIcon from '@mui/icons-material/Search';
 import { Loader } from '@googlemaps/js-api-loader';
 import { PickedPlace } from '../data/models';
+
+declare const google: any;
 
 interface PlaceSearchDialogProps {
   open: boolean;
@@ -48,8 +51,14 @@ const PlaceSearchDialog: React.FC<PlaceSearchDialogProps> = ({
       return;
     }
 
+    const apiKey = import.meta.env.VITE_MAPS_API_KEY;
+    if (!apiKey) {
+      setError('Google Maps API Key is missing. Please check your configuration.');
+      return;
+    }
+
     const loader = new Loader({
-      apiKey: (window as any).GOOGLE_MAPS_API_KEY || '',
+      apiKey: apiKey,
       version: 'weekly',
       libraries: ['places'],
     });

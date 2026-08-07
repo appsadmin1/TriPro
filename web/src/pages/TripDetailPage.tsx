@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
+import { useEffect, useState } from 'react';
 import {
   Typography,
   Box,
@@ -16,11 +17,14 @@ import {
   Group,
   Edit,
   ArrowForwardIos,
+  AccountCircle,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import TripEditDialog from '../components/TripEditDialog';
 import { tripService } from '../services/tripService';
-import { Trip, TripDay, ItineraryItem } from '../data/models';
+import { userService } from '../services/userService';
+import { Trip, TripDay, UserProfile } from '../data/models';
 import { format, parseISO, differenceInDays, isValid } from 'date-fns';
 import { getOptimizedImageUrl } from '../utils/imageUtils';
 
@@ -28,7 +32,9 @@ const TripDetailPage: React.FC = () => {
   const { tripId } = useParams<{ tripId: string }>();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [days, setDays] = useState<TripDay[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, UserProfile>>({});
   const [loading, setLoading] = useState(true);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   const safeFormat = (dateStr: string | undefined, formatStr: string) => {
@@ -44,10 +50,14 @@ const TripDetailPage: React.FC = () => {
     }
 
     console.log("Observing trip details and days for:", tripId);
-    const unsubTrip = tripService.observeTrip(tripId, (data) => {
+    const unsubTrip = tripService.observeTrip(tripId, async (data) => {
       console.log("Trip data updated:", data?.name);
       setTrip(data);
-      if (!data) {
+      if (data) {
+        // Fetch traveler profiles
+        const userProfiles = await userService.getProfiles(data.memberIds);
+        setProfiles(userProfiles);
+      } else {
         console.warn("Trip not found");
         setLoading(false);
       }
@@ -108,12 +118,23 @@ const TripDetailPage: React.FC = () => {
             background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
             p: 4,
             color: 'white',
+            display: 'flex',
+            justify: 'space-between',
+            alignItems: 'flex-end',
           }}
         >
-          <Typography variant="h2" sx={{ fontWeight: 'bold' }}>{trip.destination}</Typography>
-          <Typography variant="h6">
-            {safeFormat(trip.startDate, 'MMM d')} - {safeFormat(trip.endDate, 'MMM d, yyyy')}
-          </Typography>
+          <Box>
+            <Typography variant="h2" sx={{ fontWeight: 'bold' }}>{trip.destination}</Typography>
+            <Typography variant="h6">
+              {safeFormat(trip.startDate, 'MMM d')} - {safeFormat(trip.endDate, 'MMM d, yyyy')}
+            </Typography>
+          </Box>
+          <IconButton
+            onClick={() => setEditDialogOpen(true)}
+            sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)', '&:hover': { bgcolor: 'rgba(255,255,255,0.4)' } }}
+          >
+            <Edit />
+          </IconButton>
         </Box>
       </Box>
 
@@ -144,17 +165,32 @@ const TripDetailPage: React.FC = () => {
 
       {/* Travelers Section */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>TRAVELERS</Typography>
-        <Card variant="outlined" sx={{ p: 2, borderRadius: 3, display: 'flex', alignItems: 'center' }}>
-          <Stack direction="row" spacing={2}>
-            {trip.memberIds.map(uid => (
-              <Stack key={uid} alignItems="center" spacing={0.5}>
-                <Avatar sx={{ bgcolor: 'primary.container', color: 'primary.main' }}>
-                  {uid.substring(0, 1).toUpperCase()}
-                </Avatar>
-                <Typography variant="caption">Traveler</Typography>
-              </Stack>
-            ))}
+        <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>Travelers</Typography>
+        <Card variant="outlined" sx={{ p: 2, borderRadius: 3, display: 'flex', alignItems: 'center', bgcolor: 'background.paper' }}>
+          <Stack direction="row" spacing={3} sx={{ overflowX: 'auto', pb: 1 }}>
+            {trip.memberIds.map(uid => {
+              const profile = profiles[uid];
+              return (
+                <Stack key={uid} alignItems="center" spacing={1} sx={{ minWidth: 64 }}>
+                  <Avatar
+                    src={profile?.photoUrl}
+                    sx={{
+                      bgcolor: 'primary.container',
+                      color: 'primary.main',
+                      width: 56,
+                      height: 56,
+                      border: '2px solid',
+                      borderColor: 'primary.main'
+                    }}
+                  >
+                    {!profile?.photoUrl && (profile?.displayName?.charAt(0) || <AccountCircle />)}
+                  </Avatar>
+                  <Typography variant="caption" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+                    {profile?.displayName || 'Traveler'}
+                  </Typography>
+                </Stack>
+              );
+            })}
           </Stack>
         </Card>
       </Box>
@@ -201,6 +237,14 @@ const TripDetailPage: React.FC = () => {
           </Card>
         ))}
       </Stack>
+
+      {trip && (
+        <TripEditDialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          trip={trip}
+        />
+      )}
     </Layout>
   );
 };

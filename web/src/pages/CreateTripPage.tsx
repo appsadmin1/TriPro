@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import {
   Typography,
   Box,
@@ -8,12 +9,16 @@ import {
   Stack,
   IconButton,
   Alert,
+  CircularProgress,
 } from '@mui/material';
-import { ArrowBack, PhotoCamera } from '@mui/icons-material';
+import { ArrowBack, PhotoCamera, LocationOn } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { tripService } from '../services/tripService';
 import { authService } from '../services/authService';
+import { uploadAttachment } from '../services/cloudinaryService';
+import PlaceSearchDialog from '../components/PlaceSearchDialog';
+import { PickedPlace } from '../data/models';
 
 const CreateTripPage: React.FC = () => {
   const [name, setName] = useState('');
@@ -22,9 +27,32 @@ const CreateTripPage: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [coverPhoto, setCoverPhoto] = useState<{ url: string; publicId: string; resourceType: string } | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [placeSearchOpen, setPlaceSearchOpen] = useState(false);
 
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setUploadingPhoto(true);
+    try {
+      const att = await uploadAttachment(file, user.uid);
+      setCoverPhoto({
+        url: att.downloadUrl,
+        publicId: att.publicId,
+        resourceType: att.resourceType
+      });
+    } catch (err) {
+      console.error(err);
+      setError('Failed to upload cover photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,15 +66,16 @@ const CreateTripPage: React.FC = () => {
     setError(null);
 
     try {
-      // For now we use a default cover image until we add Cloudinary upload to web
-      const defaultCover = "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=2070";
+      const finalCoverUrl = coverPhoto?.url || "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=2070";
+      const finalPublicId = coverPhoto?.publicId || "";
+      const finalResourceType = coverPhoto?.resourceType || "";
 
       const tripId = await tripService.createTrip(
         name,
         destination,
-        defaultCover,
-        "", // publicId
-        "", // resourceType
+        finalCoverUrl,
+        finalPublicId,
+        finalResourceType,
         startDate,
         endDate,
         user.uid,
@@ -60,6 +89,10 @@ const CreateTripPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePlacePicked = (place: PickedPlace) => {
+    setDestination(place.name);
   };
 
   return (
@@ -90,7 +123,48 @@ const CreateTripPage: React.FC = () => {
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
                 required
+                InputProps={{
+                  endAdornment: (
+                    <IconButton onClick={() => setPlaceSearchOpen(true)}>
+                      <LocationOn />
+                    </IconButton>
+                  )
+                }}
               />
+
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>Cover Photo</Typography>
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: 200,
+                    borderRadius: 4,
+                    border: '2px dashed',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'action.hover',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    cursor: 'pointer'
+                  }}
+                  component="label"
+                >
+                  {coverPhoto ? (
+                    <img src={coverPhoto.url} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <>
+                      {uploadingPhoto ? <CircularProgress /> : <PhotoCamera sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />}
+                      <Typography variant="body2" color="text.secondary">
+                        {uploadingPhoto ? 'Uploading...' : 'Click to upload from device'}
+                      </Typography>
+                    </>
+                  )}
+                  <input type="file" hidden accept="image/*" onChange={handlePhotoUpload} />
+                </Box>
+              </Box>
 
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
@@ -133,6 +207,13 @@ const CreateTripPage: React.FC = () => {
           </form>
         </Paper>
       </Box>
+
+      <PlaceSearchDialog
+        open={placeSearchOpen}
+        onClose={() => setPlaceSearchOpen(false)}
+        onPlacePicked={handlePlacePicked}
+        title="Search for Destination"
+      />
     </Layout>
   );
 };

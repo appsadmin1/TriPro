@@ -1,60 +1,108 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, alpha } from '@mui/material/styles';
+
+// Exact colors from TriProColors.kt
+const TriProColors = {
+  Primary: '#001736',
+  OnPrimary: '#FFFFFF',
+  PrimaryContainer: '#002B5B',
+  OnPrimaryContainer: '#7594CA',
+  Secondary: '#7F5600',
+  SecondaryContainer: '#F9AD00',
+  OnSecondaryContainer: '#664500',
+  Background: '#F8F9FF',
+  Surface: '#F9FAFB',
+  SurfaceContainerLowest: '#FFFFFF',
+  CardBorder: '#E2E8F0',
+  Success: '#10B981',
+  Error: '#BA1A1A',
+  ErrorContainer: '#FFFFDAD6',
+  OnErrorContainer: '#93000A',
+  OnSurfaceVariant: '#43474F',
+};
 
 export const theme = createTheme({
   palette: {
     primary: {
-      main: '#0061A4',
-      contrastText: '#FFFFFF',
+      main: TriProColors.Primary,
+      contrastText: TriProColors.OnPrimary,
+      container: TriProColors.PrimaryContainer,
     },
     secondary: {
-      main: '#535F70',
-      contrastText: '#FFFFFF',
+      main: TriProColors.Secondary,
+      container: TriProColors.SecondaryContainer,
     },
     error: {
-      main: '#BA1A1A',
+      main: TriProColors.Error,
+      container: TriProColors.ErrorContainer,
     },
     background: {
-      default: '#F8F9FF',
-      paper: '#FFFFFF',
+      default: TriProColors.Background,
+      paper: TriProColors.SurfaceContainerLowest,
     },
+    text: {
+      primary: '#0B1C30',
+      secondary: TriProColors.OnSurfaceVariant,
+    },
+    divider: TriProColors.CardBorder,
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Work Sans", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      fontSize: '2.5rem',
-      fontWeight: 400,
+      fontFamily: '"Plus Jakarta Sans", sans-serif',
+      fontWeight: 700,
+      fontSize: '3rem', // 48sp
     },
     h2: {
-      fontSize: '2rem',
-      fontWeight: 400,
-    },
-    h3: {
-      fontSize: '1.75rem',
-      fontWeight: 400,
+      fontFamily: '"Plus Jakarta Sans", sans-serif',
+      fontWeight: 600,
+      fontSize: '2rem', // 32sp
     },
     h4: {
-      fontSize: '1.5rem',
-      fontWeight: 400,
+      fontFamily: '"Plus Jakarta Sans", sans-serif',
+      fontWeight: 600,
+      fontSize: '1.25rem', // 20sp
     },
     h5: {
-      fontSize: '1.25rem',
-      fontWeight: 500,
+      fontFamily: '"Plus Jakarta Sans", sans-serif',
+      fontWeight: 600,
+      fontSize: '1.125rem',
     },
     h6: {
-      fontSize: '1.125rem',
-      fontWeight: 500,
+      fontFamily: '"Plus Jakarta Sans", sans-serif',
+      fontWeight: 600,
+      fontSize: '0.875rem', // 14sp (titleSmall)
+    },
+    body1: {
+      fontSize: '1.125rem', // 18sp
+      lineHeight: 1.55,
+    },
+    body2: {
+      fontSize: '1rem', // 16sp
+      lineHeight: 1.5,
+    },
+    caption: {
+      fontSize: '0.875rem', // 14sp
+    },
+    button: {
+      textTransform: 'none',
+      fontWeight: 600,
     },
   },
   shape: {
-    borderRadius: 12,
+    borderRadius: 8,
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 26,
-          textTransform: 'none',
-          padding: '10px 24px',
+          borderRadius: 24,
+          padding: '8px 20px',
+        },
+        containedPrimary: {
+          backgroundColor: TriProColors.Primary,
+          '&:hover': {
+            backgroundColor: '#002B5B',
+          },
         },
       },
     },
@@ -62,7 +110,23 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 16,
-          boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.12), 0px 1px 2px rgba(0, 0, 0, 0.24)',
+          border: `1px solid ${TriProColors.CardBorder}`,
+          boxShadow: 'none',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        rounded: {
+          borderRadius: 16,
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          fontWeight: 500,
         },
       },
     },

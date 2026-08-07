@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -15,11 +16,19 @@ import {
   InputAdornment,
   Divider,
   Typography,
+  CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import DeleteIcon from '@mui/icons-material/Delete';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { ItineraryItem, ItemType, TimeType, NoteType, DayPeriod, PickedPlace } from '../data/models';
 import { flightService } from '../services/flightService';
+import { uploadAttachment } from '../services/cloudinaryService';
+import { authService } from '../services/authService';
 import PlaceSearchDialog from './PlaceSearchDialog';
 
 interface AddEditItemModalProps {
@@ -48,6 +57,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
 
   const [placeSearchOpen, setPlaceSearchOpen] = useState(false);
   const [placeSearchTarget, setPlaceSearchTarget] = useState<'main' | 'hotel' | 'departure' | 'arrival'>('main');
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (existingItem) {
@@ -85,6 +95,33 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
   const handleSelectChange = (e: any) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const user = authService.getCurrentUser();
+    if (!file || !user) return;
+
+    setIsUploading(true);
+    try {
+      const attachment = await uploadAttachment(file, user.uid);
+      setFormData(prev => ({
+        ...prev,
+        attachments: [...(prev.attachments || []), attachment]
+      }));
+    } catch (error) {
+      console.error('Upload failed', error);
+      alert('Failed to upload file.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveAttachment = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      attachments: (prev.attachments || []).filter(a => a.id !== id)
+    }));
   };
 
   const handleSubmit = () => {
@@ -401,6 +438,46 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                 <MenuItem value={NoteType.ALERT}>Alert</MenuItem>
               </Select>
             </FormControl>
+
+            <Divider />
+
+            <Typography variant="subtitle2" color="text.secondary">
+              Attachments
+            </Typography>
+
+            <List>
+              {(formData.attachments || []).map((att) => (
+                <ListItem
+                  key={att.id}
+                  secondaryAction={
+                    <IconButton edge="end" size="small" onClick={() => handleRemoveAttachment(att.id)}>
+                      <DeleteIcon color="error" fontSize="small" />
+                    </IconButton>
+                  }
+                  sx={{ py: 0 }}
+                >
+                  <AttachFileIcon sx={{ fontSize: 16, mr: 1, color: 'primary.main' }} />
+                  <ListItemText
+                    primary={att.fileName}
+                    primaryTypographyProps={{ variant: 'body2', noWrap: true }}
+                  />
+                </ListItem>
+              ))}
+            </List>
+
+            <Button
+              component="label"
+              variant="outlined"
+              startIcon={isUploading ? <CircularProgress size={20} /> : <UploadFileIcon />}
+              disabled={isUploading}
+            >
+              {isUploading ? 'Uploading...' : 'Upload File'}
+              <input
+                type="file"
+                hidden
+                onChange={handleFileUpload}
+              />
+            </Button>
           </Stack>
         </DialogContent>
         <DialogActions>

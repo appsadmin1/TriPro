@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppBar,
   Box,
@@ -18,6 +18,7 @@ import {
   MenuItem,
   useTheme,
   useMediaQuery,
+  Badge,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -30,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
+import { activityService } from '../services/activityService';
 
 const drawerWidth = 280;
 
@@ -41,11 +43,31 @@ interface Props {
 const Layout: React.FC<Props> = ({ children, title }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [unreadAlertsCount, setUnreadAlertsCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const user = authService.getCurrentUser();
+
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = activityService.observeRecentActivity(user.uid, (activities) => {
+      const lastSeen = localStorage.getItem('alerts_last_seen');
+      const lastSeenTime = lastSeen ? parseInt(lastSeen, 10) : 0;
+
+      const unread = activities.filter(a => {
+        if (!a.createdAt) return false;
+        const time = a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime();
+        return time > lastSeenTime;
+      }).length;
+
+      setUnreadAlertsCount(unread);
+    });
+
+    return () => unsubscribe();
+  }, [user, location.pathname]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -66,7 +88,15 @@ const Layout: React.FC<Props> = ({ children, title }) => {
 
   const menuItems = [
     { text: 'My Trips', icon: <FlightTakeoff />, path: '/' },
-    { text: 'Alerts', icon: <Notifications />, path: '/alerts' },
+    {
+      text: 'Alerts',
+      icon: (
+        <Badge badgeContent={unreadAlertsCount} color="error">
+          <Notifications />
+        </Badge>
+      ),
+      path: '/alerts'
+    },
     { text: 'Past Adventures', icon: <History />, path: '/past' },
   ];
 

@@ -1,6 +1,7 @@
 package com.tripro.app.data.model
 
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.IgnoreExtraProperties
 import com.google.firebase.firestore.ServerTimestamp
 import java.util.Date
 
@@ -13,6 +14,7 @@ import java.util.Date
  *
  * All fields need defaults for Firestore's no-arg-constructor deserialization.
  */
+@IgnoreExtraProperties
 data class Trip(
     @DocumentId
     val id: String = "",

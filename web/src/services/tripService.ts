@@ -20,6 +20,8 @@ import { db } from "../firebase";
 import { Trip, TripDay, ItineraryItem, Role } from "../data/models";
 import { format, addDays, parseISO } from "date-fns";
 
+import { authService } from "./authService";
+
 const TRIPS_COLLECTION = "trips";
 
 export const tripService = {
@@ -150,7 +152,23 @@ export const tripService = {
   },
 
   deleteTrip: async (tripId: string) => {
-    await deleteDoc(doc(db, TRIPS_COLLECTION, tripId));
+    const user = authService.getCurrentUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const idToken = await user.getIdToken();
+    const response = await fetch("/.netlify/functions/delete-trip", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ tripId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to delete trip: ${response.status}`);
+    }
   },
 
   observeDays: (tripId: string, callback: (days: TripDay[]) => void) => {
@@ -185,17 +203,85 @@ export const tripService = {
     const tripRef = doc(db, TRIPS_COLLECTION, tripId);
     const dayRef = doc(tripRef, "days", date);
     const itemRef = doc(collection(dayRef, "items"));
-    await setDoc(itemRef, { ...item, id: itemRef.id, updatedBy: item.createdBy });
+
+    const { ...itemData } = item;
+    await setDoc(itemRef, { ...itemData, updatedBy: item.createdBy });
+
+    // Notify collaborators
+    try {
+      const user = authService.getCurrentUser();
+      if (user) {
+        const idToken = await user.getIdToken();
+        await fetch("/.netlify/functions/notify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            type: "itinerary_update",
+            tripId,
+            date,
+            itemTitle: item.title,
+            action: "added"
+          }),
+        });
+      }
+    } catch (e) {
+      console.error("Failed to notify itinerary change", e);
+    }
+
     return itemRef.id;
   },
 
   updateItem: async (tripId: string, date: string, itemId: string, item: Partial<ItineraryItem>, updatedBy: string) => {
     const ref = doc(db, TRIPS_COLLECTION, tripId, "days", date, "items", itemId);
-    await updateDoc(ref, { ...item, updatedBy });
+    const { id, ...itemData } = item as any;
+    await updateDoc(ref, { ...itemData, updatedBy });
+
+    // Notify collaborators
+    try {
+      const user = authService.getCurrentUser();
+      if (user) {
+        const idToken = await user.getIdToken();
+        await fetch("/.netlify/functions/notify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            type: "itinerary_update",
+            tripId,
+            date,
+            itemTitle: item.title || "An item",
+            action: "updated"
+          }),
+        });
+      }
+    } catch (e) {
+      console.error("Failed to notify itinerary change", e);
+    }
   },
 
   deleteItem: async (tripId: string, date: string, itemId: string) => {
-    await deleteDoc(doc(db, TRIPS_COLLECTION, tripId, "days", date, "items", itemId));
+    const user = authService.getCurrentUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const idToken = await user.getIdToken();
+    const response = await fetch("/.netlify/functions/delete-item", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ tripId, date, itemId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to delete item: ${response.status}`);
+    }
   },
 
   setMemberRole: async (tripId: string, uid: string, role: Role) => {
@@ -239,15 +325,50 @@ export const tripService = {
 
   renameAttachment: async (tripId: string, date: string, itemId: string, attachmentId: string, newName: string) => {
     const itemRef = doc(db, TRIPS_COLLECTION, tripId, "days", date, "items", itemId);
-    const itemSnapshot = await getDocs(collection(db, TRIPS_COLLECTION, tripId, "days", date, "items"));
-    const itemDoc = itemSnapshot.docs.find(d => d.id === itemId);
-    if (!itemDoc) return;
+    const itemDoc = await getDocs(query(collection(db, TRIPS_COLLECTION, tripId, "days", date, "items")));
+    const foundDoc = itemDoc.docs.find(d => d.id === itemId);
+    if (!foundDoc) return;
 
-    const item = itemDoc.data() as ItineraryItem;
+    const item = foundDoc.data() as ItineraryItem;
     const updatedAttachments = item.attachments.map(att =>
       att.id === attachmentId ? { ...att, fileName: newName } : att
     );
     await updateDoc(itemRef, { attachments: updatedAttachments });
+  },
+
+  removeAttachment: async (tripId: string, date: string, itemId: string, attachmentId: string) => {
+    const itemRef = doc(db, TRIPS_COLLECTION, tripId, "days", date, "items", itemId);
+    const itemDoc = await getDocs(query(collection(db, TRIPS_COLLECTION, tripId, "days", date, "items")));
+    const foundDoc = itemDoc.docs.find(d => d.id === itemId);
+    if (!foundDoc) return;
+
+    const item = foundDoc.data() as ItineraryItem;
+    const attachmentToRemove = item.attachments.find(a => a.id === attachmentId);
+    if (!attachmentToRemove) return;
+
+    const updatedAttachments = item.attachments.filter(att => att.id !== attachmentId);
+    await updateDoc(itemRef, { attachments: updatedAttachments });
+
+    // Try to cleanup from Cloudinary via netlify function
+    try {
+      const user = authService.getCurrentUser();
+      if (user) {
+        const idToken = await user.getIdToken();
+        await fetch("/.netlify/functions/delete-cloudinary-asset", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            publicId: attachmentToRemove.publicId,
+            resourceType: attachmentToRemove.resourceType
+          }),
+        });
+      }
+    } catch (e) {
+      console.error("Failed to delete Cloudinary asset", e);
+    }
   },
 
   inviteByEmail: async (

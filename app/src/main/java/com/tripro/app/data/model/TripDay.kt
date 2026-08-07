@@ -1,12 +1,14 @@
 package com.tripro.app.data.model
 
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.IgnoreExtraProperties
 
 /**
  * Firestore document: trips/{tripId}/days/{date}
  * Document id IS the date string ("2023-10-14") so a day can be looked up directly
  * without a query, and creating trip.startDate..trip.endDate day docs is a cheap batch write.
  */
+@IgnoreExtraProperties
 data class TripDay(
     @DocumentId
     val date: String = "", // yyyy-MM-dd
@@ -16,6 +18,7 @@ data class TripDay(
                                 // to exclude them from the "this day changed" push notification
 )
 
+@IgnoreExtraProperties
 data class HotelInfo(
     val name: String = "",
     val address: String = "",
@@ -30,6 +33,7 @@ data class HotelInfo(
     val attachments: List<Attachment> = emptyList()
 )
 
+@IgnoreExtraProperties
 data class FlightInfo(
     val airline: String = "",
     val flightNumber: String = "",

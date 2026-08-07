@@ -7,6 +7,13 @@ command = "npm install --prefix netlify/functions && npm install --prefix web &&
 publish = "web/dist"
 functions = "netlify/functions"
 
+[dev]
+command = "npm run dev --prefix web"
+port = 8888
+targetPort = 5173
+publish = "web/dist"
+autoLaunch = true
+
 [functions]
 node_bundler = "esbuild"
 

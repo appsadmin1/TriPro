@@ -1,6 +1,7 @@
 package com.tripro.app.data.model
 
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.IgnoreExtraProperties
 
 enum class ItemType(val icon: String) {
     FLIGHT("flight_takeoff"),
@@ -24,6 +25,7 @@ enum class DayPeriod(val label: String) {
  *  field existed keeps its old red/warning look. */
 enum class NoteType { ALERT, NOTE }
 
+@IgnoreExtraProperties
 data class ItineraryItem(
     @DocumentId
     val id: String = "",
