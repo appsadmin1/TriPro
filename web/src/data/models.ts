@@ -23,6 +23,27 @@ export enum ItemType {
   CUSTOM = "CUSTOM",
 }
 
+export enum MarkerColorKey {
+  FLIGHT = "FLIGHT",
+  HOTEL = "HOTEL",
+  RESTAURANT = "RESTAURANT",
+  ATTRACTION = "ATTRACTION",
+  ACTIVITY = "ACTIVITY",
+  TRANSPORT = "TRANSPORT",
+  SHOW = "SHOW",
+  CUSTOM = "CUSTOM",
+  DEFAULT = "DEFAULT",
+}
+
+export const MarkerColorPalette = [
+  "#3B82F6", "#EF4444", "#F59E0B", "#10B981", "#8B5CF6", "#EC4899", "#6366F1", "#14B8A6",
+  "#F97316", "#06B6D4", "#84CC16", "#D946EF", "#64748B", "#475569", "#1E293B", "#000000"
+];
+
+export interface ActivityColorPrefs {
+  colors: Record<string, string>;
+}
+
 export enum TimeType {
   EXACT = "EXACT",
   RANGE = "RANGE",
@@ -135,6 +156,12 @@ export interface UserProfile {
   email: string;
   displayName: string;
   photoUrl: string;
+}
+
+export interface NotificationPreferences {
+  tripInvites: boolean;
+  itineraryChanges: boolean;
+  dayInfoChanges: boolean;
 }
 
 export enum WeatherStatus {

@@ -10,11 +10,16 @@ import {
   IconButton,
   InputAdornment,
   Typography,
+  Box,
+  CircularProgress,
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import DeleteIcon from '@mui/icons-material/Delete';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { Trip, PickedPlace } from '../data/models';
 import { tripService } from '../services/tripService';
+import { uploadAttachment } from '../services/cloudinaryService';
+import { authService } from '../services/authService';
 import PlaceSearchDialog from './PlaceSearchDialog';
 
 interface TripEditDialogProps {
@@ -30,10 +35,13 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
     startDate: '',
     endDate: '',
     coverImageUrl: '',
+    coverImagePublicId: '',
+    coverImageResourceType: '',
   });
   const [placeSearchOpen, setPlaceSearchOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     if (trip) {
@@ -43,12 +51,36 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
         startDate: trip.startDate,
         endDate: trip.endDate,
         coverImageUrl: trip.coverImageUrl,
+        coverImagePublicId: trip.coverImagePublicId || '',
+        coverImageResourceType: trip.coverImageResourceType || '',
       });
     }
   }, [trip, open]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const user = authService.getCurrentUser();
+    if (!file || !user) return;
+
+    setUploadingPhoto(true);
+    try {
+      const att = await uploadAttachment(file, user.uid);
+      setFormData({
+        ...formData,
+        coverImageUrl: att.downloadUrl,
+        coverImagePublicId: att.publicId,
+        coverImageResourceType: att.resourceType,
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Failed to upload cover photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const handleSave = async () => {
@@ -59,8 +91,8 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
         formData.name,
         formData.destination,
         formData.coverImageUrl !== trip.coverImageUrl ? formData.coverImageUrl : null,
-        null, // publicId
-        null, // resourceType
+        formData.coverImagePublicId !== trip.coverImagePublicId ? formData.coverImagePublicId : null,
+        formData.coverImageResourceType !== trip.coverImageResourceType ? formData.coverImageResourceType : null,
         formData.startDate,
         formData.endDate
       );
@@ -142,13 +174,40 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
                 InputLabelProps={{ shrink: true }}
               />
             </Stack>
-            <TextField
-              name="coverImageUrl"
-              label="Cover Image URL"
-              fullWidth
-              value={formData.coverImageUrl}
-              onChange={handleChange}
-            />
+
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Cover Photo</Typography>
+              <Box
+                sx={{
+                  width: '100%',
+                  height: 150,
+                  borderRadius: 3,
+                  border: '2px dashed',
+                  borderColor: 'divider',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: 'action.hover',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  cursor: 'pointer'
+                }}
+                component="label"
+              >
+                {formData.coverImageUrl ? (
+                  <img src={formData.coverImageUrl} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <>
+                    {uploadingPhoto ? <CircularProgress /> : <PhotoCameraIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 1 }} />}
+                    <Typography variant="body2" color="text.secondary">
+                      {uploadingPhoto ? 'Uploading...' : 'Click to change cover photo'}
+                    </Typography>
+                  </>
+                )}
+                <input type="file" hidden accept="image/*" onChange={handlePhotoUpload} />
+              </Box>
+            </Box>
           </Stack>
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>

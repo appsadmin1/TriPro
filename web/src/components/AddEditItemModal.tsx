@@ -30,6 +30,7 @@ import { flightService } from '../services/flightService';
 import { uploadAttachment } from '../services/cloudinaryService';
 import { authService } from '../services/authService';
 import PlaceSearchDialog from './PlaceSearchDialog';
+import MapPreview from './MapPreview';
 
 interface AddEditItemModalProps {
   open: boolean;
@@ -415,6 +416,10 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                 )
               }}
             />
+
+            {formData.lat && formData.lng && (
+              <MapPreview pins={[{ title: formData.title || 'Location', lat: formData.lat, lng: formData.lng }]} height={150} />
+            )}
 
             <TextField
               name="note"

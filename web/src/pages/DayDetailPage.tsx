@@ -20,12 +20,17 @@ import {
   AcUnit,
   Warning,
   LocationOn as LocationOnIcon,
+  Edit,
+  Close,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import ItineraryItemRow from '../components/ItineraryItemRow';
 import AddEditItemModal from '../components/AddEditItemModal';
+import MapPreview from '../components/MapPreview';
+import AttachmentViewerDialog from '../components/AttachmentViewerDialog';
 import { tripService } from '../services/tripService';
+import { userService } from '../services/userService';
 import { authService } from '../services/authService';
 import { weatherService } from '../services/weatherService';
 import { ItineraryItem, TripDay, DailyWeather, WeatherStatus } from '../data/models';
@@ -41,6 +46,10 @@ const DayDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ItineraryItem | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
+  const [activityColors, setActivityColors] = useState<Record<string, string>>({});
+  const [viewingAttachment, setViewingAttachment] = useState<{ itemId: string, att: Attachment } | null>(null);
 
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
@@ -59,11 +68,24 @@ const DayDetailPage: React.FC = () => {
       }
     });
 
+    const unsubTrip = tripService.observeTrip(tripId, (trip) => {
+      if (trip && user) {
+        const role = trip.members[user.uid];
+        setCanEdit(role === 'owner' || role === 'editor');
+      }
+    });
+
+    const unsubColors = user ? userService.observeActivityColors(user.uid, (colors) => {
+      setActivityColors(colors);
+    }) : () => {};
+
     return () => {
       unsubItems();
       unsubDay();
+      unsubTrip();
+      unsubColors();
     };
-  }, [tripId, date]);
+  }, [tripId, date, user]);
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -211,6 +233,12 @@ const DayDetailPage: React.FC = () => {
 
   const formattedDate = safeFormat(date, 'EEEE, MMM d, yyyy');
 
+  const pins = items
+    .filter(i => i.lat != null && i.lng != null && !isNaN(Number(i.lat)) && !isNaN(Number(i.lng)))
+    .map(i => ({ title: i.title, lat: Number(i.lat), lng: Number(i.lng) }));
+
+  const editingAllowed = canEdit && isEditMode;
+
   return (
     <Layout title={formattedDate}>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
@@ -219,15 +247,22 @@ const DayDetailPage: React.FC = () => {
         </IconButton>
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-            ITINERARY
+            {day ? `DAY ${day.dayIndex}` : 'ITINERARY'}
           </Typography>
           <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
             {formattedDate}
           </Typography>
         </Box>
+        {canEdit && (
+          <IconButton onClick={() => setIsEditMode(!isEditMode)} color={isEditMode ? "error" : "primary"}>
+            {isEditMode ? <Close /> : <Edit />}
+          </IconButton>
+        )}
       </Stack>
 
       {renderWeather()}
+
+      {pins.length > 0 && <MapPreview pins={pins} />}
 
       {/* Day Note */}
       <Paper
@@ -238,10 +273,11 @@ const DayDetailPage: React.FC = () => {
           borderRadius: 3,
           display: 'flex',
           alignItems: 'flex-start',
-          cursor: 'pointer',
-          '&:hover': { bgcolor: 'action.hover' }
+          cursor: editingAllowed ? 'pointer' : 'default',
+          '&:hover': editingAllowed ? { bgcolor: 'action.hover' } : {}
         }}
         onClick={() => {
+          if (!editingAllowed) return;
           const newNote = prompt('Edit day note:', day?.dayNote || '');
           if (newNote !== null && tripId && date && user) {
             tripService.updateDayNote(tripId, date, newNote, user.uid);
@@ -251,9 +287,10 @@ const DayDetailPage: React.FC = () => {
         <StickyNote2 sx={{ mr: 2, color: 'text.secondary' }} />
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="body2" color={day?.dayNote ? "text.primary" : "text.secondary"}>
-            {day?.dayNote || 'Add a note for this day...'}
+            {day?.dayNote || (editingAllowed ? 'Add a note for this day...' : '')}
           </Typography>
         </Box>
+        {editingAllowed && <Edit fontSize="small" color="action" />}
       </Paper>
 
       <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>Schedule</Typography>
@@ -264,7 +301,8 @@ const DayDetailPage: React.FC = () => {
             <ItineraryItemRow
               key={item.id}
               item={item}
-              canEdit={true}
+              canEdit={editingAllowed}
+              activityColors={activityColors}
               onEdit={() => {
                 setEditingItem(item);
                 setModalOpen(true);
@@ -274,6 +312,7 @@ const DayDetailPage: React.FC = () => {
                 setEditingItem(item);
                 setModalOpen(true);
               }}
+              onAttachmentClick={(att) => setViewingAttachment({ itemId: item.id, att })}
             />
           ))}
         </Stack>
@@ -283,23 +322,41 @@ const DayDetailPage: React.FC = () => {
         </Box>
       )}
 
-      <Fab
-        color="secondary"
-        aria-label="add"
-        sx={{ position: 'fixed', bottom: 32, right: 32 }}
-        onClick={() => {
-          setEditingItem(null);
-          setModalOpen(true);
-        }}
-      >
-        <Add />
-      </Fab>
+      {editingAllowed && (
+        <Fab
+          color="secondary"
+          aria-label="add"
+          sx={{ position: 'fixed', bottom: 32, right: 32 }}
+          onClick={() => {
+            setEditingItem(null);
+            setModalOpen(true);
+          }}
+        >
+          <Add />
+        </Fab>
+      )}
 
       <AddEditItemModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSave={handleSaveItem}
         existingItem={editingItem}
+      />
+
+      <AttachmentViewerDialog
+        open={!!viewingAttachment}
+        attachment={viewingAttachment?.att || null}
+        onClose={() => setViewingAttachment(null)}
+        onRemove={editingAllowed ? () => {
+          if (viewingAttachment && tripId && date) {
+            tripService.removeAttachment(tripId, date, viewingAttachment.itemId, viewingAttachment.att.id);
+          }
+        } : undefined}
+        onRename={editingAllowed ? (newName) => {
+          if (viewingAttachment && tripId && date) {
+            tripService.renameAttachment(tripId, date, viewingAttachment.itemId, viewingAttachment.att.id, newName);
+          }
+        } : undefined}
       />
     </Layout>
   );

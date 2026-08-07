@@ -36,13 +36,12 @@ const PlaceSearchDialog: React.FC<PlaceSearchDialogProps> = ({
   title = 'Search for a place',
 }) => {
   const [query, setQuery] = useState('');
-  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [predictions, setPredictions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
-  const placesService = useRef<google.maps.places.PlacesService | null>(null);
-  const sessionToken = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+  const placesLibrary = useRef<any>(null);
+  const sessionToken = useRef<any>(null);
 
   useEffect(() => {
     if (!open) {
@@ -63,12 +62,9 @@ const PlaceSearchDialog: React.FC<PlaceSearchDialogProps> = ({
       libraries: ['places'],
     });
 
-    loader.load().then(() => {
-      autocompleteService.current = new google.maps.places.AutocompleteService();
-      sessionToken.current = new google.maps.places.AutocompleteSessionToken();
-      // PlacesService requires a DOM element, but we only use getDetails
-      const dummyDiv = document.createElement('div');
-      placesService.current = new google.maps.places.PlacesService(dummyDiv);
+    loader.importLibrary('places').then((library) => {
+      placesLibrary.current = library;
+      sessionToken.current = new library.AutocompleteSessionToken();
     }).catch(err => {
       console.error('Failed to load Google Maps API', err);
       setError('Failed to load Google Maps API');
@@ -76,58 +72,63 @@ const PlaceSearchDialog: React.FC<PlaceSearchDialogProps> = ({
   }, [open]);
 
   useEffect(() => {
-    if (!query || query.length < 2 || !autocompleteService.current) {
+    if (!query || query.length < 2 || !placesLibrary.current) {
       setPredictions([]);
       return;
     }
 
-    const timeoutId = setTimeout(() => {
-      setLoading(true);
-      autocompleteService.current?.getPlacePredictions(
-        {
+    const fetchSuggestions = async () => {
+      try {
+        setLoading(true);
+        const { AutocompleteSuggestion } = placesLibrary.current;
+        const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
           input: query,
-          sessionToken: sessionToken.current || undefined,
-        },
-        (results, status) => {
-          setLoading(false);
-          if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-            setPredictions(results);
-          } else {
-            setPredictions([]);
-          }
-        }
-      );
-    }, 300);
+          sessionToken: sessionToken.current,
+        });
+        setPredictions(suggestions || []);
+      } catch (err) {
+        console.error('Autocomplete error:', err);
+        setPredictions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const timeoutId = setTimeout(fetchSuggestions, 300);
 
     return () => clearTimeout(timeoutId);
   }, [query]);
 
-  const handleSelectPlace = (placeId: string) => {
-    if (!placesService.current) return;
+  const handleSelectPlace = async (suggestion: any) => {
+    if (!placesLibrary.current) return;
 
-    setLoading(true);
-    placesService.current.getDetails(
-      {
-        placeId,
-        fields: ['name', 'formatted_address', 'geometry', 'place_id'],
-        sessionToken: sessionToken.current || undefined,
-      },
-      (place, status) => {
-        setLoading(false);
-        if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry?.location) {
-          onPlacePicked({
-            name: place.name || '',
-            address: place.formatted_address || '',
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng(),
-            placeId: place.place_id,
-          });
-          onClose();
-        } else {
-          setError('Failed to get place details');
-        }
+    try {
+      setLoading(true);
+      const { Place } = placesLibrary.current;
+      const place = suggestion.placePrediction.toPlace();
+
+      await place.fetchFields({
+        fields: ['displayName', 'formattedAddress', 'location', 'id'],
+      });
+
+      if (place.location) {
+        onPlacePicked({
+          name: place.displayName || '',
+          address: place.formattedAddress || '',
+          lat: place.location.lat(),
+          lng: place.location.lng(),
+          placeId: place.id,
+        });
+        onClose();
+      } else {
+        setError('Failed to get place details');
       }
-    );
+    } catch (err) {
+      console.error('Place details error:', err);
+      setError('Failed to get place details');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -159,18 +160,17 @@ const PlaceSearchDialog: React.FC<PlaceSearchDialogProps> = ({
         )}
 
         <List>
-          {predictions.map((prediction) => (
+          {predictions.map((suggestion) => (
             <ListItem
               button
-              key={prediction.place_id}
-              onClick={() => handleSelectPlace(prediction.place_id)}
+              key={suggestion.placePrediction.placeId}
+              onClick={() => handleSelectPlace(suggestion)}
             >
               <ListItemIcon>
                 <LocationOnIcon color="primary" />
               </ListItemIcon>
               <ListItemText
-                primary={prediction.structured_formatting.main_text}
-                secondary={prediction.structured_formatting.secondary_text}
+                primary={suggestion.placePrediction.text.text}
               />
             </ListItem>
           ))}

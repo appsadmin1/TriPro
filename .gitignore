@@ -21,5 +21,8 @@ netlify/functions/.env*
 tripro-*.json
 
 *node_modules
+*package.json
+*package-lock.json
 
 *.env
+.artifacts/

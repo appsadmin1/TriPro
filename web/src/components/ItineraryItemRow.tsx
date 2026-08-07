@@ -16,8 +16,9 @@ import {
   FlightTakeoff,
   Hotel,
   Restaurant,
-  Star,
-  DirectionsBus,
+  Attractions,
+  Hiking,
+  DirectionsCar,
   TheaterComedy,
   Event,
   Warning,
@@ -27,7 +28,7 @@ import {
   UploadFile,
   EditNote,
 } from '@mui/icons-material';
-import { ItineraryItem, ItemType, NoteType, TimeType, DayPeriod } from '../data/models';
+import { ItineraryItem, ItemType, NoteType, TimeType, DayPeriod, MarkerColorKey } from '../data/models';
 import { getAccentColor } from '../utils/colorUtils';
 import { alpha } from '@mui/material/styles';
 
@@ -37,6 +38,8 @@ interface ItineraryItemRowProps {
   onEdit: () => void;
   onDelete: () => void;
   onAddAttachment: () => void;
+  onAttachmentClick?: (attachment: any) => void;
+  activityColors?: Record<string, string>;
 }
 
 const getItemIcon = (type: ItemType) => {
@@ -44,9 +47,9 @@ const getItemIcon = (type: ItemType) => {
     case ItemType.FLIGHT: return <FlightTakeoff />;
     case ItemType.HOTEL: return <Hotel />;
     case ItemType.RESTAURANT: return <Restaurant />;
-    case ItemType.ATTRACTION: return <Star />;
-    case ItemType.ACTIVITY: return <Star />;
-    case ItemType.TRANSPORT: return <DirectionsBus />;
+    case ItemType.ATTRACTION: return <Attractions />;
+    case ItemType.ACTIVITY: return <Hiking />;
+    case ItemType.TRANSPORT: return <DirectionsCar />;
     case ItemType.SHOW: return <TheaterComedy />;
     default: return <Event />;
   }
@@ -58,8 +61,10 @@ const ItineraryItemRow: React.FC<ItineraryItemRowProps> = ({
   onEdit,
   onDelete,
   onAddAttachment,
+  onAttachmentClick,
+  activityColors,
 }) => {
-  const accentColor = getAccentColor(item.type);
+  const accentColor = activityColors?.[item.type] || getAccentColor(item.type);
 
   const renderTime = () => {
     switch (item.timeType) {
@@ -121,10 +126,11 @@ const ItineraryItemRow: React.FC<ItineraryItemRowProps> = ({
             {/* Icon Circle */}
             <Avatar
               sx={{
-                width: 40,
-                height: 40,
+                width: 36,
+                height: 36,
                 bgcolor: alpha(accentColor, 0.12),
                 color: accentColor,
+                '& .MuiSvgIcon-root': { fontSize: 20 }
               }}
             >
               {getItemIcon(item.type)}
@@ -133,7 +139,7 @@ const ItineraryItemRow: React.FC<ItineraryItemRowProps> = ({
             <Box sx={{ flexGrow: 1 }}>
               <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                 <Box>
-                  <Typography variant="h4" sx={{ fontSize: '1.25rem' }}>
+                  <Typography variant="h4" sx={{ fontSize: '1.25rem', color: 'primary.main', fontWeight: 'bold' }}>
                     {item.title}
                   </Typography>
                   {item.type === ItemType.CUSTOM && item.customLabel && (
@@ -202,7 +208,7 @@ const ItineraryItemRow: React.FC<ItineraryItemRowProps> = ({
                   {item.attachments.map((att) => (
                     <Box
                       key={att.id}
-                      onClick={() => window.open(att.downloadUrl, '_blank')}
+                      onClick={() => onAttachmentClick ? onAttachmentClick(att) : window.open(att.downloadUrl, '_blank')}
                       sx={{
                         display: 'flex',
                         alignItems: 'center',

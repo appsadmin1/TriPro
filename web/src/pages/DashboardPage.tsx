@@ -27,15 +27,17 @@ const DashboardPage: React.FC = () => {
     if (!user) return;
 
     console.log("DashboardPage: Observing trips for user:", user.uid);
+    let stillLoading = true;
     const unsubscribe = tripService.observeUserTrips(user.uid, (data) => {
       console.log("DashboardPage: Received trips:", data.length);
       setTrips(data);
+      stillLoading = false;
       setLoading(false);
     });
 
     // Safety timeout to stop loading if nothing happens
     const timer = setTimeout(() => {
-      if (loading) {
+      if (stillLoading) {
         console.warn("DashboardPage: Firestore listener timed out after 10s");
         setLoading(false);
       }
