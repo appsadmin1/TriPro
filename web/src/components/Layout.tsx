@@ -26,6 +26,7 @@ import {
   AccountCircle,
   Settings,
   Logout,
+  Notifications,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -65,6 +66,7 @@ const Layout: React.FC<Props> = ({ children, title }) => {
 
   const menuItems = [
     { text: 'My Trips', icon: <FlightTakeoff />, path: '/' },
+    { text: 'Alerts', icon: <Notifications />, path: '/alerts' },
     { text: 'Past Adventures', icon: <History />, path: '/past' },
   ];
 

@@ -1,3 +1,11 @@
+export interface PickedPlace {
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  placeId?: string;
+}
+
 export enum Role {
   OWNER = "owner",
   EDITOR = "editor",
@@ -120,4 +128,52 @@ export interface ItineraryItem {
   tripId: string;
   createdBy: string;
   updatedBy: string;
+}
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoUrl: string;
+}
+
+export enum WeatherStatus {
+  AVAILABLE = "AVAILABLE",
+  NOT_YET_AVAILABLE = "NOT_YET_AVAILABLE",
+  NO_LOCATION = "NO_LOCATION",
+  ERROR = "ERROR",
+}
+
+export interface DailyWeather {
+  date: string;
+  status: WeatherStatus;
+  weatherCode?: number;
+  tempMaxC?: number;
+  tempMinC?: number;
+  precipitationProbabilityPct?: number;
+}
+
+export enum ActivityType {
+  ITEM_ADDED = "ITEM_ADDED",
+  ITEM_UPDATED = "ITEM_UPDATED",
+  ITEM_REMOVED = "ITEM_REMOVED",
+  HOTEL_UPDATED = "HOTEL_UPDATED",
+  FLIGHT_UPDATED = "FLIGHT_UPDATED",
+  DAY_NOTE_UPDATED = "DAY_NOTE_UPDATED",
+  MEMBER_INVITED = "MEMBER_INVITED",
+  MEMBER_ROLE_CHANGED = "MEMBER_ROLE_CHANGED",
+  MEMBER_REMOVED = "MEMBER_REMOVED",
+}
+
+export interface ActivityEntry {
+  id: string;
+  tripId: string;
+  tripName: string;
+  date?: string;
+  type: ActivityType;
+  message: string;
+  actorUid: string;
+  actorName: string;
+  memberIds: string[];
+  createdAt?: any;
 }

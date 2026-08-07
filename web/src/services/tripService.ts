@@ -249,6 +249,38 @@ export const tripService = {
     );
     await updateDoc(itemRef, { attachments: updatedAttachments });
   },
+
+  inviteByEmail: async (
+    tripId: string,
+    email: string,
+    role: Role,
+    invitedBy: string,
+    existingUid?: string | null
+  ) => {
+    if (existingUid) {
+      await tripService.setMemberRole(tripId, existingUid, role);
+    } else {
+      const normalizedEmail = email.trim().toLowerCase();
+      const inviteRef = doc(db, TRIPS_COLLECTION, tripId, "pendingInvites", normalizedEmail);
+      await setDoc(inviteRef, {
+        email: normalizedEmail,
+        role,
+        invitedBy,
+        invitedAt: serverTimestamp(),
+      });
+    }
+  },
+
+  observePendingInvites: (tripId: string, callback: (invites: { email: string, role: string }[]) => void) => {
+    const q = collection(db, TRIPS_COLLECTION, tripId, "pendingInvites");
+    return onSnapshot(q, (snapshot) => {
+      const invites = snapshot.docs.map((doc) => ({
+        email: doc.data().email,
+        role: doc.data().role || Role.VIEWER,
+      }));
+      callback(invites);
+    });
+  },
 };
 
 function calculateSortMinutes(item: ItineraryItem): number {

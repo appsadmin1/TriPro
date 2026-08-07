@@ -15,6 +15,8 @@ import TripDocsPage from './pages/TripDocsPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import PastAdventuresPage from './pages/PastAdventuresPage';
+import CollaboratorsPage from './pages/CollaboratorsPage';
+import AlertsPage from './pages/AlertsPage';
 
 interface ProtectedRouteProps {
   user: User | null;
@@ -99,6 +101,18 @@ function App() {
           <Route path="/past" element={
             <ProtectedRoute user={user}>
               <PastAdventuresPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/trip/:tripId/members" element={
+            <ProtectedRoute user={user}>
+              <CollaboratorsPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/alerts" element={
+            <ProtectedRoute user={user}>
+              <AlertsPage />
             </ProtectedRoute>
           } />
 
