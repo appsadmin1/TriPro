@@ -1,5 +1,17 @@
 import { createTheme, alpha } from '@mui/material/styles';
 
+// Module augmentation to add container and onContainer to palette colors
+declare module '@mui/material/styles' {
+  interface PaletteColor {
+    container?: string;
+    onContainer?: string;
+  }
+  interface SimplePaletteColorOptions {
+    container?: string;
+    onContainer?: string;
+  }
+}
+
 // Exact colors from TriProColors.kt
 const TriProColors = {
   Primary: '#001736',
@@ -26,14 +38,22 @@ export const theme = createTheme({
       main: TriProColors.Primary,
       contrastText: TriProColors.OnPrimary,
       container: TriProColors.PrimaryContainer,
+      onContainer: TriProColors.OnPrimaryContainer,
     },
     secondary: {
       main: TriProColors.Secondary,
       container: TriProColors.SecondaryContainer,
+      onContainer: TriProColors.OnSecondaryContainer,
+    },
+    success: {
+      main: TriProColors.Success,
+      container: alpha(TriProColors.Success, 0.15),
+      onContainer: TriProColors.Success,
     },
     error: {
       main: TriProColors.Error,
       container: TriProColors.ErrorContainer,
+      onContainer: TriProColors.OnErrorContainer,
     },
     background: {
       default: TriProColors.Background,

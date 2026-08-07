@@ -33,7 +33,8 @@ import { tripService } from '../services/tripService';
 import { userService } from '../services/userService';
 import { authService } from '../services/authService';
 import { weatherService } from '../services/weatherService';
-import { ItineraryItem, TripDay, DailyWeather, WeatherStatus } from '../data/models';
+import { ITEM_TYPE_COLORS } from '../utils/colorUtils';
+import { ItineraryItem, TripDay, DailyWeather, WeatherStatus, Attachment } from '../data/models';
 import { format, parseISO, isValid } from 'date-fns';
 import { onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -173,7 +174,7 @@ const DayDetailPage: React.FC = () => {
     switch (weather.status) {
       case WeatherStatus.AVAILABLE:
         return (
-          <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3, display: 'flex', alignItems: 'center', bgcolor: 'primary.container', color: 'primary.main' }}>
+          <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3, display: 'flex', alignItems: 'center', bgcolor: 'primary.container', color: 'primary.onContainer' }}>
             {getWeatherIcon(weather.weatherCode)}
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
@@ -235,7 +236,12 @@ const DayDetailPage: React.FC = () => {
 
   const pins = items
     .filter(i => i.lat != null && i.lng != null && !isNaN(Number(i.lat)) && !isNaN(Number(i.lng)))
-    .map(i => ({ title: i.title, lat: Number(i.lat), lng: Number(i.lng) }));
+    .map(i => ({
+      title: i.title,
+      lat: Number(i.lat),
+      lng: Number(i.lng),
+      color: activityColors[i.type] || ITEM_TYPE_COLORS[i.type]
+    }));
 
   const editingAllowed = canEdit && isEditMode;
 

@@ -75,10 +75,23 @@ const MapPreview: React.FC<MapPreviewProps> = ({ pins, height = 250 }) => {
             return;
           }
 
+          const markerColor = pin.color || '#EF4444'; // Default to red
+          const svgMarker = {
+            path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+            fillColor: markerColor,
+            fillOpacity: 1,
+            strokeWeight: 1,
+            strokeColor: '#FFFFFF',
+            rotation: 0,
+            scale: 1.5,
+            anchor: new (window as any).google.maps.Point(12, 22),
+          };
+
           const marker = new Marker({
             position: { lat: pin.lat, lng: pin.lng },
             map: googleMap.current,
             title: pin.title,
+            icon: svgMarker,
           });
           markersRef.current.push(marker);
           bounds.extend(marker.getPosition());

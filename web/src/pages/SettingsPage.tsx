@@ -22,7 +22,8 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { authService } from '../services/authService';
 import { userService } from '../services/userService';
-import { MarkerColorKey, MarkerColorPalette, NotificationPreferences } from '../data/models';
+import { ITEM_TYPE_COLORS } from '../utils/colorUtils';
+import { MarkerColorKey, MarkerColorPalette, NotificationPreferences, ItemType } from '../data/models';
 
 const SettingsPage: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationPreferences>({
@@ -71,7 +72,7 @@ const SettingsPage: React.FC = () => {
   };
 
   const getMarkerColor = (key: MarkerColorKey) => {
-    return activityColors[key] || MarkerColorPalette[0];
+    return activityColors[key] || ITEM_TYPE_COLORS[key as unknown as ItemType] || MarkerColorPalette[0];
   };
 
   return (

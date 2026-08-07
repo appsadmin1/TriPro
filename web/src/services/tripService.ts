@@ -155,7 +155,7 @@ export const tripService = {
     const user = authService.getCurrentUser();
     if (!user) throw new Error("Not authenticated");
 
-    const idToken = await user.getIdToken();
+    const idToken = await user.getIdToken(true);
     const response = await fetch("/.netlify/functions/delete-trip", {
       method: "POST",
       headers: {
@@ -211,7 +211,7 @@ export const tripService = {
     try {
       const user = authService.getCurrentUser();
       if (user) {
-        const idToken = await user.getIdToken();
+        const idToken = await user.getIdToken(true);
         await fetch("/.netlify/functions/notify", {
           method: "POST",
           headers: {
@@ -243,7 +243,7 @@ export const tripService = {
     try {
       const user = authService.getCurrentUser();
       if (user) {
-        const idToken = await user.getIdToken();
+        const idToken = await user.getIdToken(true);
         await fetch("/.netlify/functions/notify", {
           method: "POST",
           headers: {
@@ -268,7 +268,7 @@ export const tripService = {
     const user = authService.getCurrentUser();
     if (!user) throw new Error("Not authenticated");
 
-    const idToken = await user.getIdToken();
+    const idToken = await user.getIdToken(true);
     const response = await fetch("/.netlify/functions/delete-item", {
       method: "POST",
       headers: {
@@ -353,7 +353,7 @@ export const tripService = {
     try {
       const user = authService.getCurrentUser();
       if (user) {
-        const idToken = await user.getIdToken();
+        const idToken = await user.getIdToken(true);
         await fetch("/.netlify/functions/delete-cloudinary-asset", {
           method: "POST",
           headers: {
