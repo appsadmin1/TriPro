@@ -214,7 +214,16 @@ const TripDetailPage: React.FC = () => {
             {trip.memberIds.map(uid => {
               const profile = profiles[uid];
               return (
-                <Stack key={uid} alignItems="center" spacing={1} sx={{ minWidth: 64 }}>
+                <Stack
+                  key={uid}
+                  alignItems="center"
+                  spacing={1}
+                  sx={{ minWidth: 64, cursor: 'pointer' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/shared-trips-view/${uid}`);
+                  }}
+                >
                   <Avatar
                     src={profile?.photoUrl}
                     sx={{

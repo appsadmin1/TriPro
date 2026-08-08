@@ -49,13 +49,14 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
   const { t } = useTranslation();
   const [formData, setFormData] = useState<Partial<ItineraryItem>>({
     title: '',
-    type: ItemType.ACTIVITY,
-    timeType: TimeType.EXACT,
+    type: ItemType.HOTEL,
+    timeType: TimeType.PERIOD,
     locationName: '',
     address: '',
     note: '',
-    noteType: NoteType.NOTE,
+    noteType: NoteType.ALERT,
     attachments: [],
+    customLabel: '',
   });
 
   const [placeSearchOpen, setPlaceSearchOpen] = useState(false);
@@ -68,13 +69,14 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
     } else {
       setFormData({
         title: '',
-        type: ItemType.ACTIVITY,
-        timeType: TimeType.EXACT,
+        type: ItemType.HOTEL,
+        timeType: TimeType.PERIOD,
         locationName: '',
         address: '',
         note: '',
-        noteType: NoteType.NOTE,
+        noteType: NoteType.ALERT,
         attachments: [],
+        customLabel: '',
       });
     }
   }, [existingItem, open]);
@@ -171,18 +173,17 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
     if (placeSearchTarget === 'main') {
       setFormData({
         ...formData,
-        locationName: place.name,
-        address: place.address,
+        title: formData.title || place.name,
+        locationName: formData.locationName || place.name,
+        address: formData.address || place.address,
         lat: place.lat,
         lng: place.lng,
       });
     } else if (placeSearchTarget === 'hotel') {
       setFormData({
         ...formData,
-        locationName: place.name,
-        address: place.address,
         hotelInfo: {
-          ...(formData.hotelInfo || { checkIn: '', checkOut: '', arrivalTime: '', notes: '', noteType: NoteType.NOTE, attachments: [] }),
+          ...(formData.hotelInfo || { checkIn: '', checkOut: '', attachments: [] }),
           name: place.name,
           address: place.address,
           lat: place.lat,
@@ -194,8 +195,8 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
       setFormData({
         ...formData,
         flightInfo: {
-          ...(formData.flightInfo || { airline: '', flightNumber: '', departureAirportCode: '', arrivalAirportCode: '', departureTime: '', arrivalTime: '', notes: '', noteType: NoteType.NOTE, attachments: [] }),
-          departureAirportCode: place.name, // Or try to extract IATA if possible, but place.name is a start
+          ...(formData.flightInfo || { airline: '', flightNumber: '', departureAirportCode: '', arrivalAirportCode: '', departureTime: '', arrivalTime: '', attachments: [] }),
+          departureAirportCode: place.name,
           departureAirportLat: place.lat,
           departureAirportLng: place.lng,
         }
@@ -204,7 +205,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
       setFormData({
         ...formData,
         flightInfo: {
-          ...(formData.flightInfo || { airline: '', flightNumber: '', departureAirportCode: '', arrivalAirportCode: '', departureTime: '', arrivalTime: '', notes: '', noteType: NoteType.NOTE, attachments: [] }),
+          ...(formData.flightInfo || { airline: '', flightNumber: '', departureAirportCode: '', arrivalAirportCode: '', departureTime: '', arrivalTime: '', attachments: [] }),
           arrivalAirportCode: place.name,
           arrivalAirportLat: place.lat,
           arrivalAirportLng: place.lng,
@@ -241,6 +242,16 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                 ))}
               </Select>
             </FormControl>
+
+            {formData.type === ItemType.CUSTOM && (
+              <TextField
+                name="customLabel"
+                label={t('custom_label', { defaultValue: 'What is this? (e.g. Grocery run)' })}
+                fullWidth
+                value={formData.customLabel || ''}
+                onChange={handleChange}
+              />
+            )}
 
             {formData.type === ItemType.FLIGHT && (
               <Stack spacing={2} sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>

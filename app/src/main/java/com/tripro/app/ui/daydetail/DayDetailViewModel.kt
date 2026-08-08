@@ -6,17 +6,22 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tripro.app.data.model.ActivityColorPrefs
+import com.tripro.app.data.model.ActivityType
 import com.tripro.app.data.model.Attachment
 import com.tripro.app.data.model.DailyWeather
 import com.tripro.app.data.model.ItineraryItem
 import com.tripro.app.data.model.ItemType
 import com.tripro.app.data.model.TripDay
 import com.tripro.app.data.model.canEdit
+import com.tripro.app.data.repository.ActivityRepository
 import com.tripro.app.data.repository.CloudinaryRepository
 import com.tripro.app.data.repository.PushNotificationRepository
 import com.tripro.app.data.repository.TripRepository
 import com.tripro.app.data.repository.UserRepository
 import com.tripro.app.data.repository.WeatherRepository
+import com.tripro.app.util.PeriodGroup
+import com.tripro.app.util.groupByHierarchy
+import com.tripro.app.util.ItineraryUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,6 +39,7 @@ data class DayDetailUiState(
     val weatherLoading: Boolean = true,
     val canEdit: Boolean = false,
     val activityColors: ActivityColorPrefs = ActivityColorPrefs(),
+    val groupedItems: List<PeriodGroup> = emptyList(),
     val uploadingAttachmentForItemId: String? = null,
     val error: String? = null
 )
@@ -43,14 +49,18 @@ class DayDetailViewModel(
     private val weatherRepository: WeatherRepository,
     private val cloudinaryRepository: CloudinaryRepository,
     private val pushNotificationRepository: PushNotificationRepository,
+    private val activityRepository: ActivityRepository,
     private val userRepository: UserRepository,
     private val tripId: String,
     private val date: String,
-    private val currentUid: String
+    private val currentUid: String,
+    private val currentUserName: String
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DayDetailUiState())
     val uiState: StateFlow<DayDetailUiState> = _uiState.asStateFlow()
+    private var currentTripName: String = ""
+    private var currentMemberIds: List<String> = emptyList()
 
     init {
         viewModelScope.launch {
@@ -60,7 +70,11 @@ class DayDetailViewModel(
                         Log.e("DayDetailViewModel", "Error observing trip: ${e.message}", e)
                     }
                 }
-                .collect { trip -> _uiState.value = _uiState.value.copy(canEdit = trip?.roleOf(currentUid)?.canEdit() ?: false) }
+                .collect { trip -> 
+                    currentTripName = trip?.name.orEmpty()
+                    currentMemberIds = trip?.memberIds.orEmpty()
+                    _uiState.value = _uiState.value.copy(canEdit = trip?.roleOf(currentUid)?.canEdit() ?: false) 
+                }
         }
 
         viewModelScope.launch {
@@ -73,7 +87,14 @@ class DayDetailViewModel(
                     }
                     _uiState.value = _uiState.value.copy(isLoading = false)
                 }
-                .collect { (day, items) -> _uiState.value = _uiState.value.copy(isLoading = false, day = day, items = items) }
+                .collect { (day, items) -> 
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false, 
+                        day = day, 
+                        items = items,
+                        groupedItems = items.groupByHierarchy()
+                    ) 
+                }
         }
 
         viewModelScope.launch {
@@ -99,23 +120,58 @@ class DayDetailViewModel(
     fun forecastAvailableFromLabel(): String = weatherRepository.forecastAvailableFrom(date)
 
     fun addItem(item: ItineraryItem) = launchCatching {
-        tripRepository.addItem(tripId, date, item.copy(createdBy = currentUid))
-        pushNotificationRepository.notifyItineraryChange(tripId, date, item.title, action = "added")
+        val nextOrder = (_uiState.value.items.maxOfOrNull { it.order } ?: -1) + 1
+        tripRepository.addItem(tripId, date, item.copy(createdBy = currentUid, order = nextOrder))
+        pushNotificationRepository.notifyItineraryChange(tripId, date, item.title, action = "added", actorName = currentUserName)
+        logActivity(ActivityType.ITEM_ADDED, "${item.title} was added to the itinerary")
     }
 
     fun updateItem(item: ItineraryItem) = launchCatching {
         tripRepository.updateItem(tripId, date, item, updatedBy = currentUid)
-        pushNotificationRepository.notifyItineraryChange(tripId, date, item.title, action = "updated")
+        pushNotificationRepository.notifyItineraryChange(tripId, date, item.title, action = "updated", actorName = currentUserName)
+        logActivity(ActivityType.ITEM_UPDATED, "${item.title} was updated")
     }
 
     fun deleteItem(itemId: String) = launchCatching {
+        val title = _uiState.value.items.find { it.id == itemId }?.title ?: "An item"
         // Backend handles Firestore deletion, Cloudinary cleanup, and notification in one go
-        pushNotificationRepository.deleteItem(tripId, date, itemId).getOrThrow()
+        pushNotificationRepository.deleteItem(tripId, date, itemId, currentUserName).getOrThrow()
+        logActivity(ActivityType.ITEM_REMOVED, "$title was removed from the itinerary")
     }
 
     fun updateDayNote(note: String) = launchCatching {
         tripRepository.updateDayNote(tripId, date, note, updatedBy = currentUid)
-        pushNotificationRepository.notifyDayChange(tripId, date, what = "A note")
+        pushNotificationRepository.notifyDayChange(tripId, date, what = "A note", actorName = currentUserName)
+        logActivity(ActivityType.DAY_NOTE_UPDATED, "A note was updated for $date")
+    }
+
+    fun moveItem(itemId: String, direction: Int) = launchCatching {
+        val currentItems = _uiState.value.items
+        val currentIndex = currentItems.indexOfFirst { it.id == itemId }
+        if (currentIndex == -1) return@launchCatching
+
+        val targetIndex = currentIndex + direction
+        if (targetIndex in currentItems.indices) {
+            val item1 = currentItems[currentIndex]
+            val item2 = currentItems[targetIndex]
+
+            // Only allow reordering within the same time period
+            if (ItineraryUtils.getEffectivePeriod(item1) == ItineraryUtils.getEffectivePeriod(item2)) {
+                // Use indices as new orders to ensure they are distinct and correctly swapped
+                // We must use a value that will definitely change the sort order.
+                // If we use currentIndex and targetIndex, and the repository sorts by order, it will work.
+                tripRepository.swapItemOrders(tripId, date, item1.id, targetIndex, item2.id, currentIndex)
+            }
+        }
+    }
+
+    private fun logActivity(type: ActivityType, message: String) {
+        if (currentTripName.isBlank() || currentMemberIds.isEmpty()) return
+        viewModelScope.launch {
+            runCatching {
+                activityRepository.log(tripId, currentTripName, currentMemberIds, type, message, currentUid, currentUserName, date)
+            }
+        }
     }
 
     fun uploadAttachment(contentResolver: ContentResolver, itemId: String, uri: Uri, fileName: String) {

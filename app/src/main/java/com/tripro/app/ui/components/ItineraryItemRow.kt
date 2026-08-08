@@ -16,11 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Delete
@@ -32,8 +30,11 @@ import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Hiking
 import androidx.compose.material.icons.filled.Hotel
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Museum
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.TheaterComedy
 import androidx.compose.material.icons.filled.UploadFile
@@ -50,33 +51,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.tripro.app.R
+import com.tripro.app.data.model.ActivityColorPrefs
 import com.tripro.app.data.model.Attachment
-import com.tripro.app.data.model.DayPeriod
 import com.tripro.app.data.model.ItemType
 import com.tripro.app.data.model.ItineraryItem
 import com.tripro.app.data.model.NoteType
-import com.tripro.app.data.model.TimeType
-import com.tripro.app.ui.theme.TriProColors
-import com.tripro.app.util.localizedLabel
-
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-
-import androidx.compose.material.icons.filled.PriorityHigh
-
-import androidx.compose.ui.graphics.Color
-import com.tripro.app.data.model.ActivityColorPrefs
 import com.tripro.app.data.model.toMarkerColorKey
-
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
+import com.tripro.app.ui.theme.TriProColors
 
 @Composable
 fun ItineraryItemRow(
@@ -88,186 +77,184 @@ fun ItineraryItemRow(
     onAddAttachment: () -> Unit,
     onAttachmentClick: (Attachment) -> Unit,
     onViewAllDocs: () -> Unit,
+    onMoveUp: (() -> Unit)? = null,
+    onMoveDown: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    Row(modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-        Column(modifier = Modifier.width(100.dp).padding(top = 8.dp)) {
-            when (item.timeType) {
-                TimeType.EXACT -> Text(item.startTime ?: "--:--", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1)
-                TimeType.RANGE -> {
-                    Text(item.startTime ?: "--:--", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1)
-                    Text(item.endTime ?: "", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-                }
-                TimeType.PERIOD -> Text(
-                    (item.period ?: DayPeriod.MORNING).localizedLabel(),
-                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 14.sp),
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    softWrap = false
-                )
-            }
-        }
+    val accentColor = Color(activityColors.colorInt(item.type.toMarkerColorKey()))
 
-        Spacer(Modifier.width(16.dp))
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = TriProColors.SurfaceContainerLowest),
+        border = BorderStroke(1.dp, TriProColors.CardBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(4.dp)
+                    .background(accentColor)
+            )
 
-        val accentColor = Color(activityColors.colorInt(item.type.toMarkerColorKey()))
-
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = TriProColors.SurfaceContainerLowest),
-            border = BorderStroke(1.dp, TriProColors.CardBorder),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(4.dp)
-                        .background(accentColor)
-                )
-
-                Column {
-                    Row(modifier = Modifier.padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Row(modifier = Modifier.weight(1f)) {
-                            val iconBg = accentColor.copy(alpha = 0.12f)
-                            val iconTint = accentColor
-                            val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-                            
-                            Box(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(iconBg)
-                                    .padding(8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVectorForType(item.type),
-                                    contentDescription = null,
-                                    tint = iconTint,
-                                    modifier = Modifier.size(20.dp).let {
-                                        if (isRtl && (item.type == ItemType.HOTEL || item.type == ItemType.FLIGHT || item.type == ItemType.ACTIVITY)) {
-                                            it.scale(scaleX = -1f, scaleY = 1f)
-                                        } else it
-                                    }
-                                )
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text(item.title, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
-                                if (item.type == ItemType.CUSTOM && item.customLabel.isNotBlank()) {
-                                    Text(item.customLabel, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Row(modifier = Modifier.weight(1f)) {
+                        val iconBg = accentColor.copy(alpha = 0.12f)
+                        val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+                        
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(iconBg)
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVectorForType(item.type),
+                                contentDescription = null,
+                                tint = accentColor,
+                                modifier = Modifier.size(20.dp).let {
+                                    if (isRtl && (item.type == ItemType.HOTEL || item.type == ItemType.FLIGHT || item.type == ItemType.ACTIVITY)) {
+                                        it.scale(scaleX = -1f, scaleY = 1f)
+                                    } else it
                                 }
-
-                                if (item.type == ItemType.FLIGHT && item.flightInfo != null) {
-                                    val f = item.flightInfo
-                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                                        Text("${f.departureAirportCode} ${f.departureTime}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(14.dp).padding(horizontal = 4.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text("${f.arrivalAirportCode} ${f.arrivalTime}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                                    }
-                                }
-
-                                if (item.type == ItemType.HOTEL && item.hotelInfo != null) {
-                                    val h = item.hotelInfo
-                                    if (h.checkIn.isNotBlank() || h.checkOut.isNotBlank()) {
-                                        Text(
-                                            stringResource(R.string.day_detail_checkin_checkout, h.checkIn, h.checkOut),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.padding(top = 4.dp)
-                                        )
-                                    }
-                                }
-                                
-                                if (item.note.isNotBlank()) {
-                                    val isAlert = item.noteType == NoteType.ALERT
-                                    val bg = if (isAlert) MaterialTheme.colorScheme.errorContainer else TriProColors.Success.copy(alpha = 0.25f)
-                                    val fg = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else TriProColors.Success
-                                    
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier
-                                            .padding(top = 8.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(bg)
-                                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                                    ) {
-                                        Icon(
-                                            if (isAlert) Icons.Filled.Warning else Icons.Filled.PriorityHigh,
-                                            contentDescription = null,
-                                            tint = fg,
-                                            modifier = Modifier.size(16.dp).padding(end = 4.dp)
-                                        )
-                                        Text(
-                                            item.note,
-                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                            color = fg
-                                        )
-                                    }
-                                }
-
-                                if (item.locationName.isNotBlank() && item.note.isBlank()) {
-                                    Text(item.locationName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-
-                                if (item.attachments.isNotEmpty()) {
-                                    Column(
-                                        modifier = Modifier.padding(top = 8.dp),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        item.attachments.take(3).forEach { attachment ->
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier
-                                                    .clip(RoundedCornerShape(percent = 50))
-                                                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                                                    .border(1.dp, TriProColors.CardBorder, RoundedCornerShape(percent = 50))
-                                                    .clickable { onAttachmentClick(attachment) }
-                                                    .padding(horizontal = 12.dp, vertical = 4.dp)
-                                            ) {
-                                                val attachmentIcon = if (attachment.fileName.endsWith(".pdf", ignoreCase = true)) Icons.Filled.PictureAsPdf else Icons.Filled.AttachFile
-                                                val attachmentTint = if (attachment.fileName.endsWith(".pdf", ignoreCase = true)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                                                
-                                                Icon(attachmentIcon, contentDescription = null, tint = attachmentTint, modifier = Modifier.size(14.dp).padding(end = 4.dp))
-                                                Text(attachment.fileName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                                            }
-                                        }
-                                        if (item.attachments.size > 3) {
-                                            Text(
-                                                stringResource(R.string.itinerary_view_all_docs),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.padding(start = 8.dp).clickable { onViewAllDocs() }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                            )
                         }
-                        if (canEdit) {
-                            IconButton(onClick = onEdit) {
-                                Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.itinerary_row_edit_cd), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(item.title, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+                            if (item.type == ItemType.CUSTOM && item.customLabel.isNotBlank()) {
+                                Text(item.customLabel, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+
+                            if (item.type == ItemType.FLIGHT && item.flightInfo != null) {
+                                val f = item.flightInfo
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+                                    Text("${f.departureAirportCode} ${f.departureTime}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(14.dp).padding(horizontal = 4.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("${f.arrivalAirportCode} ${f.arrivalTime}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+
+                            if (item.type == ItemType.HOTEL && item.hotelInfo != null) {
+                                val h = item.hotelInfo
+                                if (h.checkIn.isNotBlank() || h.checkOut.isNotBlank()) {
+                                    Text(
+                                        stringResource(R.string.day_detail_checkin_checkout, h.checkIn, h.checkOut),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                }
+                            }
+                            
+                            if (item.note.isNotBlank()) {
+                                val isAlert = item.noteType == NoteType.ALERT
+                                val bg = if (isAlert) MaterialTheme.colorScheme.errorContainer else TriProColors.Success.copy(alpha = 0.25f)
+                                val fg = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else TriProColors.Success
+                                
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .padding(top = 8.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(bg)
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        if (isAlert) Icons.Filled.Warning else Icons.Filled.PriorityHigh,
+                                        contentDescription = null,
+                                        tint = fg,
+                                        modifier = Modifier.size(16.dp).padding(end = 4.dp)
+                                    )
+                                    Text(
+                                        item.note,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = fg
+                                    )
+                                }
+                            }
+
+                            if (item.locationName.isNotBlank() && item.note.isBlank()) {
+                                Text(item.locationName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+
+                            if (item.attachments.isNotEmpty()) {
+                                Column(
+                                    modifier = Modifier.padding(top = 8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    item.attachments.take(3).forEach { attachment ->
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(percent = 50))
+                                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                                .border(1.dp, TriProColors.CardBorder, RoundedCornerShape(percent = 50))
+                                                .clickable { onAttachmentClick(attachment) }
+                                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                                        ) {
+                                            val attachmentIcon = if (attachment.fileName.endsWith(".pdf", ignoreCase = true)) Icons.Filled.PictureAsPdf else Icons.Filled.AttachFile
+                                            val attachmentTint = if (attachment.fileName.endsWith(".pdf", ignoreCase = true)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                            
+                                            Icon(attachmentIcon, contentDescription = null, tint = attachmentTint, modifier = Modifier.size(14.dp).padding(end = 4.dp))
+                                            Text(attachment.fileName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                        }
+                                    }
+                                    if (item.attachments.size > 3) {
+                                        Text(
+                                            stringResource(R.string.itinerary_view_all_docs),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(start = 8.dp).clickable { onViewAllDocs() }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
-
                     if (canEdit) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().border(BorderStroke(1.dp, TriProColors.CardBorder.copy(alpha = 0.5f))).padding(horizontal = 8.dp, vertical = 2.dp)
-                        ) {
-                            TextButton(onClick = onEdit) {
-                                Icon(Icons.Filled.EditNote, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 4.dp))
-                                Text(stringResource(R.string.itinerary_row_add_note), style = MaterialTheme.typography.labelSmall)
+                        IconButton(onClick = onEdit) {
+                            Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.itinerary_row_edit_cd), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+
+                if (canEdit) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(BorderStroke(1.dp, TriProColors.CardBorder.copy(alpha = 0.5f)))
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = onEdit) {
+                            Icon(Icons.Filled.EditNote, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 4.dp))
+                            Text(stringResource(R.string.itinerary_row_add_note), style = MaterialTheme.typography.labelSmall)
+                        }
+                        TextButton(onClick = onAddAttachment) {
+                            Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 4.dp))
+                            Text(stringResource(R.string.itinerary_row_upload_file), style = MaterialTheme.typography.labelSmall)
+                        }
+                        Spacer(Modifier.weight(1f))
+                        if (onMoveUp != null) {
+                            IconButton(onClick = onMoveUp, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Move Up", modifier = Modifier.size(20.dp))
                             }
-                            TextButton(onClick = onAddAttachment) {
-                                Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 4.dp))
-                                Text(stringResource(R.string.itinerary_row_upload_file), style = MaterialTheme.typography.labelSmall)
+                        }
+                        if (onMoveDown != null) {
+                            IconButton(onClick = onMoveDown, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Move Down", modifier = Modifier.size(20.dp))
                             }
-                            Spacer(Modifier.weight(1f))
-                            IconButton(onClick = onDelete) {
-                                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.itinerary_row_delete_cd), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
-                            }
+                        }
+                        IconButton(onClick = onDelete) {
+                            Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.itinerary_row_delete_cd), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
                         }
                     }
                 }

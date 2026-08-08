@@ -28,26 +28,26 @@ export default async (request) => {
         break;
       }
       case "itinerary_update": {
-        const { date, itemTitle, action } = payload;
+        const { date, itemTitle, action, actorName } = payload;
         if (!date) return Response.json({ error: "Missing date" }, { status: 400 });
         const others = Object.keys(trip.members || {}).filter((uid) => uid !== callerUid);
         const recipients = await filterByPreference(others, "itineraryChanges");
-        await sendToUsers(recipients, { title: trip.name, body: `${itemTitle || "An item"} was ${action || "updated"} on ${date}` }, { tripId, date, type: "itinerary_update" });
+        await sendToUsers(recipients, { title: trip.name, body: `${actorName || "A traveler"} ${action || "updated"} "${itemTitle || "an item"}" on ${date}` }, { tripId, date, type: "itinerary_update" });
         break;
       }
       case "day_update": {
-        const { date, what } = payload;
+        const { date, what, actorName } = payload;
         if (!date) return Response.json({ error: "Missing date" }, { status: 400 });
         const others = Object.keys(trip.members || {}).filter((uid) => uid !== callerUid);
         const recipients = await filterByPreference(others, "dayInfoChanges");
-        await sendToUsers(recipients, { title: trip.name, body: `${what || "Trip info"} was updated for ${date}` }, { tripId, date, type: "day_update" });
+        await sendToUsers(recipients, { title: trip.name, body: `${actorName || "A traveler"} updated ${what || "trip info"} for ${date}` }, { tripId, date, type: "day_update" });
         break;
       }
       case "trip_update": {
-        const { what } = payload;
+        const { what, actorName } = payload;
         const others = Object.keys(trip.members || {}).filter((uid) => uid !== callerUid);
         const recipients = await filterByPreference(others, "dayInfoChanges");
-        await sendToUsers(recipients, { title: trip.name, body: `${what || "Trip details"} were updated` }, { tripId, type: "trip_update" });
+        await sendToUsers(recipients, { title: trip.name, body: `${actorName || "A traveler"} updated ${what || "trip details"}` }, { tripId, type: "trip_update" });
         break;
       }
       default:

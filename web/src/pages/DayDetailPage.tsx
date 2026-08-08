@@ -33,8 +33,10 @@ import { tripService } from '../services/tripService';
 import { userService } from '../services/userService';
 import { authService } from '../services/authService';
 import { weatherService } from '../services/weatherService';
+import { activityService } from '../services/activityService';
 import { ITEM_TYPE_COLORS } from '../utils/colorUtils';
-import { ItineraryItem, TripDay, DailyWeather, WeatherStatus, Attachment } from '../data/models';
+import { groupByHierarchy } from '../utils/itineraryUtils';
+import { ItineraryItem, TripDay, DailyWeather, WeatherStatus, Attachment, ActivityType, Trip } from '../data/models';
 import { format, parseISO, isValid } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { onSnapshot, doc } from 'firebase/firestore';
@@ -45,6 +47,7 @@ const DayDetailPage: React.FC = () => {
   const { tripId, date } = useParams<{ tripId: string; date: string }>();
   const [items, setItems] = useState<ItineraryItem[]>([]);
   const [day, setDay] = useState<TripDay | null>(null);
+  const [trip, setTrip] = useState<Trip | null>(null);
   const [weather, setWeather] = useState<DailyWeather | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -73,6 +76,7 @@ const DayDetailPage: React.FC = () => {
     });
 
     const unsubTrip = tripService.observeTrip(tripId, (trip) => {
+      setTrip(trip);
       if (trip && user) {
         const role = trip.members[user.uid];
         setCanEdit(role === 'owner' || role === 'editor');
@@ -114,30 +118,69 @@ const DayDetailPage: React.FC = () => {
   }, [items, date]);
 
   const handleSaveItem = async (itemData: Partial<ItineraryItem>) => {
-    if (!tripId || !date || !user) return;
+    if (!tripId || !date || !user || !trip) return;
 
     if (editingItem) {
       await tripService.updateItem(tripId, date, editingItem.id, itemData, user.uid);
+      activityService.logActivity(tripId, trip.name, trip.memberIds, ActivityType.ITEM_UPDATED, `${user.displayName || 'Traveler'} updated "${itemData.title || editingItem.title}" on ${date}`, user.uid, user.displayName || 'Traveler', date);
     } else {
+      const nextOrder = items.length > 0 ? Math.max(...items.map(i => i.order || 0)) + 1 : 0;
       const newItem = {
         ...itemData,
         tripId,
         createdBy: user.uid,
         updatedBy: user.uid,
         attachments: [],
-        order: items.length,
+        order: nextOrder,
       } as Omit<ItineraryItem, "id">;
       await tripService.addItem(tripId, date, newItem);
+      activityService.logActivity(tripId, trip.name, trip.memberIds, ActivityType.ITEM_ADDED, `${user.displayName || 'Traveler'} added "${newItem.title}" to the itinerary on ${date}`, user.uid, user.displayName || 'Traveler', date);
     }
     setEditingItem(null);
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    if (!tripId || !date) return;
+    if (!tripId || !date || !user || !trip) return;
+    const title = items.find(i => i.id === itemId)?.title || 'An item';
     if (window.confirm(t('itinerary_delete_confirm_text', { defaultValue: 'Are you sure you want to delete this activity?' }))) {
       await tripService.deleteItem(tripId, date, itemId);
+      activityService.logActivity(tripId, trip.name, trip.memberIds, ActivityType.ITEM_REMOVED, `${user.displayName || 'Traveler'} removed "${title}" from the itinerary on ${date}`, user.uid, user.displayName || 'Traveler', date);
     }
   };
+
+  const handleMoveItem = async (itemId: string, direction: number) => {
+    if (!tripId || !date) return;
+    const currentIndex = items.findIndex(i => i.id === itemId);
+    if (currentIndex === -1) return;
+
+    const targetIndex = currentIndex + direction;
+    if (targetIndex >= 0 && targetIndex < items.length) {
+      const item1 = items[currentIndex];
+      const item2 = items[targetIndex];
+
+      if (getEffectivePeriod(item1) === getEffectivePeriod(item2)) {
+        // Swap using indices to ensure distinct values
+        await tripService.swapItemOrders(tripId, date, item1.id, targetIndex, item2.id, currentIndex);
+      }
+    }
+  };
+
+  // Helper for handleMoveItem logic
+  function getEffectivePeriod(it: ItineraryItem): string {
+    if (it.timeType === "PERIOD") return it.period || "MORNING";
+    const parts = it.startTime?.split(":") || [];
+    const hour = parseInt(parts[0], 10) || 0;
+    if (hour >= 0 && hour <= 11) return "MORNING";
+    if (hour >= 12 && hour <= 13) return "NOON";
+    if (hour >= 14 && hour <= 17) return "AFTERNOON";
+    if (hour >= 18 && hour <= 21) return "EVENING";
+    return "NIGHT";
+  }
+
+  function toMinutes(hhmm: string): number {
+    const [h, m] = hhmm.split(":").map(Number);
+    return (h || 0) * 60 + (m || 0);
+  }
 
   const safeFormat = (dateStr: string | undefined, formatStr: string) => {
     if (!dateStr) return 'N/A';
@@ -301,8 +344,9 @@ const DayDetailPage: React.FC = () => {
         onClick={() => {
           if (!editingAllowed) return;
           const newNote = prompt(t('edit_day_note', { defaultValue: 'Edit day note:' }), day?.dayNote || '');
-          if (newNote !== null && tripId && date && user) {
+          if (newNote !== null && tripId && date && user && trip) {
             tripService.updateDayNote(tripId, date, newNote, user.uid);
+            activityService.logActivity(tripId, trip.name, trip.memberIds, ActivityType.DAY_NOTE_UPDATED, `${user.displayName || 'Traveler'} updated the day note for ${date}`, user.uid, user.displayName || 'Traveler', date);
           }
         }}
       >
@@ -319,23 +363,42 @@ const DayDetailPage: React.FC = () => {
 
       {items.length > 0 ? (
         <Stack spacing={0} sx={{ pb: 12 }}>
-          {items.map((item) => (
-            <ItineraryItemRow
-              key={item.id}
-              item={item}
-              canEdit={editingAllowed}
-              activityColors={activityColors}
-              onEdit={() => {
-                setEditingItem(item);
-                setModalOpen(true);
-              }}
-              onDelete={() => handleDeleteItem(item.id)}
-              onAddAttachment={() => {
-                setEditingItem(item);
-                setModalOpen(true);
-              }}
-              onAttachmentClick={(att) => setViewingAttachment({ itemId: item.id, att })}
-            />
+          {groupByHierarchy(items).map((periodGroup) => (
+            <Box key={periodGroup.period}>
+              <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold', mt: 6, mb: 1, textTransform: 'uppercase' }}>
+                {t(periodGroup.period.toLowerCase())}
+              </Typography>
+
+              {periodGroup.timeGroups.map((timeGroup, tgIdx) => (
+                <Box key={`${periodGroup.period}-${tgIdx}`}>
+                  {timeGroup.label && (
+                    <Typography variant="subtitle1" color="text.secondary" sx={{ fontWeight: 'bold', mt: 2, mb: 1 }}>
+                      {timeGroup.label}
+                    </Typography>
+                  )}
+                  {timeGroup.items.map((item) => (
+                    <ItineraryItemRow
+                      key={item.id}
+                      item={item}
+                      canEdit={editingAllowed}
+                      activityColors={activityColors}
+                      onEdit={() => {
+                        setEditingItem(item);
+                        setModalOpen(true);
+                      }}
+                      onDelete={() => handleDeleteItem(item.id)}
+                      onAddAttachment={() => {
+                        setEditingItem(item);
+                        setModalOpen(true);
+                      }}
+                      onAttachmentClick={(att) => setViewingAttachment({ itemId: item.id, att })}
+                      onMoveUp={() => handleMoveItem(item.id, -1)}
+                      onMoveDown={() => handleMoveItem(item.id, 1)}
+                    />
+                  ))}
+                </Box>
+              ))}
+            </Box>
           ))}
         </Stack>
       ) : (

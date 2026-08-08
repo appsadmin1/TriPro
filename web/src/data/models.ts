@@ -13,24 +13,24 @@ export enum Role {
 }
 
 export enum ItemType {
-  FLIGHT = "FLIGHT",
   HOTEL = "HOTEL",
   RESTAURANT = "RESTAURANT",
   ATTRACTION = "ATTRACTION",
   ACTIVITY = "ACTIVITY",
-  TRANSPORT = "TRANSPORT",
   SHOW = "SHOW",
+  TRANSPORT = "TRANSPORT",
+  FLIGHT = "FLIGHT",
   CUSTOM = "CUSTOM",
 }
 
 export enum MarkerColorKey {
-  FLIGHT = "FLIGHT",
   HOTEL = "HOTEL",
   RESTAURANT = "RESTAURANT",
   ATTRACTION = "ATTRACTION",
   ACTIVITY = "ACTIVITY",
-  TRANSPORT = "TRANSPORT",
   SHOW = "SHOW",
+  TRANSPORT = "TRANSPORT",
+  FLIGHT = "FLIGHT",
   CUSTOM = "CUSTOM",
   DEFAULT = "DEFAULT",
 }
@@ -82,9 +82,6 @@ export interface HotelInfo {
   placeId?: string;
   checkIn: string;
   checkOut: string;
-  arrivalTime: string;
-  notes: string;
-  noteType: NoteType;
   attachments: Attachment[];
 }
 
@@ -99,8 +96,6 @@ export interface FlightInfo {
   arrivalAirportLng?: number;
   departureTime: string;
   arrivalTime: string;
-  notes: string;
-  noteType: NoteType;
   attachments: Attachment[];
 }
 
@@ -141,7 +136,7 @@ export interface ItineraryItem {
   lng?: number;
   note: string;
   noteType: NoteType;
-  customLabel: string;
+  customLabel?: string;
   flightInfo?: FlightInfo;
   hotelInfo?: HotelInfo;
   attachments: Attachment[];

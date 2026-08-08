@@ -28,7 +28,8 @@ import Layout from '../components/Layout';
 import { tripService } from '../services/tripService';
 import { userService } from '../services/userService';
 import { authService } from '../services/authService';
-import { Trip, Role, UserProfile } from '../data/models';
+import { activityService } from '../services/activityService';
+import { Trip, Role, UserProfile, ActivityType } from '../data/models';
 import { useTranslation } from 'react-i18next';
 
 interface MemberRow {
@@ -96,6 +97,9 @@ const CollaboratorsPage: React.FC = () => {
 
     try {
       await tripService.inviteByEmail(tripId, inviteEmail, inviteRole, user.uid);
+      if (trip) {
+        activityService.logActivity(tripId, trip.name, trip.memberIds, ActivityType.MEMBER_INVITED, `${inviteEmail} was invited as ${inviteRole}`, user.uid, user.displayName || 'Traveler');
+      }
       setSuccess(`Invite sent to ${inviteEmail}.`);
       setInviteEmail('');
       setError(null);
@@ -105,10 +109,12 @@ const CollaboratorsPage: React.FC = () => {
   };
 
   const handleRemoveMember = async (uid: string) => {
-    if (!tripId) return;
+    if (!tripId || !user || !trip) return;
+    const name = members.find(m => m.profile.uid === uid)?.profile.displayName || 'A member';
     if (window.confirm('Are you sure you want to remove this member?')) {
       try {
         await tripService.removeMember(tripId, uid);
+        activityService.logActivity(tripId, trip.name, trip.memberIds, ActivityType.MEMBER_REMOVED, `${name} was removed from the trip`, user.uid, user.displayName || 'Traveler');
         setSuccess('Member removed.');
       } catch (e: any) {
         setError(e.message || 'Failed to remove member.');
@@ -117,9 +123,11 @@ const CollaboratorsPage: React.FC = () => {
   };
 
   const handleChangeRole = async (uid: string, newRole: Role) => {
-    if (!tripId) return;
+    if (!tripId || !user || !trip) return;
+    const name = members.find(m => m.profile.uid === uid)?.profile.displayName || 'A member';
     try {
       await tripService.setMemberRole(tripId, uid, newRole);
+      activityService.logActivity(tripId, trip.name, trip.memberIds, ActivityType.MEMBER_ROLE_CHANGED, `${name}'s role changed to ${newRole}`, user.uid, user.displayName || 'Traveler');
       setSuccess('Role updated.');
     } catch (e: any) {
       setError(e.message || 'Failed to update role.');

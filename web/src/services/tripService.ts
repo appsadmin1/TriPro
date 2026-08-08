@@ -149,6 +149,29 @@ export const tripService = {
     }
 
     await batch.commit();
+
+    // Notify collaborators
+    try {
+      const user = authService.getCurrentUser();
+      if (user) {
+        const idToken = await user.getIdToken(true);
+        await fetch("/.netlify/functions/notify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            type: "trip_update",
+            tripId,
+            what: "Trip details",
+            actorName: user.displayName || "A traveler"
+          }),
+        });
+      }
+    } catch (e) {
+      console.error("Failed to notify trip update", e);
+    }
   },
 
   deleteTrip: async (tripId: string) => {
@@ -183,6 +206,30 @@ export const tripService = {
       dayNote: note,
       updatedBy,
     });
+
+    // Notify collaborators
+    try {
+      const user = authService.getCurrentUser();
+      if (user) {
+        const idToken = await user.getIdToken(true);
+        await fetch("/.netlify/functions/notify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            type: "day_update",
+            tripId,
+            date,
+            what: "A note",
+            actorName: user.displayName || "A traveler"
+          }),
+        });
+      }
+    } catch (e) {
+      console.error("Failed to notify day change", e);
+    }
   },
 
   observeItems: (tripId: string, date: string, callback: (items: ItineraryItem[]) => void) => {
@@ -193,7 +240,8 @@ export const tripService = {
       items.sort((a, b) => {
         const aMin = calculateSortMinutes(a);
         const bMin = calculateSortMinutes(b);
-        return aMin - bMin;
+        if (aMin !== bMin) return aMin - bMin;
+        return (a.order || 0) - (b.order || 0);
       });
       callback(items);
     });
@@ -223,7 +271,8 @@ export const tripService = {
             tripId,
             date,
             itemTitle: item.title,
-            action: "added"
+            action: "added",
+            actorName: user.displayName || "A traveler"
           }),
         });
       }
@@ -255,13 +304,28 @@ export const tripService = {
             tripId,
             date,
             itemTitle: item.title || "An item",
-            action: "updated"
+            action: "updated",
+            actorName: user.displayName || "A traveler"
           }),
         });
       }
     } catch (e) {
       console.error("Failed to notify itinerary change", e);
     }
+  },
+
+  updateItemOrder: async (tripId: string, date: string, itemId: string, newOrder: number) => {
+    const ref = doc(db, TRIPS_COLLECTION, tripId, "days", date, "items", itemId);
+    await updateDoc(ref, { order: newOrder });
+  },
+
+  swapItemOrders: async (tripId: string, date: string, item1Id: string, order1: number, item2Id: string, order2: number) => {
+    const batch = writeBatch(db);
+    const ref1 = doc(db, TRIPS_COLLECTION, tripId, "days", date, "items", item1Id);
+    const ref2 = doc(db, TRIPS_COLLECTION, tripId, "days", date, "items", item2Id);
+    batch.update(ref1, { order: order1 });
+    batch.update(ref2, { order: order2 });
+    await batch.commit();
   },
 
   deleteItem: async (tripId: string, date: string, itemId: string) => {
@@ -275,7 +339,12 @@ export const tripService = {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`,
       },
-      body: JSON.stringify({ tripId, date, itemId }),
+      body: JSON.stringify({
+        tripId,
+        date,
+        itemId,
+        actorName: user.displayName || "A traveler"
+      }),
     });
 
     if (!response.ok) {
@@ -389,6 +458,30 @@ export const tripService = {
         invitedBy,
         invitedAt: serverTimestamp(),
       });
+    }
+
+    // Notify if existing user
+    if (existingUid) {
+      try {
+        const user = authService.getCurrentUser();
+        if (user) {
+          const idToken = await user.getIdToken(true);
+          await fetch("/.netlify/functions/notify", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({
+              type: "trip_invite",
+              tripId,
+              invitedUid: existingUid
+            }),
+          });
+        }
+      } catch (e) {
+        console.error("Failed to notify trip invite", e);
+      }
     }
   },
 

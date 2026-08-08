@@ -27,6 +27,8 @@ import {
   PictureAsPdf,
   UploadFile,
   EditNote,
+  KeyboardArrowUp,
+  KeyboardArrowDown,
 } from '@mui/icons-material';
 import { ItineraryItem, ItemType, NoteType, TimeType, DayPeriod, MarkerColorKey } from '../data/models';
 import { getAccentColor } from '../utils/colorUtils';
@@ -40,6 +42,8 @@ interface ItineraryItemRowProps {
   onDelete: () => void;
   onAddAttachment: () => void;
   onAttachmentClick?: (attachment: any) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   activityColors?: Record<string, string>;
 }
 
@@ -63,6 +67,8 @@ const ItineraryItemRow: React.FC<ItineraryItemRowProps> = ({
   onDelete,
   onAddAttachment,
   onAttachmentClick,
+  onMoveUp,
+  onMoveDown,
   activityColors,
 }) => {
   const { t } = useTranslation();
@@ -100,11 +106,6 @@ const ItineraryItemRow: React.FC<ItineraryItemRowProps> = ({
 
   return (
     <Box sx={{ display: 'flex', width: '100%', mb: 3 }}>
-      {/* Time Column */}
-      <Box sx={{ minWidth: 100, pt: 1 }}>
-        {renderTime()}
-      </Box>
-
       {/* Item Card */}
       <Paper
         elevation={0}
@@ -260,6 +261,16 @@ const ItineraryItemRow: React.FC<ItineraryItemRowProps> = ({
                   {t('upload_file')}
                 </Button>
                 <Box sx={{ flexGrow: 1 }} />
+                {onMoveUp && (
+                  <IconButton size="small" onClick={onMoveUp}>
+                    <KeyboardArrowUp fontSize="small" />
+                  </IconButton>
+                )}
+                {onMoveDown && (
+                  <IconButton size="small" onClick={onMoveDown}>
+                    <KeyboardArrowDown fontSize="small" />
+                  </IconButton>
+                )}
                 <IconButton size="small" color="error" onClick={onDelete}>
                   <Delete fontSize="small" />
                 </IconButton>

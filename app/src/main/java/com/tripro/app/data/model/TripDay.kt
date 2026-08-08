@@ -27,7 +27,6 @@ data class HotelInfo(
     val placeId: String? = null,
     val checkIn: String = "",
     val checkOut: String = "",
-    val arrivalTime: String = "",
     val notes: String = "",
     val noteType: NoteType = NoteType.NOTE,
     val attachments: List<Attachment> = emptyList()

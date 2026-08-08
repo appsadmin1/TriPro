@@ -22,6 +22,7 @@ import SettingsPage from './pages/SettingsPage';
 import PastAdventuresPage from './pages/PastAdventuresPage';
 import CollaboratorsPage from './pages/CollaboratorsPage';
 import AlertsPage from './pages/AlertsPage';
+import SharedTripsPage from './pages/SharedTripsPage';
 
 // Create rtl cache
 const cacheRtl = createCache({
@@ -141,6 +142,12 @@ function App() {
             <Route path="/alerts" element={
               <ProtectedRoute user={user}>
                 <AlertsPage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/shared-trips-view/:uid" element={
+              <ProtectedRoute user={user}>
+                <SharedTripsPage />
               </ProtectedRoute>
             } />
 

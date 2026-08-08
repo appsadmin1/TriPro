@@ -54,7 +54,7 @@ fun AddEditItemSheet(
     currentUid: String = ""
 ) {
     var title by remember { mutableStateOf(existing?.title.orEmpty()) }
-    var type by remember { mutableStateOf(existing?.type ?: ItemType.CUSTOM) }
+    var type by remember { mutableStateOf(existing?.type ?: ItemType.HOTEL) }
     var customLabel by remember { mutableStateOf(existing?.customLabel.orEmpty()) }
     var timeType by remember { mutableStateOf(existing?.timeType ?: TimeType.PERIOD) }
     var period by remember { mutableStateOf(existing?.period ?: DayPeriod.MORNING) }
@@ -122,10 +122,8 @@ fun AddEditItemSheet(
     val hotelInfo = existing?.hotelInfo
     var checkIn by remember { mutableStateOf(hotelInfo?.checkIn.orEmpty()) }
     var checkOut by remember { mutableStateOf(hotelInfo?.checkOut.orEmpty()) }
-    var hotelArrival by remember { mutableStateOf(hotelInfo?.arrivalTime.orEmpty()) }
     var showCheckInPicker by remember { mutableStateOf(false) }
     var showCheckOutPicker by remember { mutableStateOf(false) }
-    var showHotelArrivalPicker by remember { mutableStateOf(false) }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(pin ?: defaultMapCenter, 13f)
@@ -249,7 +247,6 @@ fun AddEditItemSheet(
                     OutlinedButton(onClick = { showCheckInPicker = true }, modifier = Modifier.weight(1f), shape = TriProShapes.medium) { Text(if (checkIn.isBlank()) stringResource(R.string.day_detail_checkin_time_label) else stringResource(R.string.day_detail_checkin_prefix, checkIn)) }
                     OutlinedButton(onClick = { showCheckOutPicker = true }, modifier = Modifier.weight(1f), shape = TriProShapes.medium) { Text(if (checkOut.isBlank()) stringResource(R.string.day_detail_checkout_time_label) else stringResource(R.string.day_detail_checkout_prefix, checkOut)) }
                 }
-                OutlinedButton(onClick = { showHotelArrivalPicker = true }, modifier = Modifier.fillMaxWidth(), shape = TriProShapes.medium) { Text(if (hotelArrival.isBlank()) stringResource(R.string.day_detail_arrival_time_label) else stringResource(R.string.day_detail_arrival_prefix, hotelArrival)) }
             }
 
             Text(stringResource(R.string.item_sheet_type_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
@@ -422,7 +419,7 @@ fun AddEditItemSheet(
                             ) else null,
                             hotelInfo = if (type == ItemType.HOTEL) com.tripro.app.data.model.HotelInfo(
                                 name = title, address = address, lat = pin?.latitude, lng = pin?.longitude,
-                                checkIn = checkIn, checkOut = checkOut, arrivalTime = hotelArrival,
+                                checkIn = checkIn, checkOut = checkOut,
                                 attachments = attachments
                             ) else null
                         )
@@ -451,7 +448,6 @@ fun AddEditItemSheet(
 
     if (showCheckInPicker) SimpleTimePickerDialog(stringResource(R.string.day_detail_checkin_time_label), checkIn.ifBlank { "15:00" }, { showCheckInPicker = false }, { checkIn = it; showCheckInPicker = false })
     if (showCheckOutPicker) SimpleTimePickerDialog(stringResource(R.string.day_detail_checkout_time_label), checkOut.ifBlank { "11:00" }, { showCheckOutPicker = false }, { checkOut = it; showCheckOutPicker = false })
-    if (showHotelArrivalPicker) SimpleTimePickerDialog(stringResource(R.string.day_detail_arrival_time_label), hotelArrival.ifBlank { "14:00" }, { showHotelArrivalPicker = false }, { hotelArrival = it; showHotelArrivalPicker = false })
 
     if (showStartTimePicker) {
         SimpleTimePickerDialog(
@@ -474,8 +470,9 @@ fun AddEditItemSheet(
         visible = showLocationSearch,
         onDismiss = { showLocationSearch = false },
         onPlacePicked = { picked ->
-            locationName = picked.name
-            address = picked.address
+            if (title.isBlank()) title = picked.name
+            if (locationName.isBlank()) locationName = picked.name
+            if (address.isBlank()) address = picked.address
             pin = LatLng(picked.lat, picked.lng)
             showLocationSearch = false
         }

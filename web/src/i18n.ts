@@ -175,7 +175,13 @@ const resources = {
       "delete_trip_confirm_title": "Delete Trip?",
       "failed_upload_cover": "Failed to upload cover photo",
       "failed_update_trip": "Failed to update trip details.",
-      "failed_delete_trip": "Failed to delete trip."
+      "failed_delete_trip": "Failed to delete trip.",
+      "shared_trips_title": "Shared Trips",
+      "shared_trips_title_with_name": "Trips with {{name}}",
+      "shared_trips_count": "{{count}} shared trips",
+      "shared_trips_empty": "No shared trips with this traveler yet.",
+      "custom_label": "What is this? (e.g. Grocery run)",
+      "arrival_time": "Arrival Time"
     }
   },
   he: {
@@ -350,7 +356,13 @@ const resources = {
       "delete_trip_confirm_title": "למחוק את הטיול?",
       "failed_upload_cover": "העלאת תמונת השער נכשלה",
       "failed_update_trip": "עדכון פרטי הטיול נכשל.",
-      "failed_delete_trip": "מחיקת הטיול נכשלה."
+      "failed_delete_trip": "מחיקת הטיול נכשלה.",
+      "shared_trips_title": "טיולים משותפים",
+      "shared_trips_title_with_name": "טיולים עם {{name}}",
+      "shared_trips_count": "{{count}} טיולים משותפים",
+      "shared_trips_empty": "אין טיולים משותפים עם מטייל זה עדיין.",
+      "custom_label": "מה זה? (למשל קניות)",
+      "arrival_time": "שעת הגעה"
     }
   }
 };

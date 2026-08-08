@@ -269,4 +269,9 @@
 
     <string name="search_trips_label">חיפוש בטיולים שלך</string>
     <string name="search_trips_no_match">לא נמצאו טיולים התואמים ל-\"%1$s\".</string>
+
+    <string name="shared_trips_title">טיולים משותפים</string>
+    <string name="shared_trips_title_with_name">טיולים עם %1$s</string>
+    <string name="shared_trips_count">%1$d טיולים משותפים</string>
+    <string name="shared_trips_empty">אין טיולים משותפים עם מטייל זה עדיין.</string>
 </resources>

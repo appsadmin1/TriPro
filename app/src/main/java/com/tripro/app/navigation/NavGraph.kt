@@ -43,6 +43,7 @@ import com.tripro.app.ui.profile.ProfileRoute
 import com.tripro.app.ui.search.SearchTripsDialog
 import com.tripro.app.ui.search.SearchTripsViewModel
 import com.tripro.app.ui.settings.SettingsRoute
+import com.tripro.app.ui.sharedtrips.SharedTripsRoute
 import com.tripro.app.ui.triplist.CreateTripRoute
 import com.tripro.app.ui.triplist.TripsListRoute
 import com.tripro.app.ui.tripoverview.TripDocsRoute
@@ -104,7 +105,8 @@ fun TriProNavGraph(
                 Destinations.ALERTS, 
                 Destinations.PROFILE,
                 Destinations.TRIP_OVERVIEW,
-                Destinations.DAY_DETAIL
+                Destinations.DAY_DETAIL,
+                Destinations.SHARED_TRIPS
             )
 
             ModalNavigationDrawer(
@@ -209,6 +211,7 @@ fun TriProNavGraph(
                                 onBack = { navController.popBackStack() },
                                 onOpenDay = { date -> navController.navigate(Destinations.dayDetail(tripId, date)) },
                                 onOpenCollaborators = { navController.navigate(Destinations.collaborators(tripId)) },
+                                onOpenSharedTrips = { targetUid -> navController.navigate(Destinations.sharedTrips(targetUid)) },
                                 onOpenDocs = { navController.navigate(Destinations.tripDocs(tripId)) },
                                 onTripDeleted = { navController.popBackStack(Destinations.TRIPS_LIST, inclusive = false) },
                                 onOpenDrawer = { drawerScope.launch { drawerState.open() } }
@@ -252,6 +255,19 @@ fun TriProNavGraph(
                         ) { backStackEntry ->
                             val tripId = backStackEntry.arguments?.getString(Destinations.ARG_TRIP_ID).orEmpty()
                             TripDocsRoute(tripId = tripId, currentUid = uid, onBack = { navController.popBackStack() })
+                        }
+                        composable(
+                            route = Destinations.SHARED_TRIPS,
+                            arguments = listOf(navArgument(Destinations.ARG_TARGET_UID) { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val targetUid = backStackEntry.arguments?.getString(Destinations.ARG_TARGET_UID).orEmpty()
+                            SharedTripsRoute(
+                                targetUid = targetUid,
+                                currentUid = uid,
+                                onBack = { navController.popBackStack() },
+                                onOpenTrip = { tripId -> navController.navigate(Destinations.tripOverview(tripId)) },
+                                onOpenDrawer = { drawerScope.launch { drawerState.open() } }
+                            )
                         }
                     }
                 }

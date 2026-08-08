@@ -39,22 +39,24 @@ class PushNotificationRepository(
         })
     }
 
-    suspend fun notifyItineraryChange(tripId: String, date: String, itemTitle: String, action: String) {
+    suspend fun notifyItineraryChange(tripId: String, date: String, itemTitle: String, action: String, actorName: String) {
         post("notify", JSONObject().apply {
             put("type", "itinerary_update")
             put("tripId", tripId)
             put("date", date)
             put("itemTitle", itemTitle)
             put("action", action) // "added" | "updated" | "removed"
+            put("actorName", actorName)
         })
     }
 
-    suspend fun notifyDayChange(tripId: String, date: String, what: String) {
+    suspend fun notifyDayChange(tripId: String, date: String, what: String, actorName: String) {
         post("notify", JSONObject().apply {
             put("type", "day_update")
             put("tripId", tripId)
             put("date", date)
             put("what", what) // "Hotel" | "Flight" | "A note"
+            put("actorName", actorName)
         })
     }
 
@@ -66,11 +68,12 @@ class PushNotificationRepository(
             put("attachmentId", attachmentId)
         })
 
-    suspend fun deleteItem(tripId: String, date: String, itemId: String): Result<Unit> {
+    suspend fun deleteItem(tripId: String, date: String, itemId: String, actorName: String): Result<Unit> {
         return post("delete-item", JSONObject().apply {
             put("tripId", tripId)
             put("date", date)
             put("itemId", itemId)
+            put("actorName", actorName)
         })
     }
 
@@ -88,11 +91,12 @@ class PushNotificationRepository(
         })
     }
 
-    suspend fun notifyTripUpdate(tripId: String, what: String) {
+    suspend fun notifyTripUpdate(tripId: String, what: String, actorName: String) {
         post("notify", JSONObject().apply {
             put("type", "trip_update")
             put("tripId", tripId)
             put("what", what)
+            put("actorName", actorName)
         })
     }
 

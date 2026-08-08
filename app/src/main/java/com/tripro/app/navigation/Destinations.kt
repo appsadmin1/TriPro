@@ -11,14 +11,17 @@ object Destinations {
     const val COLLABORATORS = "trip/{tripId}/collaborators"
     const val TRIP_DOCS = "trip/{tripId}/docs"
     const val SETTINGS = "settings"
+    const val SHARED_TRIPS = "shared_trips_view/{targetUid}"
 
     fun tripsList(filter: String? = null): String = if (filter != null) "trips?filter=$filter" else "trips"
     fun tripOverview(tripId: String) = "trip/$tripId"
     fun dayDetail(tripId: String, date: String) = "trip/$tripId/day/$date"
     fun collaborators(tripId: String) = "trip/$tripId/collaborators"
     fun tripDocs(tripId: String) = "trip/$tripId/docs"
+    fun sharedTrips(targetUid: String) = "shared_trips_view/$targetUid"
 
     const val ARG_TRIP_ID = "tripId"
+    const val ARG_TARGET_UID = "targetUid"
     const val ARG_DATE = "date"
     const val ARG_FILTER = "filter"
 }
