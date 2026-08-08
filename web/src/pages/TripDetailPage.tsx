@@ -26,8 +26,10 @@ import { userService } from '../services/userService';
 import { authService } from '../services/authService';
 import { Trip, TripDay, UserProfile, ItineraryItem, ItemType } from '../data/models';
 import { format, parseISO, differenceInDays, isValid, isToday as isDateToday } from 'date-fns';
+import { he } from 'date-fns/locale';
 import { getOptimizedImageUrl } from '../utils/imageUtils';
 import { ITEM_TYPE_COLORS } from '../utils/colorUtils';
+import { useTranslation } from 'react-i18next';
 
 const TripDetailPage: React.FC = () => {
   const { tripId } = useParams<{ tripId: string }>();
@@ -40,11 +42,13 @@ const TripDetailPage: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
+  const { t, i18n } = useTranslation();
 
   const safeFormat = (dateStr: string | undefined, formatStr: string) => {
     if (!dateStr) return 'N/A';
     const d = parseISO(dateStr);
-    return isValid(d) ? format(d, formatStr) : 'N/A';
+    const locale = i18n.language.startsWith('he') ? he : undefined;
+    return isValid(d) ? format(d, formatStr, { locale }) : 'N/A';
   };
 
   useEffect(() => {
@@ -108,6 +112,10 @@ const TripDetailPage: React.FC = () => {
     ? (differenceInDays(parseISO(trip.endDate), parseISO(trip.startDate)) + 1)
     : 0;
 
+  const docCount = Object.values(itemsByDate).reduce((acc, items) => {
+    return acc + items.reduce((itemAcc, item) => itemAcc + (item.attachments?.length || 0), 0);
+  }, 0);
+
   return (
     <Layout title={trip.name}>
       {/* Hero Section */}
@@ -162,29 +170,33 @@ const TripDetailPage: React.FC = () => {
         <Grid item xs={4}>
           <Card variant="outlined" sx={{ textAlign: 'center', p: 2, borderRadius: 3 }}>
             <CalendarMonth color="primary" sx={{ mb: 1 }} />
-            <Typography variant="h6">{durationDays} Days</Typography>
-            <Typography variant="caption" color="text.secondary">DURATION</Typography>
+            <Typography variant="h6">
+              {t(durationDays === 1 ? 'trip_duration_days' : 'trip_duration_days_plural', { count: durationDays })}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">{t('duration_label')}</Typography>
           </Card>
         </Grid>
         <Grid item xs={4}>
           <Card variant="outlined" sx={{ textAlign: 'center', p: 2, borderRadius: 3, cursor: 'pointer' }} onClick={() => navigate(`/trip/${tripId}/docs`)}>
             <Folder color="primary" sx={{ mb: 1 }} />
-            <Typography variant="h6">Docs</Typography>
-            <Typography variant="caption" color="text.secondary">SAVED</Typography>
+            <Typography variant="h6">
+              {t(docCount === 1 ? 'trip_docs_count' : 'trip_docs_count_plural', { count: docCount })}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">{t('docs_saved')}</Typography>
           </Card>
         </Grid>
         <Grid item xs={4}>
           <Card variant="outlined" sx={{ textAlign: 'center', p: 2, borderRadius: 3, cursor: 'pointer' }} onClick={() => navigate(`/trip/${tripId}/members`)}>
             <Group color="primary" sx={{ mb: 1 }} />
             <Typography variant="h6">{trip.memberIds.length}</Typography>
-            <Typography variant="caption" color="text.secondary">TRAVELERS</Typography>
+            <Typography variant="caption" color="text.secondary">{t('travelers_label')}</Typography>
           </Card>
         </Grid>
       </Grid>
 
       {/* Travelers Section */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>Travelers</Typography>
+        <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>{t('trip_travelers')}</Typography>
         <Card variant="outlined" sx={{ p: 2, borderRadius: 3, display: 'flex', alignItems: 'center', bgcolor: 'background.paper' }}>
           <Stack direction="row" spacing={3} sx={{ overflowX: 'auto', pb: 1 }}>
             {trip.memberIds.map(uid => {
@@ -214,7 +226,7 @@ const TripDetailPage: React.FC = () => {
         </Card>
       </Box>
 
-      <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>Itinerary</Typography>
+      <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>{t('trip_itinerary')}</Typography>
 
       {/* Day List */}
       <Stack spacing={1} sx={{ pb: 8 }}>
@@ -273,7 +285,7 @@ const TripDetailPage: React.FC = () => {
                     {firstHotel?.title || 'Free Day'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                    Day {day.dayIndex}
+                    {t('day_label', { index: day.dayIndex })}
                   </Typography>
 
                   {/* Indicators */}

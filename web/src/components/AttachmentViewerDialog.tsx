@@ -18,6 +18,7 @@ import {
   Edit as EditIcon,
 } from '@mui/icons-material';
 import { Attachment } from '../data/models';
+import { useTranslation } from 'react-i18next';
 
 interface AttachmentViewerDialogProps {
   open: boolean;
@@ -34,6 +35,7 @@ const AttachmentViewerDialog: React.FC<AttachmentViewerDialogProps> = ({
   onRemove,
   onRename,
 }) => {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = React.useState(false);
   const [newName, setNewName] = React.useState('');
 

@@ -17,13 +17,14 @@ import {
   DialogActions,
   Grid,
 } from '@mui/material';
-import { Notifications, Security, Palette, Logout, ChevronRight } from '@mui/icons-material';
+import { Notifications, Security, Palette, Logout, ChevronRight, Language } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { authService } from '../services/authService';
 import { userService } from '../services/userService';
 import { ITEM_TYPE_COLORS } from '../utils/colorUtils';
 import { MarkerColorKey, MarkerColorPalette, NotificationPreferences, ItemType } from '../data/models';
+import { useTranslation } from 'react-i18next';
 
 const SettingsPage: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationPreferences>({
@@ -36,6 +37,9 @@ const SettingsPage: React.FC = () => {
 
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
+  const { t, i18n } = useTranslation();
+
+  const currentLanguage = i18n.language.startsWith('he') ? 'he' : 'en';
 
   useEffect(() => {
     if (!user) return;
@@ -71,14 +75,18 @@ const SettingsPage: React.FC = () => {
     navigate('/login');
   };
 
+  const handleLanguageChange = (lang: string) => {
+    i18n.changeLanguage(lang);
+  };
+
   const getMarkerColor = (key: MarkerColorKey) => {
     return activityColors[key] || ITEM_TYPE_COLORS[key as unknown as ItemType] || MarkerColorPalette[0];
   };
 
   return (
-    <Layout title="Settings">
+    <Layout title={t('settings_title')}>
       <Box sx={{ maxWidth: 700, mx: 'auto', mt: 4, pb: 8 }}>
-        <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 4 }}>Settings</Typography>
+        <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 4 }}>{t('settings_title')}</Typography>
 
         <Stack spacing={4}>
           {/* Profile Header */}
@@ -94,7 +102,7 @@ const SettingsPage: React.FC = () => {
           <Paper sx={{ p: 4, borderRadius: 4 }}>
             <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
               <Notifications color="primary" />
-              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Notifications</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{t('notifications')}</Typography>
             </Stack>
 
             <Stack spacing={2}>
@@ -102,8 +110,8 @@ const SettingsPage: React.FC = () => {
                 control={<Switch checked={notifications.tripInvites} onChange={() => handleToggle('tripInvites')} />}
                 label={
                   <Box>
-                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>Trip Invites</Typography>
-                    <Typography variant="body2" color="text.secondary">Get notified when someone invites you to a trip.</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{t('trip_invites')}</Typography>
+                    <Typography variant="body2" color="text.secondary">{t('trip_invites_desc')}</Typography>
                   </Box>
                 }
                 sx={{ width: '100%', justifyContent: 'space-between', ml: 0 }}
@@ -114,8 +122,8 @@ const SettingsPage: React.FC = () => {
                 control={<Switch checked={notifications.itineraryChanges} onChange={() => handleToggle('itineraryChanges')} />}
                 label={
                   <Box>
-                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>Itinerary Changes</Typography>
-                    <Typography variant="body2" color="text.secondary">Get notified when a trip plan is updated.</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{t('itinerary_changes')}</Typography>
+                    <Typography variant="body2" color="text.secondary">{t('itinerary_changes_desc')}</Typography>
                   </Box>
                 }
                 sx={{ width: '100%', justifyContent: 'space-between', ml: 0 }}
@@ -126,8 +134,8 @@ const SettingsPage: React.FC = () => {
                 control={<Switch checked={notifications.dayInfoChanges} onChange={() => handleToggle('dayInfoChanges')} />}
                 label={
                   <Box>
-                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>Day Updates</Typography>
-                    <Typography variant="body2" color="text.secondary">Get notified about daily notes and weather.</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{t('day_updates')}</Typography>
+                    <Typography variant="body2" color="text.secondary">{t('day_updates_desc')}</Typography>
                   </Box>
                 }
                 sx={{ width: '100%', justifyContent: 'space-between', ml: 0 }}
@@ -140,7 +148,7 @@ const SettingsPage: React.FC = () => {
           <Paper sx={{ p: 4, borderRadius: 4 }}>
             <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
               <Palette color="primary" />
-              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Marker Colors</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{t('settings_marker_colors')}</Typography>
             </Stack>
 
             <Stack spacing={1}>
@@ -158,8 +166,8 @@ const SettingsPage: React.FC = () => {
                     '&:hover': { bgcolor: 'action.hover' }
                   }}
                 >
-                  <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
-                    {key.toLowerCase()}
+                  <Typography variant="body1">
+                    {t(`item_type_${key.toLowerCase()}`, { defaultValue: key })}
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Box
@@ -195,7 +203,7 @@ const SettingsPage: React.FC = () => {
               onClick={handleLogout}
               sx={{ borderRadius: 3, py: 1 }}
             >
-              Sign Out from all devices
+              {t('settings_sign_out')}
             </Button>
           </Paper>
         </Stack>
@@ -203,8 +211,8 @@ const SettingsPage: React.FC = () => {
 
       {/* Color Picker Dialog */}
       <Dialog open={!!colorPickerKey} onClose={() => setColorPickerKey(null)} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ textTransform: 'capitalize' }}>
-          Choose Color for {colorPickerKey?.toLowerCase()}
+        <DialogTitle>
+          {t('settings_choose_color')} - {colorPickerKey ? t(`item_type_${colorPickerKey.toLowerCase()}`) : ''}
         </DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={2} justifyContent="center" sx={{ p: 1 }}>

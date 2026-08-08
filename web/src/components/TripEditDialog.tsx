@@ -21,6 +21,7 @@ import { tripService } from '../services/tripService';
 import { uploadAttachment } from '../services/cloudinaryService';
 import { authService } from '../services/authService';
 import PlaceSearchDialog from './PlaceSearchDialog';
+import { useTranslation } from 'react-i18next';
 
 interface TripEditDialogProps {
   open: boolean;
@@ -29,6 +30,7 @@ interface TripEditDialogProps {
 }
 
 const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     destination: '',
@@ -77,7 +79,7 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
       });
     } catch (err) {
       console.error(err);
-      alert('Failed to upload cover photo');
+      alert(t('failed_upload_cover', { defaultValue: 'Failed to upload cover photo' }));
     } finally {
       setUploadingPhoto(false);
     }
@@ -99,7 +101,7 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
       onClose();
     } catch (error) {
       console.error('Failed to update trip', error);
-      alert('Failed to update trip details.');
+      alert(t('failed_update_trip', { defaultValue: 'Failed to update trip details.' }));
     } finally {
       setLoading(false);
     }
@@ -114,7 +116,7 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
       window.location.href = '/';
     } catch (error) {
       console.error('Failed to delete trip', error);
-      alert('Failed to delete trip.');
+      alert(t('failed_delete_trip', { defaultValue: 'Failed to delete trip.' }));
     } finally {
       setLoading(false);
     }
@@ -127,12 +129,12 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
   return (
     <>
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-        <DialogTitle>Edit Trip</DialogTitle>
+        <DialogTitle>{t('edit_trip')}</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               name="name"
-              label="Trip Name"
+              label={t('trip_name')}
               fullWidth
               value={formData.name}
               onChange={handleChange}
@@ -140,7 +142,7 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
             />
             <TextField
               name="destination"
-              label="Destination"
+              label={t('destination')}
               fullWidth
               value={formData.destination}
               onChange={handleChange}
@@ -157,7 +159,7 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
             <Stack direction="row" spacing={2}>
               <TextField
                 name="startDate"
-                label="Start Date"
+                label={t('start_date')}
                 type="date"
                 fullWidth
                 value={formData.startDate}
@@ -166,7 +168,7 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
               />
               <TextField
                 name="endDate"
-                label="End Date"
+                label={t('end_date')}
                 type="date"
                 fullWidth
                 value={formData.endDate}
@@ -176,7 +178,7 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
             </Stack>
 
             <Box sx={{ mt: 1 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>Cover Photo</Typography>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>{t('cover_photo')}</Typography>
               <Box
                 sx={{
                   width: '100%',
@@ -201,7 +203,7 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
                   <>
                     {uploadingPhoto ? <CircularProgress /> : <PhotoCameraIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 1 }} />}
                     <Typography variant="body2" color="text.secondary">
-                      {uploadingPhoto ? 'Uploading...' : 'Click to change cover photo'}
+                      {uploadingPhoto ? t('uploading') : t('click_to_change_cover')}
                     </Typography>
                   </>
                 )}
@@ -217,18 +219,18 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
             onClick={() => setDeleteConfirmOpen(true)}
             disabled={loading}
           >
-            Delete Trip
+            {t('delete_trip')}
           </Button>
           <Stack direction="row" spacing={1}>
             <Button onClick={onClose} disabled={loading}>
-              Cancel
+              {t('action_cancel')}
             </Button>
             <Button
               variant="contained"
               onClick={handleSave}
               disabled={loading || !formData.name || !formData.startDate || !formData.endDate}
             >
-              {loading ? 'Saving...' : 'Save Changes'}
+              {loading ? t('saving') : t('save_changes')}
             </Button>
           </Stack>
         </DialogActions>
@@ -238,20 +240,20 @@ const TripEditDialog: React.FC<TripEditDialogProps> = ({ open, onClose, trip }) 
         open={placeSearchOpen}
         onClose={() => setPlaceSearchOpen(false)}
         onPlacePicked={handlePlacePicked}
-        title="Search for Destination"
+        title={t('search_destination', { defaultValue: 'Search for Destination' })}
       />
 
       <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle>Delete Trip?</DialogTitle>
+        <DialogTitle>{t('delete_trip_confirm_title', { defaultValue: 'Delete Trip?' })}</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete "{trip.name}"? This action cannot be undone.
+            {t('delete_trip_confirm', { name: trip.name })}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
+          <Button onClick={() => setDeleteConfirmOpen(false)}>{t('action_cancel')}</Button>
           <Button onClick={handleDelete} color="error" variant="contained">
-            Delete
+            {t('action_delete')}
           </Button>
         </DialogActions>
       </Dialog>

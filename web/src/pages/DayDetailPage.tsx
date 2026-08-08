@@ -36,8 +36,10 @@ import { weatherService } from '../services/weatherService';
 import { ITEM_TYPE_COLORS } from '../utils/colorUtils';
 import { ItineraryItem, TripDay, DailyWeather, WeatherStatus, Attachment } from '../data/models';
 import { format, parseISO, isValid } from 'date-fns';
+import { he } from 'date-fns/locale';
 import { onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useTranslation } from 'react-i18next';
 
 const DayDetailPage: React.FC = () => {
   const { tripId, date } = useParams<{ tripId: string; date: string }>();
@@ -51,6 +53,7 @@ const DayDetailPage: React.FC = () => {
   const [canEdit, setCanEdit] = useState(false);
   const [activityColors, setActivityColors] = useState<Record<string, string>>({});
   const [viewingAttachment, setViewingAttachment] = useState<{ itemId: string, att: Attachment } | null>(null);
+  const { t, i18n } = useTranslation();
 
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
@@ -131,7 +134,7 @@ const DayDetailPage: React.FC = () => {
 
   const handleDeleteItem = async (itemId: string) => {
     if (!tripId || !date) return;
-    if (window.confirm('Are you sure you want to delete this activity?')) {
+    if (window.confirm(t('itinerary_delete_confirm_text', { defaultValue: 'Are you sure you want to delete this activity?' }))) {
       await tripService.deleteItem(tripId, date, itemId);
     }
   };
@@ -139,7 +142,8 @@ const DayDetailPage: React.FC = () => {
   const safeFormat = (dateStr: string | undefined, formatStr: string) => {
     if (!dateStr) return 'N/A';
     const d = parseISO(dateStr);
-    return isValid(d) ? format(d, formatStr) : 'N/A';
+    const locale = i18n.language.startsWith('he') ? he : undefined;
+    return isValid(d) ? format(d, formatStr, { locale }) : 'N/A';
   };
 
   const getWeatherIcon = (code?: number) => {
@@ -156,16 +160,16 @@ const DayDetailPage: React.FC = () => {
   };
 
   const getWeatherDescription = (code?: number) => {
-    if (code === undefined) return 'Clear';
-    if (code === 0) return 'Clear sky';
-    if (code <= 3) return 'Partly cloudy';
-    if (code <= 48) return 'Foggy';
-    if (code <= 67) return 'Rainy';
-    if (code <= 77) return 'Snowy';
-    if (code <= 82) return 'Rain showers';
-    if (code <= 86) return 'Snow showers';
-    if (code <= 99) return 'Thunderstorm';
-    return 'Clear';
+    if (code === undefined) return t('weather_clear');
+    if (code === 0) return t('weather_clear_sky');
+    if (code <= 3) return t('weather_partly_cloudy');
+    if (code <= 48) return t('weather_foggy');
+    if (code <= 67) return t('weather_rainy');
+    if (code <= 77) return t('weather_snowy');
+    if (code <= 82) return t('weather_rain_showers');
+    if (code <= 86) return t('weather_snow_showers');
+    if (code <= 99) return t('weather_thunderstorm');
+    return t('weather_clear');
   };
 
   const renderWeather = () => {
@@ -174,14 +178,26 @@ const DayDetailPage: React.FC = () => {
     switch (weather.status) {
       case WeatherStatus.AVAILABLE:
         return (
-          <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3, display: 'flex', alignItems: 'center', bgcolor: 'primary.container', color: 'primary.onContainer' }}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              mb: 3,
+              borderRadius: 3,
+              display: 'flex',
+              alignItems: 'center',
+              bgcolor: 'secondary.container',
+              color: 'secondary.onContainer',
+              border: 'none'
+            }}
+          >
             {getWeatherIcon(weather.weatherCode)}
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
                 {getWeatherDescription(weather.weatherCode)} · {Math.round(weather.tempMaxC || 0)}°C / {Math.round(weather.tempMinC || 0)}°C
               </Typography>
               <Typography variant="caption">
-                {weather.precipitationProbabilityPct}% chance of precipitation
+                {t('weather_chance_rain', { percent: weather.precipitationProbabilityPct })}
               </Typography>
             </Box>
           </Paper>
@@ -191,7 +207,7 @@ const DayDetailPage: React.FC = () => {
           <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3, display: 'flex', alignItems: 'center', bgcolor: 'action.hover' }}>
             <WbSunny sx={{ mr: 2, color: 'text.disabled' }} />
             <Box>
-              <Typography variant="subtitle2" color="text.secondary">Weather forecast not yet available</Typography>
+              <Typography variant="subtitle2" color="text.secondary">{t('weather_forecast_not_available')}</Typography>
               <Typography variant="caption" color="text.secondary">
                 Forecast available from {weatherService.forecastAvailableFrom(date || '')}
               </Typography>
@@ -203,8 +219,8 @@ const DayDetailPage: React.FC = () => {
           <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3, display: 'flex', alignItems: 'center', bgcolor: 'action.hover' }}>
             <LocationOnIcon sx={{ mr: 2, color: 'text.disabled' }} />
             <Box>
-              <Typography variant="subtitle2" color="text.secondary">No location set for weather</Typography>
-              <Typography variant="caption" color="text.secondary">Add an activity with a location to see weather</Typography>
+              <Typography variant="subtitle2" color="text.secondary">{t('weather_no_location')}</Typography>
+              <Typography variant="caption" color="text.secondary">{t('weather_add_location')}</Typography>
             </Box>
           </Paper>
         );
@@ -213,7 +229,7 @@ const DayDetailPage: React.FC = () => {
           <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3, display: 'flex', alignItems: 'center', bgcolor: 'error.container', color: 'error.main' }}>
             <Warning sx={{ mr: 2 }} />
             <Box>
-              <Typography variant="subtitle2">Failed to load weather</Typography>
+              <Typography variant="subtitle2">{t('weather_failed')}</Typography>
             </Box>
           </Paper>
         );
@@ -253,7 +269,7 @@ const DayDetailPage: React.FC = () => {
         </IconButton>
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-            {day ? `DAY ${day.dayIndex}` : 'ITINERARY'}
+            {day ? t('day_label', { index: day.dayIndex }) : t('trip_itinerary')}
           </Typography>
           <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
             {formattedDate}
@@ -284,7 +300,7 @@ const DayDetailPage: React.FC = () => {
         }}
         onClick={() => {
           if (!editingAllowed) return;
-          const newNote = prompt('Edit day note:', day?.dayNote || '');
+          const newNote = prompt(t('edit_day_note', { defaultValue: 'Edit day note:' }), day?.dayNote || '');
           if (newNote !== null && tripId && date && user) {
             tripService.updateDayNote(tripId, date, newNote, user.uid);
           }
@@ -293,13 +309,13 @@ const DayDetailPage: React.FC = () => {
         <StickyNote2 sx={{ mr: 2, color: 'text.secondary' }} />
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="body2" color={day?.dayNote ? "text.primary" : "text.secondary"}>
-            {day?.dayNote || (editingAllowed ? 'Add a note for this day...' : '')}
+            {day?.dayNote || (editingAllowed ? t('add_day_note', { defaultValue: 'Add a note for this day...' }) : '')}
           </Typography>
         </Box>
         {editingAllowed && <Edit fontSize="small" color="action" />}
       </Paper>
 
-      <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>Schedule</Typography>
+      <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>{t('schedule')}</Typography>
 
       {items.length > 0 ? (
         <Stack spacing={0} sx={{ pb: 12 }}>
@@ -324,7 +340,7 @@ const DayDetailPage: React.FC = () => {
         </Stack>
       ) : (
         <Box sx={{ py: 4, textAlign: 'center' }}>
-          <Typography color="text.secondary">Nothing planned yet for this day.</Typography>
+          <Typography color="text.secondary">{t('nothing_planned')}</Typography>
         </Box>
       )}
 

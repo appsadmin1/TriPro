@@ -14,12 +14,14 @@ import { authService } from '../services/authService';
 import { Trip } from '../data/models';
 import { useNavigate } from 'react-router-dom';
 import { isPast, parseISO, isValid } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 const PastAdventuresPage: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const user = authService.getCurrentUser();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!user) return;
@@ -38,7 +40,7 @@ const PastAdventuresPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Layout title="Past Adventures">
+      <Layout title={t('past_adventures')}>
         <Box display="flex" justifyContent="center" alignItems="center" height="60vh">
           <CircularProgress />
         </Box>
@@ -47,16 +49,16 @@ const PastAdventuresPage: React.FC = () => {
   }
 
   return (
-    <Layout title="Past Adventures">
+    <Layout title={t('past_adventures')}>
       <Box sx={{ mb: 4 }}>
         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
           <History color="primary" sx={{ fontSize: 32 }} />
           <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold' }}>
-            Past Adventures
+            {t('past_adventures')}
           </Typography>
         </Stack>
         <Typography variant="body1" color="text.secondary">
-          Relive your favorite memories.
+          {t('past_adventures_subtitle')}
         </Typography>
       </Box>
 
@@ -70,7 +72,7 @@ const PastAdventuresPage: React.FC = () => {
         </Grid>
       ) : (
         <Box sx={{ py: 8, textAlign: 'center' }}>
-          <Typography color="text.secondary">No past trips yet. Keep exploring!</Typography>
+          <Typography color="text.secondary">{t('no_past_trips')}</Typography>
         </Box>
       )}
     </Layout>

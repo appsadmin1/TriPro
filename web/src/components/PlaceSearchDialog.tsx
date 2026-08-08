@@ -16,6 +16,7 @@ import {
   Box,
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { useTranslation } from 'react-i18next';
 import SearchIcon from '@mui/icons-material/Search';
 import { Loader } from '@googlemaps/js-api-loader';
 import { PickedPlace } from '../data/models';
@@ -35,6 +36,7 @@ const PlaceSearchDialog: React.FC<PlaceSearchDialogProps> = ({
   onPlacePicked,
   title = 'Search for a place',
 }) => {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [predictions, setPredictions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -139,7 +141,7 @@ const PlaceSearchDialog: React.FC<PlaceSearchDialogProps> = ({
           autoFocus
           fullWidth
           variant="outlined"
-          placeholder="Start typing..."
+          placeholder={t('places_search_label', { defaultValue: 'Start typing...' })}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           InputProps={{
@@ -177,7 +179,7 @@ const PlaceSearchDialog: React.FC<PlaceSearchDialogProps> = ({
         </List>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('action_cancel')}</Button>
       </DialogActions>
     </Dialog>
   );

@@ -31,6 +31,7 @@ import {
 import { ItineraryItem, ItemType, NoteType, TimeType, DayPeriod, MarkerColorKey } from '../data/models';
 import { getAccentColor } from '../utils/colorUtils';
 import { alpha } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 
 interface ItineraryItemRowProps {
   item: ItineraryItem;
@@ -64,6 +65,7 @@ const ItineraryItemRow: React.FC<ItineraryItemRowProps> = ({
   onAttachmentClick,
   activityColors,
 }) => {
+  const { t } = useTranslation();
   const accentColor = activityColors?.[item.type] || getAccentColor(item.type);
 
   const renderTime = () => {
@@ -88,7 +90,7 @@ const ItineraryItemRow: React.FC<ItineraryItemRowProps> = ({
       case TimeType.PERIOD:
         return (
           <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
-            {(item.period || DayPeriod.MORNING).toLowerCase()}
+            {t((item.period || DayPeriod.MORNING).toLowerCase())}
           </Typography>
         );
       default:
@@ -171,7 +173,7 @@ const ItineraryItemRow: React.FC<ItineraryItemRowProps> = ({
               {/* Hotel Specific */}
               {item.type === ItemType.HOTEL && item.hotelInfo && (
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                  Check-in: {item.hotelInfo.checkIn} · Check-out: {item.hotelInfo.checkOut}
+                  {t('checkin_prefix', { defaultValue: 'Check-in: {{time}}', time: item.hotelInfo.checkIn })} · {t('checkout_prefix', { defaultValue: 'Check-out: {{time}}', time: item.hotelInfo.checkOut })}
                 </Typography>
               )}
 
@@ -247,7 +249,7 @@ const ItineraryItemRow: React.FC<ItineraryItemRowProps> = ({
                   onClick={onEdit}
                   sx={{ fontSize: '0.75rem', color: 'text.secondary' }}
                 >
-                  Add Note
+                  {t('add_note')}
                 </Button>
                 <Button
                   size="small"
@@ -255,7 +257,7 @@ const ItineraryItemRow: React.FC<ItineraryItemRowProps> = ({
                   onClick={onAddAttachment}
                   sx={{ fontSize: '0.75rem', color: 'text.secondary' }}
                 >
-                  Upload File
+                  {t('upload_file')}
                 </Button>
                 <Box sx={{ flexGrow: 1 }} />
                 <IconButton size="small" color="error" onClick={onDelete}>

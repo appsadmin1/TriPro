@@ -93,6 +93,11 @@ const MapPreview: React.FC<MapPreviewProps> = ({ pins, height = 250 }) => {
             title: pin.title,
             icon: svgMarker,
           });
+
+          marker.addListener('click', () => {
+            window.open(`https://www.google.com/maps/search/?api=1&query=${pin.lat},${pin.lng}`, '_blank');
+          });
+
           markersRef.current.push(marker);
           bounds.extend(marker.getPosition());
           validPinsCount++;

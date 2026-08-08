@@ -19,6 +19,8 @@ import {
   useTheme,
   useMediaQuery,
   Badge,
+  Stack,
+  Button,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -32,6 +34,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { activityService } from '../services/activityService';
+import { useTranslation } from 'react-i18next';
 
 const drawerWidth = 280;
 
@@ -49,6 +52,8 @@ const Layout: React.FC<Props> = ({ children, title }) => {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const user = authService.getCurrentUser();
+  const { t, i18n } = useTranslation();
+  const direction = i18n.language.startsWith('he') ? 'rtl' : 'ltr';
 
   useEffect(() => {
     if (!user) return;
@@ -86,10 +91,16 @@ const Layout: React.FC<Props> = ({ children, title }) => {
     navigate('/login');
   };
 
+  const handleLanguageChange = (lang: string) => {
+    i18n.changeLanguage(lang);
+  };
+
+  const currentLanguage = i18n.language.startsWith('he') ? 'he' : 'en';
+
   const menuItems = [
-    { text: 'My Trips', icon: <FlightTakeoff />, path: '/' },
+    { text: t('nav_trips'), icon: <FlightTakeoff />, path: '/' },
     {
-      text: 'Alerts',
+      text: t('nav_alerts'),
       icon: (
         <Badge badgeContent={unreadAlertsCount} color="error">
           <Notifications />
@@ -97,20 +108,20 @@ const Layout: React.FC<Props> = ({ children, title }) => {
       ),
       path: '/alerts'
     },
-    { text: 'Past Adventures', icon: <History />, path: '/past' },
+    { text: t('trips_section_past'), icon: <History />, path: '/past' },
   ];
 
   const drawer = (
     <div>
       <Toolbar>
         <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-          TriPro
+          {t('app_name')}
         </Typography>
       </Toolbar>
       <Divider />
       <List>
         {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
+          <ListItem key={item.path} disablePadding>
             <ListItemButton
               selected={location.pathname === item.path}
               onClick={() => {
@@ -118,8 +129,9 @@ const Layout: React.FC<Props> = ({ children, title }) => {
                 setMobileOpen(false);
               }}
               sx={{
-                borderRadius: '0 24px 24px 0',
-                mr: 1,
+                borderRadius: direction === 'rtl' ? '24px 0 0 24px' : '0 24px 24px 0',
+                ml: direction === 'rtl' ? 1 : 0,
+                mr: direction === 'rtl' ? 0 : 1,
                 '&.Mui-selected': {
                   bgcolor: 'primary.container',
                   color: 'primary.main',
@@ -136,15 +148,39 @@ const Layout: React.FC<Props> = ({ children, title }) => {
       <Divider sx={{ mt: 'auto' }} />
       <List>
         <ListItem disablePadding>
+          <ListItem sx={{ py: 1, px: 2 }}>
+            <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
+              <Button
+                fullWidth
+                size="small"
+                variant={currentLanguage === 'en' ? 'contained' : 'outlined'}
+                onClick={() => handleLanguageChange('en')}
+                sx={{ fontSize: '0.75rem' }}
+              >
+                English
+              </Button>
+              <Button
+                fullWidth
+                size="small"
+                variant={currentLanguage === 'he' ? 'contained' : 'outlined'}
+                onClick={() => handleLanguageChange('he')}
+                sx={{ fontSize: '0.75rem' }}
+              >
+                עברית
+              </Button>
+            </Stack>
+          </ListItem>
+        </ListItem>
+        <ListItem disablePadding>
           <ListItemButton onClick={() => navigate('/settings')}>
             <ListItemIcon><Settings /></ListItemIcon>
-            <ListItemText primary="Settings" />
+            <ListItemText primary={t('settings_title')} />
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
           <ListItemButton onClick={handleLogout}>
             <ListItemIcon><Logout /></ListItemIcon>
-            <ListItemText primary="Log out" />
+            <ListItemText primary={t('settings_sign_out')} />
           </ListItemButton>
         </ListItem>
       </List>
@@ -189,8 +225,8 @@ const Layout: React.FC<Props> = ({ children, title }) => {
             onClose={handleMenuClose}
             onClick={handleMenuClose}
           >
-            <MenuItem onClick={() => navigate('/profile')}>Profile</MenuItem>
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+            <MenuItem onClick={() => navigate('/profile')}>{t('nav_profile')}</MenuItem>
+            <MenuItem onClick={handleLogout}>{t('settings_sign_out')}</MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>

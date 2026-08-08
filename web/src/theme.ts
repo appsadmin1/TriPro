@@ -32,7 +32,7 @@ const TriProColors = {
   OnSurfaceVariant: '#43474F',
 };
 
-export const theme = createTheme({
+export const themeOptions = {
   palette: {
     primary: {
       main: TriProColors.Primary,
@@ -151,4 +151,6 @@ export const theme = createTheme({
       },
     },
   },
-});
+};
+
+export const theme = createTheme(themeOptions);

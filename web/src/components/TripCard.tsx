@@ -13,7 +13,9 @@ import {
 import { CalendarToday, LocationOn } from '@mui/icons-material';
 import { Trip } from '../data/models';
 import { format, parseISO, differenceInDays, isValid } from 'date-fns';
+import { he } from 'date-fns/locale';
 import { getOptimizedImageUrl } from '../utils/imageUtils';
+import { useTranslation } from 'react-i18next';
 
 interface TripCardProps {
   trip: Trip;
@@ -22,6 +24,7 @@ interface TripCardProps {
 }
 
 const TripCard: React.FC<TripCardProps> = ({ trip, onClick, isPast }) => {
+  const { t, i18n } = useTranslation();
   console.log("Rendering TripCard for trip:", trip.id, trip.name, trip.coverImageUrl);
 
   const safeParseISO = (dateStr: string) => {
@@ -39,9 +42,9 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onClick, isPast }) => {
   const isHappeningNow = today >= startDate && today <= endDate;
 
   let statusLabel = '';
-  if (isHappeningNow) statusLabel = 'HAPPENING NOW';
-  else if (isPast) statusLabel = 'COMPLETED';
-  else if (daysAway > 0) statusLabel = `${daysAway} ${daysAway === 1 ? 'DAY' : 'DAYS'} AWAY`;
+  if (isHappeningNow) statusLabel = t('trip_happening_now', { defaultValue: 'HAPPENING NOW' });
+  else if (isPast) statusLabel = t('trip_completed', { defaultValue: 'COMPLETED' });
+  else if (daysAway > 0) statusLabel = t(daysAway === 1 ? 'trip_days_away' : 'trip_days_away_plural', { count: daysAway, defaultValue: `${daysAway} DAYS AWAY` });
 
   return (
     <Card sx={{ maxWidth: 400, mb: 2 }}>
@@ -64,7 +67,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onClick, isPast }) => {
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <CalendarToday sx={{ fontSize: 16, mr: 1 }} />
-            {format(startDate, 'MMM d')} - {format(endDate, 'MMM d, yyyy')}
+            {format(startDate, 'MMM d', { locale: i18n.language.startsWith('he') ? he : undefined })} - {format(endDate, 'MMM d, yyyy', { locale: i18n.language.startsWith('he') ? he : undefined })}
           </Typography>
           <Typography variant="body1" color="text.primary" sx={{ fontWeight: 'medium' }}>
             {trip.name}

@@ -12,10 +12,12 @@ import { Logout, Email, Person } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { authService } from '../services/authService';
+import { useTranslation } from 'react-i18next';
 
 const ProfilePage: React.FC = () => {
   const user = authService.getCurrentUser();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     await authService.signOut();
@@ -25,7 +27,7 @@ const ProfilePage: React.FC = () => {
   if (!user) return null;
 
   return (
-    <Layout title="My Profile">
+    <Layout title={t('my_profile')}>
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
         <Paper sx={{ p: 6, borderRadius: 6, textAlign: 'center', boxShadow: 3 }}>
           <Avatar
@@ -36,7 +38,7 @@ const ProfilePage: React.FC = () => {
           </Avatar>
 
           <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
-            {user.displayName || 'Traveler'}
+            {user.displayName || t('traveler')}
           </Typography>
 
           <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" color="text.secondary" sx={{ mb: 4 }}>
@@ -55,7 +57,7 @@ const ProfilePage: React.FC = () => {
               fullWidth
               sx={{ borderRadius: 10, py: 1.5 }}
             >
-              Sign Out
+              {t('settings_sign_out')}
             </Button>
           </Stack>
         </Paper>

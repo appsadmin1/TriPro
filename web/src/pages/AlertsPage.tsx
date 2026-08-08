@@ -19,12 +19,14 @@ import { activityService } from '../services/activityService';
 import { authService } from '../services/authService';
 import { ActivityEntry, ActivityType } from '../data/models';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 const AlertsPage: React.FC = () => {
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastSeenTimestamp, setLastSeenTimestamp] = useState<number>(0);
   const user = authService.getCurrentUser();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const saved = localStorage.getItem('alerts_last_seen');
@@ -85,7 +87,7 @@ const AlertsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Layout title="Alerts">
+      <Layout title={t('alerts_title')}>
         <Box display="flex" justifyContent="center" alignItems="center" height="60vh">
           <CircularProgress />
         </Box>
@@ -94,14 +96,14 @@ const AlertsPage: React.FC = () => {
   }
 
   return (
-    <Layout title="Alerts">
+    <Layout title={t('alerts_title')}>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <Box>
           <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold', mb: 1 }}>
-            Alerts
+            {t('alerts_title')}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Keep track of changes and updates to your trips.
+            {t('alerts_subtitle')}
           </Typography>
         </Box>
         {activities.length > 0 && (
@@ -111,7 +113,7 @@ const AlertsPage: React.FC = () => {
             onClick={handleMarkAllAsSeen}
             sx={{ borderRadius: 2 }}
           >
-            Mark all as seen
+            {t('mark_all_seen')}
           </Button>
         )}
       </Box>
@@ -119,7 +121,7 @@ const AlertsPage: React.FC = () => {
       {activities.length === 0 ? (
         <Box sx={{ py: 8, textAlign: 'center' }}>
           <NotificationsActive sx={{ fontSize: 60, color: 'action.disabled', mb: 2 }} />
-          <Typography color="text.secondary">No recent activity found.</Typography>
+          <Typography color="text.secondary">{t('no_recent_activity')}</Typography>
         </Box>
       ) : (
         <Card variant="outlined" sx={{ borderRadius: 3 }}>
@@ -155,7 +157,7 @@ const AlertsPage: React.FC = () => {
                           {activity.message}
                         </Typography>
                         <Typography variant="caption" color="primary" sx={{ mt: 0.5, display: 'block' }}>
-                          Trip: {activity.tripName}
+                          {t('app_name')}: {activity.tripName}
                         </Typography>
                       </Box>
                     }

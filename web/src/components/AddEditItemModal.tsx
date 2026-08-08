@@ -31,6 +31,7 @@ import { uploadAttachment } from '../services/cloudinaryService';
 import { authService } from '../services/authService';
 import PlaceSearchDialog from './PlaceSearchDialog';
 import MapPreview from './MapPreview';
+import { useTranslation } from 'react-i18next';
 
 interface AddEditItemModalProps {
   open: boolean;
@@ -45,6 +46,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
   onSave,
   existingItem,
 }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<Partial<ItineraryItem>>({
     title: '',
     type: ItemType.ACTIVITY,
@@ -112,7 +114,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
       }));
     } catch (error) {
       console.error('Upload failed', error);
-      alert('Failed to upload file.');
+      alert(t('failed_upload', { defaultValue: 'Failed to upload file.' }));
     } finally {
       setIsUploading(false);
     }
@@ -156,7 +158,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
       });
     } catch (error) {
       console.error('Flight lookup failed', error);
-      alert('Flight lookup failed. Please enter details manually.');
+      alert(t('flight_lookup_failed', { defaultValue: 'Flight lookup failed. Please enter details manually.' }));
     }
   };
 
@@ -214,12 +216,12 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
   return (
     <>
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-        <DialogTitle>{existingItem ? 'Edit Item' : 'Add to Itinerary'}</DialogTitle>
+        <DialogTitle>{existingItem ? t('edit_item') : t('add_to_itinerary')}</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               name="title"
-              label="Title"
+              label={t('title')}
               fullWidth
               value={formData.title}
               onChange={handleChange}
@@ -227,40 +229,40 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
             />
 
             <FormControl fullWidth>
-              <InputLabel>Type</InputLabel>
+              <InputLabel>{t('type')}</InputLabel>
               <Select
                 name="type"
-                label="Type"
+                label={t('type')}
                 value={formData.type}
                 onChange={handleSelectChange}
               >
                 {Object.values(ItemType).map((type) => (
-                  <MenuItem key={type} value={type}>{type}</MenuItem>
+                  <MenuItem key={type} value={type}>{t(`item_type_${type.toLowerCase()}`, { defaultValue: type })}</MenuItem>
                 ))}
               </Select>
             </FormControl>
 
             {formData.type === ItemType.FLIGHT && (
               <Stack spacing={2} sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-                <Typography variant="subtitle2">Flight Details</Typography>
+                <Typography variant="subtitle2">{t('flight_details')}</Typography>
                 <Stack direction="row" spacing={2}>
                   <TextField
                     name="flightInfo.flightNumber"
-                    label="Flight Number"
+                    label={t('flight_number')}
                     value={formData.flightInfo?.flightNumber || ''}
                     onChange={handleChange}
                     fullWidth
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
-                          <Button onClick={handleLookupFlight} size="small">Lookup</Button>
+                          <Button onClick={handleLookupFlight} size="small">{t('look_up', { defaultValue: 'Lookup' })}</Button>
                         </InputAdornment>
                       )
                     }}
                   />
                   <TextField
                     name="flightInfo.airline"
-                    label="Airline"
+                    label={t('airline')}
                     value={formData.flightInfo?.airline || ''}
                     onChange={handleChange}
                     fullWidth
@@ -269,7 +271,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                 <Stack direction="row" spacing={2}>
                   <TextField
                     name="flightInfo.departureAirportCode"
-                    label="From (IATA)"
+                    label={t('from_iata')}
                     value={formData.flightInfo?.departureAirportCode || ''}
                     onChange={handleChange}
                     fullWidth
@@ -285,7 +287,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                   />
                   <TextField
                     name="flightInfo.arrivalAirportCode"
-                    label="To (IATA)"
+                    label={t('to_iata')}
                     value={formData.flightInfo?.arrivalAirportCode || ''}
                     onChange={handleChange}
                     fullWidth
@@ -305,10 +307,10 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
 
             {formData.type === ItemType.HOTEL && (
               <Stack spacing={2} sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-                <Typography variant="subtitle2">Hotel Details</Typography>
+                <Typography variant="subtitle2">{t('hotel_details')}</Typography>
                 <TextField
                   name="hotelInfo.name"
-                  label="Hotel Name"
+                  label={t('hotel_name')}
                   value={formData.hotelInfo?.name || ''}
                   onChange={handleChange}
                   fullWidth
@@ -325,7 +327,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                 <Stack direction="row" spacing={2}>
                   <TextField
                     name="hotelInfo.checkIn"
-                    label="Check-in Date"
+                    label={t('checkin_date')}
                     type="date"
                     value={formData.hotelInfo?.checkIn || ''}
                     onChange={handleChange}
@@ -334,7 +336,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                   />
                   <TextField
                     name="hotelInfo.checkOut"
-                    label="Check-out Date"
+                    label={t('checkout_date')}
                     type="date"
                     value={formData.hotelInfo?.checkOut || ''}
                     onChange={handleChange}
@@ -347,30 +349,30 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
 
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth>
-                <InputLabel>Time Type</InputLabel>
+                <InputLabel>{t('time_type')}</InputLabel>
                 <Select
                   name="timeType"
-                  label="Time Type"
+                  label={t('time_type')}
                   value={formData.timeType}
                   onChange={handleSelectChange}
                 >
                   {Object.values(TimeType).map((type) => (
-                    <MenuItem key={type} value={type}>{type}</MenuItem>
+                    <MenuItem key={type} value={type}>{t(`time_type_${type.toLowerCase()}`, { defaultValue: type })}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
 
               {formData.timeType === TimeType.PERIOD ? (
                 <FormControl fullWidth>
-                  <InputLabel>Period</InputLabel>
+                  <InputLabel>{t('period')}</InputLabel>
                   <Select
                     name="period"
-                    label="Period"
+                    label={t('period')}
                     value={formData.period || DayPeriod.MORNING}
                     onChange={handleSelectChange}
                   >
                     {Object.values(DayPeriod).map((p) => (
-                      <MenuItem key={p} value={p}>{p}</MenuItem>
+                      <MenuItem key={p} value={p}>{t(p.toLowerCase())}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -378,7 +380,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                 <>
                   <TextField
                     name="startTime"
-                    label="Start Time"
+                    label={t('start_time')}
                     type="time"
                     fullWidth
                     InputLabelProps={{ shrink: true }}
@@ -388,7 +390,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                   {formData.timeType === TimeType.RANGE && (
                     <TextField
                       name="endTime"
-                      label="End Time"
+                      label={t('end_time')}
                       type="time"
                       fullWidth
                       InputLabelProps={{ shrink: true }}
@@ -402,7 +404,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
 
             <TextField
               name="locationName"
-              label="Location Name"
+              label={t('location_name')}
               fullWidth
               value={formData.locationName}
               onChange={handleChange}
@@ -423,7 +425,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
 
             <TextField
               name="note"
-              label="Note"
+              label={t('note')}
               fullWidth
               multiline
               rows={3}
@@ -432,22 +434,22 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
             />
 
             <FormControl fullWidth>
-              <InputLabel>Note Type</InputLabel>
+              <InputLabel>{t('note_type')}</InputLabel>
               <Select
                 name="noteType"
-                label="Note Type"
+                label={t('note_type')}
                 value={formData.noteType}
                 onChange={handleSelectChange}
               >
-                <MenuItem value={NoteType.NOTE}>Info</MenuItem>
-                <MenuItem value={NoteType.ALERT}>Alert</MenuItem>
+                <MenuItem value={NoteType.NOTE}>{t('info')}</MenuItem>
+                <MenuItem value={NoteType.ALERT}>{t('alert')}</MenuItem>
               </Select>
             </FormControl>
 
             <Divider />
 
             <Typography variant="subtitle2" color="text.secondary">
-              Attachments
+              {t('attachments')}
             </Typography>
 
             <List>
@@ -476,7 +478,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
               startIcon={isUploading ? <CircularProgress size={20} /> : <UploadFileIcon />}
               disabled={isUploading}
             >
-              {isUploading ? 'Uploading...' : 'Upload File'}
+              {isUploading ? t('uploading') : t('upload_file')}
               <input
                 type="file"
                 hidden
@@ -486,9 +488,9 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t('action_cancel')}</Button>
           <Button onClick={handleSubmit} variant="contained" color="primary">
-            Save
+            {t('action_save')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -497,7 +499,7 @@ const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
         open={placeSearchOpen}
         onClose={() => setPlaceSearchOpen(false)}
         onPlacePicked={handlePlacePicked}
-        title={placeSearchTarget === 'hotel' ? 'Search for Hotel' : 'Search for Place'}
+        title={placeSearchTarget === 'hotel' ? t('search_hotel', { defaultValue: 'Search for Hotel' }) : t('search_place', { defaultValue: 'Search for Place' })}
       />
     </>
   );

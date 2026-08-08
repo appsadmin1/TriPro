@@ -12,12 +12,14 @@ import {
 } from '@mui/material';
 import { Explore, FlightTakeoff } from '@mui/icons-material';
 import { authService } from '../services/authService';
+import { useTranslation } from 'react-i18next';
 
 const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  const { t } = useTranslation();
 
   const handleSignIn = async () => {
     setLoading(true);
@@ -47,16 +49,16 @@ const LoginPage: React.FC = () => {
         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 8 }}>
           <Explore color="primary" sx={{ fontSize: 40 }} />
           <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold' }}>
-            TriPro
+            {t('app_name')}
           </Typography>
         </Stack>
 
         <Typography variant="h1" sx={{ fontWeight: 'bold', mb: 3, textAlign: isDesktop ? 'left' : 'center', lineHeight: 1.2 }}>
-          Your collaborative <br /> journey starts here.
+          {t('login_tagline').split(' ').slice(0, 2).join(' ')} <br /> {t('login_tagline').split(' ').slice(2).join(' ')}
         </Typography>
 
         <Typography variant="body1" color="text.secondary" sx={{ mb: 6, maxWidth: 400, textAlign: isDesktop ? 'left' : 'center' }}>
-          Plan, share, and experience travel like never before. TriPro meets the wonder of discovery.
+          {t('login_subtitle', { defaultValue: 'Plan, share, and experience travel like never before. TriPro meets the wonder of discovery.' })}
         </Typography>
 
         <Button
@@ -73,12 +75,12 @@ const LoginPage: React.FC = () => {
             boxShadow: theme.shadows[4],
           }}
         >
-          {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign in with Google'}
+          {loading ? <CircularProgress size={24} color="inherit" /> : t('login_sign_in_google')}
         </Button>
 
         {error && (
           <Typography color="error" variant="body2" sx={{ mt: 2 }}>
-            {error}
+            {t('failed_signin', { defaultValue: error })}
           </Typography>
         )}
       </Box>
@@ -110,10 +112,10 @@ const LoginPage: React.FC = () => {
           >
             <Stack direction="row" spacing={1} alignItems="center" mb={1}>
               <FlightTakeoff />
-              <Typography variant="overline" sx={{ fontWeight: 'bold' }}>Next Adventure</Typography>
+              <Typography variant="overline" sx={{ fontWeight: 'bold' }}>{t('next_adventure')}</Typography>
             </Stack>
             <Typography variant="body2">
-              "The world is a book and those who do not travel read only one page."
+              {t('login_quote')}
             </Typography>
           </Paper>
         </Box>

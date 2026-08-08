@@ -19,6 +19,7 @@ import { authService } from '../services/authService';
 import { uploadAttachment } from '../services/cloudinaryService';
 import PlaceSearchDialog from '../components/PlaceSearchDialog';
 import { PickedPlace } from '../data/models';
+import { useTranslation } from 'react-i18next';
 
 const CreateTripPage: React.FC = () => {
   const [name, setName] = useState('');
@@ -33,6 +34,7 @@ const CreateTripPage: React.FC = () => {
 
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
+  const { t } = useTranslation();
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -96,20 +98,20 @@ const CreateTripPage: React.FC = () => {
   };
 
   return (
-    <Layout title="Plan New Adventure">
+    <Layout title={t('create_trip_title', { defaultValue: 'Plan New Adventure' })}>
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 4 }}>
           <IconButton onClick={() => navigate(-1)}>
             <ArrowBack />
           </IconButton>
-          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Plan New Trip</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{t('create_trip_title', { defaultValue: 'Plan New Trip' })}</Typography>
         </Stack>
 
         <Paper sx={{ p: 4, borderRadius: 4 }}>
           <form onSubmit={handleCreate}>
             <Stack spacing={3}>
               <TextField
-                label="Trip Name"
+                label={t('trip_name')}
                 placeholder="e.g. Summer in Japan"
                 fullWidth
                 value={name}
@@ -117,7 +119,7 @@ const CreateTripPage: React.FC = () => {
                 required
               />
               <TextField
-                label="Destination"
+                label={t('destination')}
                 placeholder="e.g. Tokyo, Kyoto"
                 fullWidth
                 value={destination}
@@ -133,7 +135,7 @@ const CreateTripPage: React.FC = () => {
               />
 
               <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>Cover Photo</Typography>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>{t('cover_photo')}</Typography>
                 <Box
                   sx={{
                     width: '100%',
@@ -158,7 +160,7 @@ const CreateTripPage: React.FC = () => {
                     <>
                       {uploadingPhoto ? <CircularProgress /> : <PhotoCamera sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />}
                       <Typography variant="body2" color="text.secondary">
-                        {uploadingPhoto ? 'Uploading...' : 'Click to upload from device'}
+                        {uploadingPhoto ? t('uploading') : t('click_to_upload_device', { defaultValue: 'Click to upload from device' })}
                       </Typography>
                     </>
                   )}
@@ -168,7 +170,7 @@ const CreateTripPage: React.FC = () => {
 
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
-                  label="Start Date"
+                  label={t('start_date')}
                   type="date"
                   fullWidth
                   InputLabelProps={{ shrink: true }}
@@ -177,7 +179,7 @@ const CreateTripPage: React.FC = () => {
                   required
                 />
                 <TextField
-                  label="End Date"
+                  label={t('end_date')}
                   type="date"
                   fullWidth
                   InputLabelProps={{ shrink: true }}
@@ -201,7 +203,7 @@ const CreateTripPage: React.FC = () => {
                   boxShadow: 2
                 }}
               >
-                {loading ? 'Creating...' : 'Create Trip'}
+                {loading ? t('creating', { defaultValue: 'Creating...' }) : t('create_trip_button', { defaultValue: 'Create Trip' })}
               </Button>
             </Stack>
           </form>
@@ -212,7 +214,7 @@ const CreateTripPage: React.FC = () => {
         open={placeSearchOpen}
         onClose={() => setPlaceSearchOpen(false)}
         onPlacePicked={handlePlacePicked}
-        title="Search for Destination"
+        title={t('search_destination', { defaultValue: 'Search for Destination' })}
       />
     </Layout>
   );

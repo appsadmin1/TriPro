@@ -30,6 +30,8 @@ import { tripService } from '../services/tripService';
 import { authService } from '../services/authService';
 import { Trip, TripDay, ItineraryItem, Attachment } from '../data/models';
 import { format, parseISO } from 'date-fns';
+import { he } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 interface DocEntry {
   date: string;
@@ -48,6 +50,7 @@ const TripDocsPage: React.FC = () => {
   const [viewing, setViewing] = useState<DocEntry | null>(null);
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     if (!tripId) return;
@@ -104,14 +107,14 @@ const TripDocsPage: React.FC = () => {
 
   const handleRemoveDoc = async (date: string, itemId: string, attachmentId: string) => {
     if (!tripId) return;
-    if (window.confirm('Are you sure you want to remove this document?')) {
+    if (window.confirm(t('confirm_remove_doc'))) {
       await tripService.removeAttachment(tripId, date, itemId, attachmentId);
     }
   };
 
   if (loading) {
     return (
-      <Layout title="Trip Documents">
+      <Layout title={t('trip_documents')}>
         <Box display="flex" justifyContent="center" alignItems="center" height="60vh">
           <CircularProgress />
         </Box>
@@ -123,13 +126,13 @@ const TripDocsPage: React.FC = () => {
   const allExpanded = expandedDates.size === dates.length && dates.length > 0;
 
   return (
-    <Layout title={`Docs: ${trip?.name || 'Trip'}`}>
+    <Layout title={`${t('docs_saved')}: ${trip?.name || t('app_name')}`}>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 4 }}>
         <IconButton onClick={() => navigate(-1)}>
           <ArrowBack />
         </IconButton>
         <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Trip Documents</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{t('trip_documents')}</Typography>
         </Box>
         {dates.length > 0 && (
           <IconButton onClick={allExpanded ? handleCollapseAll : handleExpandAll} color="primary">
@@ -140,7 +143,7 @@ const TripDocsPage: React.FC = () => {
 
       {dates.length === 0 ? (
         <Box sx={{ py: 8, textAlign: 'center' }}>
-          <Typography color="text.secondary">No documents found for this trip.</Typography>
+          <Typography color="text.secondary">{t('no_documents_found')}</Typography>
         </Box>
       ) : (
         <Stack spacing={2}>
@@ -159,7 +162,7 @@ const TripDocsPage: React.FC = () => {
                 }}
               >
                 <Typography variant="h6" color="primary" sx={{ flexGrow: 1, fontWeight: 'medium' }}>
-                  {format(parseISO(date), 'EEEE, MMM d')}
+                  {format(parseISO(date), 'EEEE, MMM d', { locale: i18n.language.startsWith('he') ? he : undefined })}
                 </Typography>
                 {expandedDates.has(date) ? <ExpandLess /> : <ExpandMore />}
               </Box>

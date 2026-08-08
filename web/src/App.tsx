@@ -1,9 +1,14 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { User } from 'firebase/auth';
 import { authService } from './services/authService';
-import { CircularProgress, Box, ThemeProvider } from '@mui/material';
-import { theme } from './theme';
+import { CircularProgress, Box, ThemeProvider, createTheme } from '@mui/material';
+import { themeOptions } from './theme';
+import { useTranslation } from 'react-i18next';
+import { CacheProvider } from '@emotion/react';
+import createCache from '@emotion/cache';
+import { prefixer } from 'stylis';
+import rtlPlugin from 'stylis-plugin-rtl';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -17,6 +22,16 @@ import SettingsPage from './pages/SettingsPage';
 import PastAdventuresPage from './pages/PastAdventuresPage';
 import CollaboratorsPage from './pages/CollaboratorsPage';
 import AlertsPage from './pages/AlertsPage';
+
+// Create rtl cache
+const cacheRtl = createCache({
+  key: 'muirtl',
+  stylisPlugins: [prefixer, rtlPlugin],
+});
+
+const cacheLtr = createCache({
+  key: 'mui',
+});
 
 interface ProtectedRouteProps {
   user: User | null;
@@ -33,6 +48,18 @@ const ProtectedRoute = ({ user, children }: ProtectedRouteProps) => {
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { i18n } = useTranslation();
+
+  const direction = i18n.language.startsWith('he') ? 'rtl' : 'ltr';
+
+  useEffect(() => {
+    document.body.dir = direction;
+  }, [direction]);
+
+  const currentTheme = useMemo(() => createTheme({
+    ...themeOptions,
+    direction,
+  }), [direction]);
 
   useEffect(() => {
     const unsubscribe = authService.subscribeToAuthChanges((u) => {
@@ -51,76 +78,78 @@ function App() {
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <Router>
-        <Routes>
-          <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" />} />
+    <CacheProvider value={direction === 'rtl' ? cacheRtl : cacheLtr}>
+      <ThemeProvider theme={currentTheme}>
+        <Router>
+          <Routes>
+            <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" />} />
 
-          <Route path="/" element={
-            <ProtectedRoute user={user}>
-              <DashboardPage />
-            </ProtectedRoute>
-          } />
+            <Route path="/" element={
+              <ProtectedRoute user={user}>
+                <DashboardPage />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/trip/:tripId" element={
-            <ProtectedRoute user={user}>
-              <TripDetailPage />
-            </ProtectedRoute>
-          } />
+            <Route path="/trip/:tripId" element={
+              <ProtectedRoute user={user}>
+                <TripDetailPage />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/trip/:tripId/docs" element={
-            <ProtectedRoute user={user}>
-              <TripDocsPage />
-            </ProtectedRoute>
-          } />
+            <Route path="/trip/:tripId/docs" element={
+              <ProtectedRoute user={user}>
+                <TripDocsPage />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/trip/:tripId/day/:date" element={
-            <ProtectedRoute user={user}>
-              <DayDetailPage />
-            </ProtectedRoute>
-          } />
+            <Route path="/trip/:tripId/day/:date" element={
+              <ProtectedRoute user={user}>
+                <DayDetailPage />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/create-trip" element={
-            <ProtectedRoute user={user}>
-              <CreateTripPage />
-            </ProtectedRoute>
-          } />
+            <Route path="/create-trip" element={
+              <ProtectedRoute user={user}>
+                <CreateTripPage />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/profile" element={
-            <ProtectedRoute user={user}>
-              <ProfilePage />
-            </ProtectedRoute>
-          } />
+            <Route path="/profile" element={
+              <ProtectedRoute user={user}>
+                <ProfilePage />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/settings" element={
-            <ProtectedRoute user={user}>
-              <SettingsPage />
-            </ProtectedRoute>
-          } />
+            <Route path="/settings" element={
+              <ProtectedRoute user={user}>
+                <SettingsPage />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/past" element={
-            <ProtectedRoute user={user}>
-              <PastAdventuresPage />
-            </ProtectedRoute>
-          } />
+            <Route path="/past" element={
+              <ProtectedRoute user={user}>
+                <PastAdventuresPage />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/trip/:tripId/members" element={
-            <ProtectedRoute user={user}>
-              <CollaboratorsPage />
-            </ProtectedRoute>
-          } />
+            <Route path="/trip/:tripId/members" element={
+              <ProtectedRoute user={user}>
+                <CollaboratorsPage />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/alerts" element={
-            <ProtectedRoute user={user}>
-              <AlertsPage />
-            </ProtectedRoute>
-          } />
+            <Route path="/alerts" element={
+              <ProtectedRoute user={user}>
+                <AlertsPage />
+              </ProtectedRoute>
+            } />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Router>
-    </ThemeProvider>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </Router>
+      </ThemeProvider>
+    </CacheProvider>
   );
 }
 

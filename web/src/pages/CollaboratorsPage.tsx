@@ -29,6 +29,7 @@ import { tripService } from '../services/tripService';
 import { userService } from '../services/userService';
 import { authService } from '../services/authService';
 import { Trip, Role, UserProfile } from '../data/models';
+import { useTranslation } from 'react-i18next';
 
 interface MemberRow {
   profile: UserProfile;
@@ -46,6 +47,7 @@ const CollaboratorsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const { t } = useTranslation();
   const user = authService.getCurrentUser();
   const isOwner = trip && user && trip.members[user.uid] === Role.OWNER;
 
@@ -126,7 +128,7 @@ const CollaboratorsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Layout title="Travelers">
+      <Layout title={t('travelers_title')}>
         <Box display="flex" justifyContent="center" alignItems="center" height="60vh">
           <CircularProgress />
         </Box>
@@ -136,46 +138,46 @@ const CollaboratorsPage: React.FC = () => {
 
   if (!trip) {
     return (
-      <Layout title="Trip Not Found">
+      <Layout title={t('trip_not_found')}>
         <Box sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h5">Trip not found or you don't have access.</Typography>
+          <Typography variant="h5">{t('trip_not_found_desc')}</Typography>
         </Box>
       </Layout>
     );
   }
 
   return (
-    <Layout title={`Travelers - ${trip.name}`}>
+    <Layout title={`${t('travelers_title')} - ${trip.name}`}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold', mb: 1 }}>
-          Travelers
+          {t('travelers_title')}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Manage who's joining you on this trip.
+          {t('travelers_subtitle')}
         </Typography>
       </Box>
 
       {/* Invite Form for Owners */}
       {isOwner && (
         <Card variant="outlined" sx={{ p: 3, mb: 4, borderRadius: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>Invite Someone</Typography>
+          <Typography variant="h6" sx={{ mb: 2 }}>{t('invite_someone')}</Typography>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
             <TextField
               fullWidth
-              label="Email Address"
+              label={t('email_address')}
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               placeholder="friend@example.com"
             />
             <FormControl sx={{ minWidth: 120 }}>
-              <InputLabel>Role</InputLabel>
+              <InputLabel>{t('role')}</InputLabel>
               <Select
                 value={inviteRole}
-                label="Role"
+                label={t('role')}
                 onChange={(e) => setInviteRole(e.target.value as Role)}
               >
-                <MenuItem value={Role.EDITOR}>Editor</MenuItem>
-                <MenuItem value={Role.VIEWER}>Viewer</MenuItem>
+                <MenuItem value={Role.EDITOR}>{t('editor')}</MenuItem>
+                <MenuItem value={Role.VIEWER}>{t('viewer')}</MenuItem>
               </Select>
             </FormControl>
             <Button
@@ -184,7 +186,7 @@ const CollaboratorsPage: React.FC = () => {
               onClick={handleInvite}
               sx={{ height: 56, px: 4 }}
             >
-              Invite
+              {t('invite')}
             </Button>
           </Stack>
         </Card>
@@ -203,7 +205,7 @@ const CollaboratorsPage: React.FC = () => {
                 </ListItemAvatar>
                 <ListItemText
                   primary={member.profile.displayName}
-                  secondary={member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                  secondary={member.role === Role.OWNER ? t('role_owner', { defaultValue: 'Owner' }) : (member.role === Role.EDITOR ? t('editor') : t('viewer'))}
                 />
                 <ListItemSecondaryAction sx={{ display: 'flex', alignItems: 'center' }}>
                   {isOwner && member.role !== Role.OWNER && (
@@ -214,8 +216,8 @@ const CollaboratorsPage: React.FC = () => {
                         onChange={(e) => handleChangeRole(member.profile.uid, e.target.value as Role)}
                         sx={{ minWidth: 100 }}
                       >
-                        <MenuItem value={Role.EDITOR}>Editor</MenuItem>
-                        <MenuItem value={Role.VIEWER}>Viewer</MenuItem>
+                        <MenuItem value={Role.EDITOR}>{t('editor')}</MenuItem>
+                        <MenuItem value={Role.VIEWER}>{t('viewer')}</MenuItem>
                       </Select>
                       <IconButton
                         edge="end"
@@ -228,12 +230,12 @@ const CollaboratorsPage: React.FC = () => {
                   )}
                   {!isOwner && (
                     <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
-                      {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                      {member.role === Role.OWNER ? t('role_owner', { defaultValue: 'Owner' }) : (member.role === Role.EDITOR ? t('editor') : t('viewer'))}
                     </Typography>
                   )}
                   {member.role === Role.OWNER && (
                     <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold', mr: 2 }}>
-                      {member.profile.uid === user?.uid ? 'You (Owner)' : 'Owner'}
+                      {member.profile.uid === user?.uid ? `${t('role_owner', { defaultValue: 'Owner' })} (${t('you', { defaultValue: 'You' })})` : t('role_owner', { defaultValue: 'Owner' })}
                     </Typography>
                   )}
                 </ListItemSecondaryAction>
@@ -248,7 +250,7 @@ const CollaboratorsPage: React.FC = () => {
       {isOwner && pendingInvites.length > 0 && (
         <Box>
           <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-            <Email sx={{ mr: 1 }} fontSize="small" /> Pending Invites
+            <Email sx={{ mr: 1 }} fontSize="small" /> {t('pending_invites')}
           </Typography>
           <Card variant="outlined" sx={{ borderRadius: 3 }}>
             <List>
@@ -257,10 +259,10 @@ const CollaboratorsPage: React.FC = () => {
                   <ListItem>
                     <ListItemText
                       primary={invite.email}
-                      secondary={`Invited as ${invite.role}`}
+                      secondary={t('invited_as', { defaultValue: 'Invited as {{role}}', role: invite.role === Role.EDITOR ? t('editor') : t('viewer') })}
                     />
                     <Typography variant="caption" color="text.secondary">
-                      Waiting for sign-in
+                      {t('waiting_for_signin')}
                     </Typography>
                   </ListItem>
                   {index < pendingInvites.length - 1 && <Divider component="li" />}

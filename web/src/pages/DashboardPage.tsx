@@ -15,12 +15,14 @@ import { authService } from '../services/authService';
 import { Trip } from '../data/models';
 import { useNavigate } from 'react-router-dom';
 import { isPast, parseISO } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 const DashboardPage: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const user = authService.getCurrentUser();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     console.log("DashboardPage: User state:", user?.uid);
@@ -66,23 +68,23 @@ const DashboardPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Layout title="My Trips">
+      <Layout title={t('trips_title')}>
         <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height="60vh">
           <CircularProgress sx={{ mb: 2 }} />
-          <Typography color="text.secondary">Loading your trips...</Typography>
+          <Typography color="text.secondary">{t('loading_trips', { defaultValue: 'Loading your trips...' })}</Typography>
         </Box>
       </Layout>
     );
   }
 
   return (
-    <Layout title="My Trips">
+    <Layout title={t('trips_title')}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold', mb: 1 }}>
-          My Trips
+          {t('trips_title')}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Your upcoming and past adventures.
+          {t('trips_subtitle')}
         </Typography>
       </Box>
 
@@ -90,7 +92,7 @@ const DashboardPage: React.FC = () => {
         <>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
             <FlightTakeoff color="primary" />
-            <Typography variant="h5" sx={{ fontWeight: 'medium' }}>Upcoming</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 'medium' }}>{t('trips_section_upcoming')}</Typography>
           </Stack>
           <Grid container spacing={3} sx={{ mb: 6 }}>
             {upcomingTrips.map((trip) => (
@@ -102,7 +104,7 @@ const DashboardPage: React.FC = () => {
         </>
       ) : (
         <Box sx={{ py: 8, textAlign: 'center' }}>
-          <Typography color="text.secondary">No upcoming trips — tap the + button to plan your first one.</Typography>
+          <Typography color="text.secondary">{t('trips_empty_state')}</Typography>
         </Box>
       )}
 
@@ -110,7 +112,7 @@ const DashboardPage: React.FC = () => {
         <>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
             <History color="disabled" />
-            <Typography variant="h5" color="text.secondary" sx={{ fontWeight: 'medium' }}>Past Adventures</Typography>
+            <Typography variant="h5" color="text.secondary" sx={{ fontWeight: 'medium' }}>{t('trips_section_past')}</Typography>
           </Stack>
           <Grid container spacing={3}>
             {pastTrips.map((trip) => (
