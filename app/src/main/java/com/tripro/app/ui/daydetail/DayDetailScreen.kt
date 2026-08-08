@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -78,6 +79,7 @@ import com.tripro.app.ui.components.WeatherCard
 import com.tripro.app.ui.theme.TriProColors
 import com.tripro.app.ui.theme.TriProSpacing
 import com.tripro.app.util.DateUtils
+import com.tripro.app.util.localizedLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,8 +102,9 @@ fun DayDetailRoute(
                     container.weatherRepository,
                     container.cloudinaryRepository,
                     container.pushNotificationRepository,
+                    container.activityRepository,
                     container.userRepository,
-                    tripId, date, currentUid
+                    tripId, date, currentUid, currentUserName
                 )
             }
         }
@@ -229,23 +232,49 @@ fun DayDetailRoute(
                 )
             }
 
-            if (uiState.items.isEmpty()) {
+            if (uiState.groupedItems.isEmpty()) {
                 item { Text(stringResource(R.string.day_detail_nothing_planned), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
 
-            items(uiState.items, key = { it.id }) { item ->
-                ItineraryItemRow(
-                    item = item,
-                    activityColors = uiState.activityColors,
-                    canEdit = editingAllowed,
-                    onEdit = {
-                        editingItem = item; showAddItemSheet = true
-                    },
-                    onDelete = { showDeleteConfirm = item.id },
-                    onAddAttachment = { pendingAttachmentItemId = item.id; filePicker.launch(arrayOf("*/*")) },
-                    onAttachmentClick = { attachment -> viewingAttachment = item.id to attachment },
-                    onViewAllDocs = onOpenDocs
-                )
+            uiState.groupedItems.forEach { periodGroup ->
+                item {
+                    Text(
+                        periodGroup.period.localizedLabel().uppercase(),
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
+                    )
+                }
+                
+                periodGroup.timeGroups.forEach { timeGroup ->
+                    if (timeGroup.label != null) {
+                        item {
+                            Text(
+                                timeGroup.label,
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                            )
+                        }
+                    }
+                    
+                    items(timeGroup.items, key = { it.id }) { item ->
+                        ItineraryItemRow(
+                            item = item,
+                            activityColors = uiState.activityColors,
+                            canEdit = editingAllowed,
+                            onEdit = {
+                                editingItem = item; showAddItemSheet = true
+                            },
+                            onDelete = { showDeleteConfirm = item.id },
+                            onAddAttachment = { pendingAttachmentItemId = item.id; filePicker.launch(arrayOf("*/*")) },
+                            onAttachmentClick = { attachment -> viewingAttachment = item.id to attachment },
+                            onViewAllDocs = onOpenDocs,
+                            onMoveUp = { viewModel.moveItem(item.id, -1) },
+                            onMoveDown = { viewModel.moveItem(item.id, 1) }
+                        )
+                    }
+                }
             }
         }
     }

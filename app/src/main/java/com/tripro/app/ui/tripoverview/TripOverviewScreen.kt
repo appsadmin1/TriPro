@@ -3,6 +3,7 @@ package com.tripro.app.ui.tripoverview
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -96,6 +97,7 @@ fun TripOverviewRoute(
     onBack: () -> Unit,
     onOpenDay: (String) -> Unit,
     onOpenCollaborators: () -> Unit,
+    onOpenSharedTrips: (String) -> Unit,
     onOpenDocs: (String) -> Unit,
     onTripDeleted: () -> Unit,
     onOpenDrawer: () -> Unit
@@ -209,7 +211,10 @@ fun TripOverviewRoute(
                         ) {
                             trip.memberIds.forEach { uid ->
                                 val profile = uiState.memberProfiles[uid]
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.clickable { onOpenSharedTrips(uid) }
+                                ) {
                                     AsyncImage(
                                         model = profile?.photoUrl?.takeIf { it.isNotBlank() },
                                         contentDescription = null,

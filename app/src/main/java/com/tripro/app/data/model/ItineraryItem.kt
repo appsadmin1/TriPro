@@ -1,15 +1,16 @@
 package com.tripro.app.data.model
 
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.IgnoreExtraProperties
 
 enum class ItemType(val icon: String) {
-    FLIGHT("flight_takeoff"),
     HOTEL("hotel"),
     RESTAURANT("restaurant"),
     ATTRACTION("museum"),
     ACTIVITY("hiking"),
-    TRANSPORT("directions_car"),
     SHOW("theater_comedy"),
+    TRANSPORT("directions_car"),
+    FLIGHT("flight_takeoff"),
     CUSTOM("event")
 }
 
@@ -24,11 +25,12 @@ enum class DayPeriod(val label: String) {
  *  field existed keeps its old red/warning look. */
 enum class NoteType { ALERT, NOTE }
 
+@IgnoreExtraProperties
 data class ItineraryItem(
     @DocumentId
     val id: String = "",
     val title: String = "",
-    val type: ItemType = ItemType.CUSTOM,
+    val type: ItemType = ItemType.HOTEL,
     val timeType: TimeType = TimeType.PERIOD,
     val startTime: String? = null,
     val endTime: String? = null,

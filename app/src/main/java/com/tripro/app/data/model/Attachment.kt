@@ -1,5 +1,7 @@
 package com.tripro.app.data.model
 
+import com.google.firebase.firestore.IgnoreExtraProperties
+
 /**
  * [publicId] + [resourceType] are Cloudinary's identifiers for the uploaded asset
  * ("image", "video", or "raw") — both are needed to delete the asset later via
@@ -7,6 +9,7 @@ package com.tripro.app.data.model
  * be called directly from the app. See netlify/functions/delete-attachment.mjs, which
  * does this server-side; DayDetailViewModel.removeAttachment calls it over HTTP.
  */
+@IgnoreExtraProperties
 data class Attachment(
     val id: String = "",
     val fileName: String = "",

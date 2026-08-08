@@ -103,8 +103,10 @@ class TripOverviewViewModel(
 
     fun addItem(date: String, item: ItineraryItem) = viewModelScope.launch {
         runCatching {
-            tripRepository.addItem(tripId, date, item.copy(createdBy = currentUid))
-            pushNotificationRepository.notifyItineraryChange(tripId, date, item.title, action = "added")
+            val currentUserName = userRepository.getProfiles(listOf(currentUid))[currentUid]?.displayName ?: "A traveler"
+            val nextOrder = (uiState.value.itemsByDate[date]?.maxOfOrNull { it.order } ?: -1) + 1
+            tripRepository.addItem(tripId, date, item.copy(createdBy = currentUid, order = nextOrder))
+            pushNotificationRepository.notifyItineraryChange(tripId, date, item.title, action = "added", actorName = currentUserName)
         }.onFailure { e -> Log.e("TripOverviewViewModel", "Failed to add item: ${e.message}", e) }
     }
 
@@ -131,7 +133,8 @@ class TripOverviewViewModel(
                 coverAttachment?.downloadUrl, coverAttachment?.publicId, coverAttachment?.resourceType,
                 startDate, endDate
             )
-            pushNotificationRepository.notifyTripUpdate(tripId, what = "Trip details")
+            val currentUserName = userRepository.getProfiles(listOf(currentUid))[currentUid]?.displayName ?: "A traveler"
+            pushNotificationRepository.notifyTripUpdate(tripId, what = "Trip details", actorName = currentUserName)
         }.onFailure { e -> Log.e("TripOverviewViewModel", "Failed to update trip details: ${e.message}", e) }
     }
 

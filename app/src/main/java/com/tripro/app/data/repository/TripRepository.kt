@@ -142,7 +142,7 @@ class TripRepository(
         val registration = trips.document(tripId).collection("days").document(date).collection("items")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) { Log.e("TripRepository", "Error observing items for trip $tripId on $date: ${error.message}", error); close(error); return@addSnapshotListener }
-                trySend(snapshot?.toObjects(ItineraryItem::class.java).orEmpty().sortedBy { it.sortMinutes() })
+                trySend(snapshot?.toObjects(ItineraryItem::class.java).orEmpty().sortedWith(compareBy({ it.sortMinutes() }, { it.order })))
             }
         awaitClose { registration.remove() }
     }
@@ -173,6 +173,14 @@ class TripRepository(
 
     suspend fun deleteItem(tripId: String, date: String, itemId: String) {
         trips.document(tripId).collection("days").document(date).collection("items").document(itemId).delete().await()
+    }
+
+    suspend fun swapItemOrders(tripId: String, date: String, item1Id: String, order1: Int, item2Id: String, order2: Int) {
+        val dayRef = trips.document(tripId).collection("days").document(date)
+        val batch = firestore.batch()
+        batch.update(dayRef.collection("items").document(item1Id), "order", order1)
+        batch.update(dayRef.collection("items").document(item2Id), "order", order2)
+        batch.commit().await()
     }
 
     /** Renames one attachment's display name in place — Cloudinary's asset id never

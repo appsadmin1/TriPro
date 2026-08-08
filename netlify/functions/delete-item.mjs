@@ -18,7 +18,7 @@ export default async (request) => {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { tripId, date, itemId } = payload;
+  const { tripId, date, itemId, actorName } = payload;
   if (!tripId || !date || !itemId) {
     return Response.json({ error: "Missing required fields (tripId, date, itemId)" }, { status: 400 });
   }
@@ -55,7 +55,7 @@ export default async (request) => {
     const recipients = await filterByPreference(others, "itineraryChanges");
     if (recipients.length > 0) {
       await sendToUsers(recipients,
-        { title: trip.name, body: `${itemData.title || "An item"} was removed from ${date}` },
+        { title: trip.name, body: `${actorName || "A traveler"} removed "${itemData.title || "an item"}" from the itinerary on ${date}` },
         { tripId, date, type: "itinerary_update" }
       );
     }
