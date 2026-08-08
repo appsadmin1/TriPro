@@ -96,29 +96,26 @@ class UserRepository(
     // ---------------------------------------------------- Notification preferences
 
     fun observeNotificationPreferences(uid: String): Flow<NotificationPreferences> = callbackFlow {
-        val registration = users.document(uid).addSnapshotListener { snap, error ->
-            if (error != null) { close(error); return@addSnapshotListener }
-            @Suppress("UNCHECKED_CAST")
-            val map = snap?.get("notificationPrefs") as? Map<String, Any?>
-            trySend(
-                NotificationPreferences(
-                    tripInvites = map?.get("tripInvites") as? Boolean ?: true,
-                    itineraryChanges = map?.get("itineraryChanges") as? Boolean ?: true,
-                    dayInfoChanges = map?.get("dayInfoChanges") as? Boolean ?: true
+        val registration = users.document(uid).collection("preferences").document("notifications")
+            .addSnapshotListener { snap, error ->
+                if (error != null) { close(error); return@addSnapshotListener }
+                trySend(
+                    NotificationPreferences(
+                        tripInvites = snap?.getBoolean("tripInvites") ?: true,
+                        itineraryChanges = snap?.getBoolean("itineraryChanges") ?: true,
+                        dayInfoChanges = snap?.getBoolean("dayInfoChanges") ?: true
+                    )
                 )
-            )
-        }
+            }
         awaitClose { registration.remove() }
     }
 
     suspend fun updateNotificationPreferences(uid: String, prefs: NotificationPreferences) {
-        users.document(uid).set(
+        users.document(uid).collection("preferences").document("notifications").set(
             mapOf(
-                "notificationPrefs" to mapOf(
-                    "tripInvites" to prefs.tripInvites,
-                    "itineraryChanges" to prefs.itineraryChanges,
-                    "dayInfoChanges" to prefs.dayInfoChanges
-                )
+                "tripInvites" to prefs.tripInvites,
+                "itineraryChanges" to prefs.itineraryChanges,
+                "dayInfoChanges" to prefs.dayInfoChanges
             ),
             SetOptions.merge()
         ).await()
@@ -127,23 +124,23 @@ class UserRepository(
     // ---------------------------------------------------------- Activity marker colors
 
     fun observeActivityColors(uid: String): Flow<ActivityColorPrefs> = callbackFlow {
-        val registration = users.document(uid).addSnapshotListener { snap, error ->
-            if (error != null) { close(error); return@addSnapshotListener }
-            @Suppress("UNCHECKED_CAST")
-            val stored = snap?.get("activityColors") as? Map<String, String>
-            val hexByKey = MarkerColorKey.entries.associateWith { key ->
-                stored?.get(key.name) ?: DefaultActivityColorHex.getValue(key)
+        val registration = users.document(uid).collection("preferences").document("activityColors")
+            .addSnapshotListener { snap, error ->
+                if (error != null) { close(error); return@addSnapshotListener }
+                @Suppress("UNCHECKED_CAST")
+                val stored = snap?.get("colors") as? Map<String, String>
+                val hexByKey = MarkerColorKey.entries.associateWith { key ->
+                    stored?.get(key.name) ?: DefaultActivityColorHex.getValue(key)
+                }
+                trySend(ActivityColorPrefs(hexByKey))
             }
-            trySend(ActivityColorPrefs(hexByKey))
-        }
         awaitClose { registration.remove() }
     }
 
-    /** Dotted field path (same pattern as `members.$uid` in TripRepository) so this only
-     *  ever touches one color key, never clobbering the others. */
+    /** Matches web app's userService: users/{uid}/preferences/activityColors -> field `colors` */
     suspend fun updateActivityColor(uid: String, key: MarkerColorKey, hex: String) {
-        users.document(uid).set(
-            mapOf("activityColors.${key.name}" to hex),
+        users.document(uid).collection("preferences").document("activityColors").set(
+            mapOf("colors" to mapOf(key.name to hex)),
             SetOptions.merge()
         ).await()
     }

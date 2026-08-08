@@ -59,6 +59,10 @@ import com.tripro.app.R
 import com.tripro.app.util.localizedLabel
 
 import com.tripro.app.ui.components.TriProAlertDialog
+import com.tripro.app.ui.components.ColorPickerWheel
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.graphics.toArgb
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -154,34 +158,62 @@ fun SettingsRoute(currentUid: String, onBack: () -> Unit, onOpenDrawer: () -> Un
     }
 
     colorPickerFor?.let { key ->
+        var selectedHex by remember(key) { mutableStateOf(uiState.activityColors.hex(key)) }
+
         TriProAlertDialog(
             onDismissRequest = { colorPickerFor = null },
-            title = stringResource(R.string.settings_choose_color),
+            title = stringResource(R.string.settings_choose_color) + " - " + key.localizedLabel(),
             content = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    MarkerColorPalette.chunked(4).forEach { rowColors ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            rowColors.forEach { hex ->
-                                val isSelected = hex.equals(uiState.activityColors.hex(key), ignoreCase = true)
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(android.graphics.Color.parseColor(hex)))
-                                        .border(
-                                            width = if (isSelected) 3.dp else 1.dp,
-                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                            shape = CircleShape
-                                        )
-                                        .clickable { viewModel.setActivityColor(key, hex); colorPickerFor = null }
-                                )
+                Column(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 450.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ColorPickerWheel(
+                        initialColor = Color(android.graphics.Color.parseColor(selectedHex)),
+                        onColorChanged = { color ->
+                            val hex = String.format("#%06X", (0xFFFFFF and color.toArgb()))
+                            selectedHex = hex
+                        },
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+
+                    Text(
+                        text = "Presets",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MarkerColorPalette.chunked(6).forEach { rowColors ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                rowColors.forEach { hex ->
+                                    val isSelected = hex.equals(selectedHex, ignoreCase = true)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(android.graphics.Color.parseColor(hex)))
+                                            .border(
+                                                width = if (isSelected) 3.dp else 1.dp,
+                                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                                shape = CircleShape
+                                            )
+                                            .clickable { selectedHex = hex }
+                                    )
+                                }
                             }
                         }
                     }
                 }
             },
-            confirmButtonText = stringResource(R.string.action_close),
-            onConfirm = { colorPickerFor = null }
+            confirmButtonText = stringResource(R.string.action_save),
+            onConfirm = {
+                viewModel.setActivityColor(key, selectedHex)
+                colorPickerFor = null
+            },
+            dismissButtonText = stringResource(R.string.action_cancel)
         )
     }
 }

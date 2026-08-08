@@ -25,6 +25,7 @@ import { userService } from '../services/userService';
 import { ITEM_TYPE_COLORS } from '../utils/colorUtils';
 import { MarkerColorKey, MarkerColorPalette, NotificationPreferences, ItemType } from '../data/models';
 import { useTranslation } from 'react-i18next';
+import ColorPickerWheel from '../components/ColorPickerWheel';
 
 const SettingsPage: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationPreferences>({
@@ -34,12 +35,19 @@ const SettingsPage: React.FC = () => {
   });
   const [activityColors, setActivityColors] = useState<Record<string, string>>({});
   const [colorPickerKey, setColorPickerKey] = useState<MarkerColorKey | null>(null);
+  const [pendingColor, setPendingColor] = useState<string>('');
 
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
   const { t, i18n } = useTranslation();
 
   const currentLanguage = i18n.language.startsWith('he') ? 'he' : 'en';
+
+  useEffect(() => {
+    if (colorPickerKey) {
+      setPendingColor(getMarkerColor(colorPickerKey));
+    }
+  }, [colorPickerKey]);
 
   useEffect(() => {
     if (!user) return;
@@ -65,8 +73,12 @@ const SettingsPage: React.FC = () => {
   };
 
   const handleColorSelect = (hex: string) => {
+    setPendingColor(hex);
+  };
+
+  const handleSaveColor = () => {
     if (!user || !colorPickerKey) return;
-    userService.updateActivityColor(user.uid, colorPickerKey, hex);
+    userService.updateActivityColor(user.uid, colorPickerKey, pendingColor);
     setColorPickerKey(null);
   };
 
@@ -215,30 +227,43 @@ const SettingsPage: React.FC = () => {
           {t('settings_choose_color')} - {colorPickerKey ? t(`item_type_${colorPickerKey.toLowerCase()}`) : ''}
         </DialogTitle>
         <DialogContent dividers>
-          <Grid container spacing={2} justifyContent="center" sx={{ p: 1 }}>
-            {MarkerColorPalette.map((hex) => (
-              <Grid item key={hex}>
-                <Box
-                  onClick={() => handleColorSelect(hex)}
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '50%',
-                    bgcolor: hex,
-                    cursor: 'pointer',
-                    border: '3px solid',
-                    borderColor: activityColors[colorPickerKey || ''] === hex ? 'primary.main' : 'transparent',
-                    boxShadow: 1,
-                    '&:hover': { transform: 'scale(1.1)' },
-                    transition: 'transform 0.2s'
-                  }}
-                />
+          <Stack spacing={3} alignItems="center" sx={{ p: 1 }}>
+            <ColorPickerWheel
+              initialColor={pendingColor}
+              onColorChange={handleColorSelect}
+            />
+
+            <Box sx={{ width: '100%' }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Presets</Typography>
+              <Grid container spacing={1} justifyContent="center">
+                {MarkerColorPalette.map((hex) => (
+                  <Grid item key={hex}>
+                    <Box
+                      onClick={() => handleColorSelect(hex)}
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: '50%',
+                        bgcolor: hex,
+                        cursor: 'pointer',
+                        border: '3px solid',
+                        borderColor: pendingColor === hex ? 'primary.main' : 'transparent',
+                        boxShadow: 1,
+                        '&:hover': { transform: 'scale(1.1)' },
+                        transition: 'transform 0.2s'
+                      }}
+                    />
+                  </Grid>
+                ))}
               </Grid>
-            ))}
-          </Grid>
+            </Box>
+          </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setColorPickerKey(null)}>Cancel</Button>
+          <Button onClick={() => setColorPickerKey(null)}>{t('action_cancel', { defaultValue: 'Cancel' })}</Button>
+          <Button onClick={handleSaveColor} variant="contained" color="primary">
+            {t('action_save', { defaultValue: 'Save' })}
+          </Button>
         </DialogActions>
       </Dialog>
     </Layout>
