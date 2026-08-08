@@ -11,7 +11,7 @@ import {
   Avatar,
 } from '@mui/material';
 import { CalendarToday, LocationOn } from '@mui/icons-material';
-import { Trip } from '../data/models';
+import { Trip, UserProfile } from '../data/models';
 import { format, parseISO, differenceInDays, isValid } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { getOptimizedImageUrl } from '../utils/imageUtils';
@@ -19,11 +19,12 @@ import { useTranslation } from 'react-i18next';
 
 interface TripCardProps {
   trip: Trip;
+  profiles?: Record<string, UserProfile>;
   onClick: () => void;
   isPast?: boolean;
 }
 
-const TripCard: React.FC<TripCardProps> = ({ trip, onClick, isPast }) => {
+const TripCard: React.FC<TripCardProps> = ({ trip, profiles, onClick, isPast }) => {
   const { t, i18n } = useTranslation();
   console.log("Rendering TripCard for trip:", trip.id, trip.name, trip.coverImageUrl);
 
@@ -75,11 +76,15 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onClick, isPast }) => {
 
           <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
             <AvatarGroup max={4}>
-              {trip.memberIds.map((id) => (
-                <Avatar key={id} sx={{ width: 32, height: 32, fontSize: '0.875rem' }}>
-                  {id.substring(0, 1).toUpperCase()}
-                </Avatar>
-              ))}
+              {trip.memberIds.map((id) => {
+                const profile = profiles?.[id];
+                const displayName = profile?.displayName || 'Traveler';
+                return (
+                  <Avatar key={id} src={profile?.photoUrl} sx={{ width: 32, height: 32, fontSize: '0.875rem' }}>
+                    {!profile?.photoUrl && displayName.substring(0, 1).toUpperCase()}
+                  </Avatar>
+                );
+              })}
             </AvatarGroup>
           </Box>
         </CardContent>

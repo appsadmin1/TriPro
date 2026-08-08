@@ -12,13 +12,15 @@ import Layout from '../components/Layout';
 import TripCard from '../components/TripCard';
 import { tripService } from '../services/tripService';
 import { authService } from '../services/authService';
-import { Trip } from '../data/models';
+import { userService } from '../services/userService';
+import { Trip, UserProfile } from '../data/models';
 import { useNavigate } from 'react-router-dom';
-import { isPast, parseISO } from 'date-fns';
+import { isPast, parseISO, endOfDay } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 
 const DashboardPage: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, UserProfile>>({});
   const [loading, setLoading] = useState(true);
   const user = authService.getCurrentUser();
   const navigate = useNavigate();
@@ -30,9 +32,17 @@ const DashboardPage: React.FC = () => {
 
     console.log("DashboardPage: Observing trips for user:", user.uid);
     let stillLoading = true;
-    const unsubscribe = tripService.observeUserTrips(user.uid, (data) => {
+    const unsubscribe = tripService.observeUserTrips(user.uid, async (data) => {
       console.log("DashboardPage: Received trips:", data.length);
       setTrips(data);
+
+      // Fetch profiles for all members in all trips
+      const allMemberIds = Array.from(new Set(data.flatMap(t => t.memberIds)));
+      if (allMemberIds.length > 0) {
+        const profileMap = await userService.getProfiles(allMemberIds);
+        setProfiles(profileMap);
+      }
+
       stillLoading = false;
       setLoading(false);
     });
@@ -53,14 +63,14 @@ const DashboardPage: React.FC = () => {
 
   const upcomingTrips = trips.filter((t) => {
     try {
-      return t.endDate ? !isPast(parseISO(t.endDate)) : true;
+      return t.endDate ? !isPast(endOfDay(parseISO(t.endDate))) : true;
     } catch (e) {
       return true;
     }
   });
   const pastTrips = trips.filter((t) => {
     try {
-      return t.endDate ? isPast(parseISO(t.endDate)) : false;
+      return t.endDate ? isPast(endOfDay(parseISO(t.endDate))) : false;
     } catch (e) {
       return false;
     }
@@ -97,7 +107,7 @@ const DashboardPage: React.FC = () => {
           <Grid container spacing={3} sx={{ mb: 6 }}>
             {upcomingTrips.map((trip) => (
               <Grid item xs={12} sm={6} lg={4} key={trip.id}>
-                <TripCard trip={trip} onClick={() => navigate(`/trip/${trip.id}`)} />
+                <TripCard trip={trip} profiles={profiles} onClick={() => navigate(`/trip/${trip.id}`)} />
               </Grid>
             ))}
           </Grid>
@@ -117,7 +127,7 @@ const DashboardPage: React.FC = () => {
           <Grid container spacing={3}>
             {pastTrips.map((trip) => (
               <Grid item xs={12} sm={6} lg={4} key={trip.id}>
-                <TripCard trip={trip} isPast onClick={() => navigate(`/trip/${trip.id}`)} />
+                <TripCard trip={trip} profiles={profiles} isPast onClick={() => navigate(`/trip/${trip.id}`)} />
               </Grid>
             ))}
           </Grid>

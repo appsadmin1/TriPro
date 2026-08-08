@@ -134,8 +134,8 @@ const Layout: React.FC<Props> = ({ children, title }) => {
                 mr: direction === 'rtl' ? 0 : 1,
                 '&.Mui-selected': {
                   bgcolor: 'primary.container',
-                  color: 'primary.main',
-                  '& .MuiListItemIcon-root': { color: 'primary.main' },
+                  color: 'primary.contrastText',
+                  '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
                 },
               }}
             >

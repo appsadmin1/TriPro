@@ -3,13 +3,21 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
-  User
+  User,
+  updateProfile
 } from "firebase/auth";
 import { auth } from "../firebase";
 
 export const authService = {
   subscribeToAuthChanges: (callback: (user: User | null) => void) => {
     return onAuthStateChanged(auth, callback);
+  },
+
+  updateUserProfile: async (displayName: string, photoURL: string) => {
+    const user = auth.currentUser;
+    if (user) {
+      await updateProfile(user, { displayName, photoURL });
+    }
   },
 
   signInWithGoogle: async () => {

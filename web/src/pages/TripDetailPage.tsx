@@ -197,7 +197,19 @@ const TripDetailPage: React.FC = () => {
       {/* Travelers Section */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>{t('trip_travelers')}</Typography>
-        <Card variant="outlined" sx={{ p: 2, borderRadius: 3, display: 'flex', alignItems: 'center', bgcolor: 'background.paper' }}>
+        <Card
+          variant="outlined"
+          sx={{
+            p: 2,
+            borderRadius: 3,
+            display: 'flex',
+            alignItems: 'center',
+            bgcolor: 'background.paper',
+            cursor: 'pointer',
+            '&:hover': { bgcolor: 'action.hover' }
+          }}
+          onClick={() => navigate(`/trip/${tripId}/members`)}
+        >
           <Stack direction="row" spacing={3} sx={{ overflowX: 'auto', pb: 1 }}>
             {trip.memberIds.map(uid => {
               const profile = profiles[uid];
@@ -207,7 +219,7 @@ const TripDetailPage: React.FC = () => {
                     src={profile?.photoUrl}
                     sx={{
                       bgcolor: 'primary.container',
-                      color: 'primary.main',
+                      color: 'primary.contrastText',
                       width: 56,
                       height: 56,
                       border: '2px solid',

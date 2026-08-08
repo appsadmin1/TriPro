@@ -11,13 +11,15 @@ import Layout from '../components/Layout';
 import TripCard from '../components/TripCard';
 import { tripService } from '../services/tripService';
 import { authService } from '../services/authService';
-import { Trip } from '../data/models';
+import { userService } from '../services/userService';
+import { Trip, UserProfile } from '../data/models';
 import { useNavigate } from 'react-router-dom';
-import { isPast, parseISO, isValid } from 'date-fns';
+import { isPast, parseISO, isValid, endOfDay } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 
 const PastAdventuresPage: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, UserProfile>>({});
   const [loading, setLoading] = useState(true);
   const user = authService.getCurrentUser();
   const navigate = useNavigate();
@@ -25,8 +27,15 @@ const PastAdventuresPage: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-    const unsubscribe = tripService.observeUserTrips(user.uid, (data) => {
+    const unsubscribe = tripService.observeUserTrips(user.uid, async (data) => {
       setTrips(data);
+
+      const allMemberIds = Array.from(new Set(data.flatMap(t => t.memberIds)));
+      if (allMemberIds.length > 0) {
+        const profileMap = await userService.getProfiles(allMemberIds);
+        setProfiles(profileMap);
+      }
+
       setLoading(false);
     });
     return () => unsubscribe();
@@ -35,7 +44,7 @@ const PastAdventuresPage: React.FC = () => {
   const pastTrips = trips.filter((t) => {
     if (!t.endDate) return false;
     const d = parseISO(t.endDate);
-    return isValid(d) && isPast(d);
+    return isValid(d) && isPast(endOfDay(d));
   });
 
   if (loading) {
@@ -66,7 +75,7 @@ const PastAdventuresPage: React.FC = () => {
         <Grid container spacing={3}>
           {pastTrips.map((trip) => (
             <Grid item xs={12} sm={6} lg={4} key={trip.id}>
-              <TripCard trip={trip} isPast onClick={() => navigate(`/trip/${trip.id}`)} />
+              <TripCard trip={trip} profiles={profiles} isPast onClick={() => navigate(`/trip/${trip.id}`)} />
             </Grid>
           ))}
         </Grid>
