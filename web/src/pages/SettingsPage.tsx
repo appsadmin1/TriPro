@@ -228,6 +228,17 @@ const SettingsPage: React.FC = () => {
         </DialogTitle>
         <DialogContent dividers>
           <Stack spacing={3} alignItems="center" sx={{ p: 1 }}>
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: 2,
+                bgcolor: pendingColor,
+                border: '2px solid',
+                borderColor: 'divider',
+                boxShadow: 1
+              }}
+            />
             <ColorPickerWheel
               initialColor={pendingColor}
               onColorChange={handleColorSelect}

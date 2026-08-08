@@ -165,10 +165,19 @@ fun SettingsRoute(currentUid: String, onBack: () -> Unit, onOpenDrawer: () -> Un
             title = stringResource(R.string.settings_choose_color) + " - " + key.localizedLabel(),
             content = {
                 Column(
-                    modifier = Modifier.fillMaxWidth().heightIn(max = 450.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Selected color preview
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(android.graphics.Color.parseColor(selectedHex)))
+                            .border(2.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
+                    )
+
                     ColorPickerWheel(
                         initialColor = Color(android.graphics.Color.parseColor(selectedHex)),
                         onColorChanged = { color ->
